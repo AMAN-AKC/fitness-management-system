@@ -1,0 +1,35 @@
+package com.fitness.repository;
+
+import com.fitness.entity.Classes;
+import com.fitness.entity.Classes.Status;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import java.time.LocalTime;
+import java.util.List;
+
+@Repository
+public interface ClassesRepository extends JpaRepository<Classes, Long> {
+	List<Classes> findByBranchBranchId(Long branchId);
+
+	List<Classes> findByTrainerTrainerId(Long trainerId);
+
+	List<Classes> findByStatus(Status status);
+
+	@Query("SELECT c FROM Classes c WHERE c.room.facilityId = :roomId " +
+			"AND c.status = 'ACTIVE' " +
+			"AND c.classTime < :endTime " +
+			"AND (ADDTIME(c.classTime, SEC_TO_TIME(c.durationMins * 60))) > :startTime")
+	List<Classes> findConflictingByRoom(@Param("roomId") Long roomId,
+			@Param("startTime") LocalTime startTime,
+			@Param("endTime") LocalTime endTime);
+
+	@Query("SELECT c FROM Classes c WHERE c.trainer.trainerId = :trainerId " +
+			"AND c.status = 'ACTIVE' " +
+			"AND c.classTime < :endTime " +
+			"AND (ADDTIME(c.classTime, SEC_TO_TIME(c.durationMins * 60))) > :startTime")
+	List<Classes> findConflictingByTrainer(@Param("trainerId") Long trainerId,
+			@Param("startTime") LocalTime startTime,
+			@Param("endTime") LocalTime endTime);
+}
