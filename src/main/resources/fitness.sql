@@ -193,7 +193,7 @@ CREATE TABLE INVOICE (
     status VARCHAR(50) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT FK_INVOICE_MEMBER FOREIGN KEY (member_id) REFERENCES MEMBER(member_id),
-    CONSTRAINT FK_INVOICE_MEMBERSHIP FOREIGN KEY (membership_id) REFERENCES MEMBERSHIP(membership_id),
+    CONSTRAINT FK_INVOICE_MEMBERSHIP FOREIGN KEY (membership_id) REFERENCES MEMBERSHIP(mem_id),
     CONSTRAINT CHK_OUTSTANDING CHECK (outstanding = final_amount - paid_amount)
 );
 
@@ -309,3 +309,179 @@ CREATE TABLE AUDIT_LOG(
 );
 
 
+INSERT INTO SYSTEM_USER (user_id, username, email, password_hash, role, active, failed_attempts, locked_until, last_login, created_at, updated_at) VALUES
+(1,  'admin',      'admin@fitness.com',      '$2a$10$adminSeedHash1234567890123456789012345678901234567890', 'ADMIN',      1, 0, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2,  'frontdesk',  'frontdesk@fitness.com',  '$2a$10$frontdeskSeedHash123456789012345678901234567890123',   'FRONT_DESK', 1, 0, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3,  'manager',    'manager@fitness.com',    '$2a$10$managerSeedHash1234567890123456789012345678901234',    'MANAGER',    1, 0, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4,  'trainer1',   'trainer1@fitness.com',   '$2a$10$trainerSeedHash1234567890123456789012345678901234',   'TRAINER',    1, 0, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5,  'member1',    'member1@fitness.com',    '$2a$10$memberSeedHash12345678901234567890123456789012345',   'MEMBER',     1, 0, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(6,  'member2',    'member2@fitness.com',    '$2a$10$memberSeedHash22345678901234567890123456789012345',   'MEMBER',     1, 0, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(7,  'trainer2',   'trainer2@fitness.com',   '$2a$10$trainerSeedHash2234567890123456789012345678901234',   'TRAINER',    1, 0, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(8,  'trainer3',   'trainer3@fitness.com',   '$2a$10$trainerSeedHash3234567890123456789012345678901234',   'TRAINER',    1, 0, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(9,  'member3',    'member3@fitness.com',    '$2a$10$memberSeedHash32345678901234567890123456789012345',   'MEMBER',     1, 0, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(10, 'member4',    'member4@fitness.com',    '$2a$10$memberSeedHash42345678901234567890123456789012345',   'MEMBER',     1, 0, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(11, 'member5',    'member5@fitness.com',    '$2a$10$memberSeedHash52345678901234567890123456789012345',   'MEMBER',     1, 0, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(12, 'frontdesk2', 'frontdesk2@fitness.com', '$2a$10$frontdeskSeedHash223456789012345678901234567890123',  'FRONT_DESK', 1, 0, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO BRANCH (branch_id, branch_name, address, contact, op_hours, timezone, is_active, created_at) VALUES
+(1, 'Downtown Fitness Hub',  '12 MG Road, Bengaluru, Karnataka',          '+91-9876543210', '06:00 - 22:00', 'Asia/Kolkata', 1, CURRENT_TIMESTAMP),
+(2, 'North Zone Gym',        '88 Hebbal Main Road, Bengaluru, Karnataka',  '+91-9876543211', '05:30 - 23:00', 'Asia/Kolkata', 1, CURRENT_TIMESTAMP),
+(3, 'South Side Studio',     '44 Jayanagar 4th Block, Bengaluru, Karnataka', '+91-9876543212', '06:00 - 21:00', 'Asia/Kolkata', 1, CURRENT_TIMESTAMP);
+
+INSERT INTO PLAN (plan_id, plan_name, duration_days, price, access_start, access_end, eligibility_type, proration_rule, tax_percent, version, effective_from, branch_visibility, is_active, created_at, updated_at) VALUES
+(1, 'Gold Annual',        365, 12999.00, '05:00:00', '23:00:00', 'GENERAL',   'FULL',     18.00, 1, '2025-01-01', 'ALL', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 'Silver Quarterly',    90,  3999.00, '06:00:00', '22:00:00', 'GENERAL',   'PRO_RATA', 18.00, 1, '2025-01-01', 'ALL', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 'Corporate Monthly',   30,  1499.00, '06:00:00', '21:00:00', 'CORPORATE', 'FULL',     18.00, 1, '2025-01-01', '1,2', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 'Student Monthly',     30,   999.00, '06:00:00', '22:00:00', 'STUDENT',   'PRO_RATA', 18.00, 1, '2025-01-01', 'ALL', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 'Platinum Half-Year', 180,  7499.00, '05:00:00', '23:00:00', 'GENERAL',   'PRO_RATA', 18.00, 1, '2025-06-01', 'ALL', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO FACILITY (facility_id, facility_name, branch_id, capacity, is_active, created_at, updated_at) VALUES
+(1, 'Room A',       1, 20, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 'Room B',       1, 18, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 'Gym Floor',    1, 40, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 'Studio 1',     2, 24, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 'Studio 2',     3, 22, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(6, 'Spin Room',    2, 15, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(7, 'Pool Deck',    3, 30, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(8, 'Boxing Ring',  1, 12, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO ADD_ON (addon_id, addon_name, price, capacity, addon_type, tax_percent, is_active, created_at, updated_at) VALUES
+(1, 'PT Package (10 Sessions)',   6500.00, NULL, 'SERVICE',  18.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 'Locker Storage (Monthly)',    300.00, NULL, 'FACILITY', 18.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 'Nutrition Consultation',     1500.00, NULL, 'SERVICE',  18.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 'Towel Service (Monthly)',     150.00, NULL, 'FACILITY',  5.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 'PT Package (5 Sessions)',    3500.00, NULL, 'SERVICE',  18.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(6, 'Parking Pass (Monthly)',      500.00, NULL, 'FACILITY',  5.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO PROMO_CODE (promo_id, code, discount_type, discount_value, expiry_date, usage_limit, per_member_limit, eligibility, is_active, created_at, updated_at) VALUES
+(1, 'NEW10',      'PERCENT',  10.00, '2026-12-31', 100, 1, 'ALL',       1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 'CORP500',    'FLAT',    500.00, '2026-12-31',  50, 1, 'CORPORATE', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 'STUDENT15',  'PERCENT',  15.00, '2026-12-31',  80, 1, 'STUDENT',   1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 'SUMMER20',   'PERCENT',  20.00, '2026-08-31', 200, 1, 'ALL',       1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 'REFER250',   'FLAT',    250.00, '2026-12-31', 500, 1, 'ALL',       1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO TRAINER (trainer_id, user_id, bio, certifications, specialties, rating, branch_id, is_active, created_at, updated_at) VALUES
+(1, 4, 'Strength and conditioning specialist.',          'ACSM Certified, CrossFit L2',       'Strength, CrossFit',          4.80, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 7, 'Yoga and mindfulness expert with 8 years exp.', 'RYT-500, Yin Yoga Certified',        'Yoga, Flexibility, Wellness', 4.90, 2, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 8, 'Cardio and functional fitness coach.',          'NASM CPT, TRX Certified, Spin L1',   'Cardio, HIIT, Spin',          4.70, 3, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO MEMBER (member_id, user_id, mem_name, email, phone, dob, address, emg_contact, emg_phone, referral_code, corporate_code, status, home_branch_id, photo_path, notes, created_by, created_at, updated_at) VALUES
+(1, 5,  'Aman Verma',    'member1@fitness.com', '9876543215', '1998-08-12', '24 Indiranagar, Bengaluru, Karnataka',      'Neha Verma',    '9876543220', 'REF1001', NULL,     'ACTIVE',    1, NULL, 'Prefers morning sessions',         2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 6,  'Riya Sharma',   'member2@fitness.com', '9876543216', '2000-02-18', '18 Koramangala, Bengaluru, Karnataka',      'Karan Sharma',  '9876543221', NULL,      'CORP100', 'PROSPECT',  2, NULL, NULL,                               2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 9,  'Vikram Nair',   'member3@fitness.com', '9876543217', '1995-05-30', '7 Whitefield, Bengaluru, Karnataka',        'Priya Nair',    '9876543222', NULL,      NULL,      'ACTIVE',    1, NULL, 'Interested in weight loss program', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 10, 'Pooja Reddy',   'member4@fitness.com', '9876543218', '2001-11-04', '33 HSR Layout, Bengaluru, Karnataka',       'Suresh Reddy',  '9876543223', 'REF1002', NULL,      'ACTIVE',    3, NULL, 'Student discount applied',         12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 11, 'Arjun Mehta',   'member5@fitness.com', '9876543219', '1990-03-22', '55 Malleshwaram, Bengaluru, Karnataka',     'Sunita Mehta',  '9876543224', NULL,      'CORP100', 'SUSPENDED', 2, NULL, 'Suspended due to payment default',  2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO PLAN_FACILITY (plan_id, facility_id) VALUES
+(1, 1),
+(1, 2),
+(1, 3),
+(1, 6),
+(1, 7),
+(1, 8),
+(2, 1),
+(2, 4),
+(3, 4),
+(3, 5),
+(4, 1),
+(4, 2),
+(5, 1),
+(5, 2),
+(5, 3),
+(5, 4),
+(5, 5),
+(5, 6);
+
+INSERT INTO CLASSES (class_id, class_name, trainer_id, room_id, branch_id, start_date, end_date, weekdays, class_time, duration_mins, capacity, prerequisites, plan_eligibility, status, cancel_reason, created_at, updated_at) VALUES
+(1, 'Morning Yoga Flow',    1, 1, 1, '2026-05-01', '2026-12-31', 'Mon,Wed,Fri', '07:00:00', 60, 20, NULL,                        'GENERAL', 'active',    NULL,                          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 'HIIT Challenge',       1, 2, 1, '2026-05-01', '2026-12-31', 'Tue,Thu',     '18:00:00', 45, 18, 'Basic cardio fitness',      'GENERAL', 'active',    NULL,                          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 'Power Lifting 101',    1, 3, 1, '2026-05-01', '2026-12-31', 'Sat',         '09:00:00', 75, 16, 'Intermediate strength level','GENERAL', 'active',    NULL,                          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 'Vinyasa Yoga',         2, 4, 2, '2026-05-01', '2026-12-31', 'Mon,Wed',     '08:00:00', 60, 24, NULL,                        'GENERAL', 'active',    NULL,                          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 'Spin Burn',            3, 6, 2, '2026-05-01', '2026-12-31', 'Tue,Thu,Sat', '06:30:00', 45, 15, NULL,                        'GENERAL', 'active',    NULL,                          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(6, 'Core & Stretch',       3, 5, 3, '2026-05-01', '2026-12-31', 'Mon,Fri',     '10:00:00', 50, 22, NULL,                        'GENERAL', 'active',    NULL,                          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(7, 'Boxing Fundamentals',  1, 8, 1, '2026-05-01', '2026-09-30', 'Wed,Sat',     '19:00:00', 60, 12, 'No prior experience needed','GENERAL', 'active',    NULL,                          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(8, 'Evening Meditation',   2, 4, 2, '2026-05-01', '2026-07-31', 'Fri',         '20:00:00', 30, 24, NULL,                        'GENERAL', 'cancelled', 'Trainer unavailable in slot', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO MEMBERSHIP (mem_id, member_id, plan_id, start_date, end_date, status, duration, price, discount_amount, promo_code_used, branch_id, created_at, updated_at) VALUES
+(1, 1, 1, '2026-01-01', '2027-01-01', 'ACTIVE',   365, 12999.00,  0.00, 'NEW10',   1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 2, 2, '2026-04-01', '2026-06-30', 'PENDING',   90,  3999.00, 500.00, 'CORP500', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 3, 1, '2026-02-01', '2027-02-01', 'ACTIVE',   365, 12999.00,  0.00, NULL,      1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 4, 4, '2026-03-15', '2026-04-15', 'EXPIRED',   30,   999.00, 149.85, 'STUDENT15', 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 4, 4, '2026-05-01', '2026-06-01', 'ACTIVE',    30,   999.00,  0.00, NULL,      3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(6, 5, 3, '2026-01-01', '2026-02-01', 'SUSPENDED', 30,  1499.00,  0.00, NULL,      2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO INVOICE (invoice_id, invoice_number, member_id, membership_id, mrp, taxes, discount, final_amount, paid_amount, outstanding, promo_code, status, created_at) VALUES
+(1, 'INV-2026-001', 1, 1, 12999.00, 2339.82,    0.00, 15338.82, 15338.82,    0.00, 'NEW10',     'PAID',    '2026-01-01 10:15:00'),
+(2, 'INV-2026-002', 2, 2,  3999.00,  719.82,  500.00,  4218.82,     0.00, 4218.82, 'CORP500',   'PENDING', '2026-04-01 11:00:00'),
+(3, 'INV-2026-003', 3, 3, 12999.00, 2339.82,    0.00, 15338.82, 15338.82,    0.00, NULL,        'PAID',    '2026-02-01 09:30:00'),
+(4, 'INV-2026-004', 4, 4,   999.00,  179.82,  149.85,  1029.00,  1029.00,    0.00, 'STUDENT15', 'PAID',    '2026-03-15 14:00:00'),
+(5, 'INV-2026-005', 4, 5,   999.00,  179.82,    0.00,  1178.82,  1178.82,    0.00, NULL,        'PAID',    '2026-05-01 10:00:00'),
+(6, 'INV-2026-006', 5, 6,  1499.00,  269.82,    0.00,  1768.82,     0.00, 1768.82, NULL,        'UNPAID',  '2026-01-01 12:00:00');
+
+INSERT INTO PAYMENT (payment_id, invoice_id, member_id, payment_method, amount_paid, payment_date, payment_status, failure_reason, refund_by, refund_reason, created_at) VALUES
+(1, 1, 1, 'CARD',  15338.82, '2026-01-01 10:20:00', 'SUCCESS', NULL,                           NULL, NULL, CURRENT_TIMESTAMP),
+(2, 3, 3, 'UPI',   15338.82, '2026-02-01 09:35:00', 'SUCCESS', NULL,                           NULL, NULL, CURRENT_TIMESTAMP),
+(3, 4, 4, 'CASH',   1029.00, '2026-03-15 14:10:00', 'SUCCESS', NULL,                           NULL, NULL, CURRENT_TIMESTAMP),
+(4, 5, 4, 'CARD',   1178.82, '2026-05-01 10:05:00', 'SUCCESS', NULL,                           NULL, NULL, CURRENT_TIMESTAMP),
+(5, 6, 5, 'CARD',      0.00, '2026-01-01 12:10:00', 'FAILED',  'Insufficient funds on card',   NULL, NULL, CURRENT_TIMESTAMP);
+
+INSERT INTO CLASS_BOOKING (booking_id, class_id, member_id, booking_status, waitlist_position, cancelled_at, override_by, override_reason, created_at) VALUES
+(1, 1, 1, 'CONFIRMED',  NULL, NULL,                    NULL, NULL,                          CURRENT_TIMESTAMP),
+(2, 2, 1, 'CONFIRMED',  NULL, NULL,                    NULL, NULL,                          CURRENT_TIMESTAMP),
+(3, 3, 2, 'WAITLISTED',    2, NULL,                    NULL, NULL,                          CURRENT_TIMESTAMP),
+(4, 4, 3, 'CONFIRMED',  NULL, NULL,                    NULL, NULL,                          CURRENT_TIMESTAMP),
+(5, 5, 4, 'CONFIRMED',  NULL, NULL,                    NULL, NULL,                          CURRENT_TIMESTAMP),
+(6, 6, 4, 'CANCELLED',  NULL, '2026-05-03 08:00:00',   NULL, NULL,                          CURRENT_TIMESTAMP),
+(7, 7, 1, 'CONFIRMED',  NULL, NULL,                    NULL, NULL,                          CURRENT_TIMESTAMP),
+(8, 3, 3, 'CONFIRMED',  NULL, NULL,                    NULL, NULL,                          CURRENT_TIMESTAMP),
+(9, 5, 1, 'WAITLISTED',    1, NULL,                    NULL, NULL,                          CURRENT_TIMESTAMP),
+(10,7, 3, 'CONFIRMED',  NULL, NULL,                       2, 'Member missed booking window', CURRENT_TIMESTAMP);
+
+INSERT INTO PT_SESSION (session_id, member_id, trainer_id, scheduled_at, duration_mins, status, trainer_notes, created_at, updated_at) VALUES
+(1, 1, 1, '2026-05-08 07:30:00', 60, 'REQUESTED', 'Focus on back and shoulders',        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 1, 1, '2026-05-10 18:30:00', 45, 'APPROVED',  'Increase weight gradually',          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 3, 1, '2026-05-09 06:00:00', 60, 'COMPLETED', 'Good form on deadlifts, +5 kg next', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 4, 3, '2026-05-07 07:00:00', 45, 'COMPLETED', 'Endurance improving week on week',   CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 1, 1, '2026-05-15 07:30:00', 60, 'APPROVED',  'Progressive overload — legs day',    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(6, 3, 2, '2026-05-12 08:00:00', 60, 'REQUESTED', 'Flexibility assessment session',     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO ATTENDANCE (log_id, member_id, branch_id, check_in_time, check_out_time, alert_flag, scan_method, sync_status, class_id, override_by, override_reason, created_at) VALUES
+(1,  1, 1, '2026-05-06 07:05:00', '2026-05-06 08:10:00', 0, 'MANUAL', 'SYNCED',  1, NULL, NULL, CURRENT_TIMESTAMP),
+(2,  2, 2, '2026-05-06 08:10:00', NULL,                  0, 'QR',     'PENDING', NULL, NULL, NULL, CURRENT_TIMESTAMP),
+(3,  3, 1, '2026-05-06 06:00:00', '2026-05-06 07:15:00', 0, 'QR',     'SYNCED',  NULL, NULL, NULL, CURRENT_TIMESTAMP),
+(4,  4, 3, '2026-05-06 10:05:00', '2026-05-06 11:00:00', 0, 'QR',     'SYNCED',  6, NULL, NULL, CURRENT_TIMESTAMP),
+(5,  1, 1, '2026-05-07 18:00:00', '2026-05-07 18:50:00', 0, 'CARD',   'SYNCED',  2, NULL, NULL, CURRENT_TIMESTAMP),
+(6,  5, 2, '2026-05-05 09:00:00', NULL,                  1, 'QR',     'SYNCED',  NULL, 1, 'Membership suspended — access override by admin', CURRENT_TIMESTAMP),
+(7,  3, 1, '2026-05-07 09:00:00', '2026-05-07 10:20:00', 0, 'MANUAL', 'SYNCED',  3, NULL, NULL, CURRENT_TIMESTAMP),
+(8,  1, 1, '2026-05-05 07:10:00', '2026-05-05 08:05:00', 0, 'QR',     'SYNCED',  1, NULL, NULL, CURRENT_TIMESTAMP);
+
+INSERT INTO HEALTH_CONSENT (consent_id, member_id, form_version, acknowledged_at, ip_address, status, staff_notes, created_at, updated_at) VALUES
+(1, 1, 'v1.0', '2026-01-01 09:00:00', '127.0.0.1',    'VALID',   'Initial consent received',          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 2, 'v1.0', '2026-04-01 09:15:00', '127.0.0.1',    'EXPIRED', 'Renewal pending',                   CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 3, 'v1.0', '2026-02-01 08:45:00', '192.168.1.10', 'VALID',   'Consent signed at front desk',      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 4, 'v1.0', '2026-03-15 13:55:00', '192.168.1.12', 'VALID',   'Student ID verified at intake',     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 5, 'v1.0', '2025-12-20 10:00:00', '192.168.1.15', 'EXPIRED', 'Form expired; re-consent required', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO NOTIFICATION (notif_id, user_id, type, channel, title, body, is_read, delivery_status, created_at) VALUES
+(1,  5, 'MEMBERSHIP', 'IN_APP', 'Membership Renewed',          'Your membership is active until 2027-01-01.',                           0, 'DELIVERED', CURRENT_TIMESTAMP),
+(2,  4, 'TRAINER',    'IN_APP', 'New PT Session',              'A member requested a personal training session.',                       0, 'DELIVERED', CURRENT_TIMESTAMP),
+(3,  1, 'SYSTEM',     'EMAIL',  'Daily Audit Summary',         'New attendance and invoice records were created today.',                 1, 'DELIVERED', CURRENT_TIMESTAMP),
+(4,  6, 'PAYMENT',    'EMAIL',  'Payment Due',                 'Your membership invoice INV-2026-002 of ₹4218.82 is outstanding.',      0, 'DELIVERED', CURRENT_TIMESTAMP),
+(5,  9, 'MEMBERSHIP', 'SMS',    'Membership Confirmed',        'Welcome Vikram! Your Gold Annual plan starts on 2026-02-01.',           1, 'DELIVERED', CURRENT_TIMESTAMP),
+(6, 10, 'CLASS',      'IN_APP', 'Booking Cancelled',           'Your booking for Core & Stretch on May 6 has been cancelled.',          0, 'DELIVERED', CURRENT_TIMESTAMP),
+(7,  5, 'CLASS',      'IN_APP', 'Waitlist Update',             'You are now #1 on the waitlist for Spin Burn.',                         0, 'DELIVERED', CURRENT_TIMESTAMP),
+(8, 11, 'SYSTEM',     'EMAIL',  'Account Suspended',           'Your account has been suspended due to an outstanding payment.',        1, 'DELIVERED', CURRENT_TIMESTAMP),
+(9,  7, 'TRAINER',    'IN_APP', 'New PT Session Request',      'Member Vikram Nair has requested a flexibility assessment session.',     0, 'DELIVERED', CURRENT_TIMESTAMP),
+(10, 3, 'SYSTEM',     'EMAIL',  'New Member Registration',     'New member Pooja Reddy registered at South Side Studio.',               1, 'DELIVERED', CURRENT_TIMESTAMP);
+
+INSERT INTO AUDIT_LOG (audit_id, performed_by, entity_name, action, old_value, new_value, created_at) VALUES
+(1,  1, 'SYSTEM_USER', 'CREATED', NULL,                         '{"username":"member1","role":"MEMBER"}',                 '2026-01-01 09:00:00'),
+(2,  2, 'MEMBER',      'UPDATED', '{"status":"PROSPECT"}',       '{"status":"ACTIVE"}',                                   '2026-05-01 12:00:00'),
+(3,  1, 'INVOICE',     'PAID',    '{"status":"PENDING"}',        '{"status":"PAID"}',                                     '2026-05-06 13:00:00'),
+(4,  1, 'SYSTEM_USER', 'CREATED', NULL,                         '{"username":"member2","role":"MEMBER"}',                 '2026-04-01 08:00:00'),
+(5,  1, 'PLAN',        'CREATED', NULL,                         '{"plan_name":"Student Monthly","price":999.00}',          '2025-01-01 10:00:00'),
+(6,  3, 'MEMBERSHIP',  'UPDATED', '{"status":"ACTIVE"}',         '{"status":"SUSPENDED"}',                                '2026-02-02 09:00:00'),
+(7,  2, 'CLASS',       'UPDATED', '{"status":"active"}',         '{"status":"cancelled","cancel_reason":"Trainer unavailable in slot"}', '2026-04-28 15:00:00'),
+(8,  1, 'MEMBER',      'CREATED', NULL,                         '{"mem_name":"Vikram Nair","status":"ACTIVE"}',           '2026-02-01 08:40:00'),
+(9,  2, 'ATTENDANCE',  'CREATED', NULL,                         '{"member_id":5,"alert_flag":true}',                      '2026-05-05 09:01:00'),
+(10, 1, 'PROMO_CODE',  'CREATED', NULL,                         '{"code":"SUMMER20","discount_type":"PERCENT","discount_value":20.00}', '2026-04-15 11:00:00');
