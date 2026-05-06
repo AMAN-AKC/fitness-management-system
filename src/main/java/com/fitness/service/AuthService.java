@@ -8,7 +8,8 @@ import com.fitness.exception.BusinessRuleException;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.SystemUserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -21,7 +22,7 @@ public class AuthService implements UserDetailsService {
 
 	private final SystemUserRepository userRepo;
 	private final JwtConfig jwtConfig;
-	private final AuthenticationManager authManager;
+	private final PasswordEncoder passwordEncoder;
 	private static final int MAX_ATTEMPTS = 5;
 
 	public JwtResponse login(LoginRequest req) {
@@ -37,16 +38,18 @@ public class AuthService implements UserDetailsService {
 		}
 
 		try {
-			authManager.authenticate(
-					new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword()));
-		} catch (Exception e) {
-			int attempts = user.getFailedAttempts() + 1;
-			user.setFailedAttempts(attempts);
-			if (attempts >= MAX_ATTEMPTS) {
-				user.setLockedUntil(java.time.LocalDateTime.now().plusMinutes(15));
-				user.setFailedAttempts(0);
+			String raw = req.getPassword();
+			if (raw == null || !passwordEncoder.matches(raw, user.getPasswordHash())) {
+				int attempts = user.getFailedAttempts() + 1;
+				user.setFailedAttempts(attempts);
+				if (attempts >= MAX_ATTEMPTS) {
+					user.setLockedUntil(java.time.LocalDateTime.now().plusMinutes(15));
+					user.setFailedAttempts(0);
+				}
+				userRepo.save(user);
+				throw new BadCredentialsException("Invalid username or password");
 			}
-			userRepo.save(user);
+		} catch (Exception e) {
 			throw e;
 		}
 

@@ -11,15 +11,15 @@ import java.util.Optional;
 public interface ClassBookingRepository extends JpaRepository<ClassBooking, Long> {
 	List<ClassBooking> findByMemberMemberId(Long memberId);
 
-	List<ClassBooking> findByClassesClassId(Long classId);
+	List<ClassBooking> findByFitnessClassClassId(Long classId);
 
-	List<ClassBooking> findByClassesClassIdAndBookingStatus(Long classId, BookingStatus status);
+	List<ClassBooking> findByFitnessClassClassIdAndBookingStatus(Long classId, BookingStatus status);
 
-	Optional<ClassBooking> findByClassesClassIdAndMemberMemberIdAndBookingStatusNot(
+	Optional<ClassBooking> findByFitnessClassClassIdAndMemberMemberIdAndBookingStatusNot(
 			Long classId, Long memberId, BookingStatus status);
 
-	long countByClassesClassIdAndBookingStatus(Long classId, BookingStatus status);
+	long countByFitnessClassClassIdAndBookingStatus(Long classId, BookingStatus status);
 
-	Optional<ClassBooking> findFirstByClassesClassIdAndBookingStatusOrderByWaitlistPositionAsc(
+	Optional<ClassBooking> findFirstByFitnessClassClassIdAndBookingStatusOrderByWaitlistPositionAsc(
 			Long classId, BookingStatus status);
 }

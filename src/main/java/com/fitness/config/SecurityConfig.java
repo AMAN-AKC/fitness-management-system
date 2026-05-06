@@ -1,6 +1,5 @@
 package com.fitness.config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,11 +25,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
-
-	private final JwtFilter jwtFilter;
-	private final UserDetailsService userDetailsService;
 
 	// Public endpoints — no token required
 	private static final String[] PUBLIC_URLS = {
@@ -42,7 +37,9 @@ public class SecurityConfig {
 	};
 
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain securityFilterChain(HttpSecurity http,
+			JwtFilter jwtFilter,
+			AuthenticationProvider authenticationProvider) throws Exception {
 		http
 				.cors(org.springframework.security.config.Customizer.withDefaults())
 				.csrf(AbstractHttpConfigurer::disable)
@@ -50,17 +47,17 @@ public class SecurityConfig {
 						.requestMatchers(PUBLIC_URLS).permitAll()
 						.anyRequest().authenticated())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authenticationProvider(authenticationProvider())
+				.authenticationProvider(authenticationProvider)
 				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}
 
 	@Bean
-	public AuthenticationProvider authenticationProvider() {
+	public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService,
+			PasswordEncoder passwordEncoder) {
 		DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-
-		provider.setPasswordEncoder(passwordEncoder());
+		provider.setPasswordEncoder(passwordEncoder);
 		return provider;
 	}
 
@@ -68,11 +65,6 @@ public class SecurityConfig {
 	public AuthenticationManager authenticationManager(
 			AuthenticationConfiguration config) throws Exception {
 		return config.getAuthenticationManager();
-	}
-
-	@Bean
-	public PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
 	}
 
 	@Bean

@@ -36,12 +36,12 @@ public class ClassBookingService {
 
 		// Prevent double-booking
 		Optional<ClassBooking> existing = bookingRepo
-				.findByClassesClassIdAndMemberMemberIdAndBookingStatusNot(
+				.findByFitnessClassClassIdAndMemberMemberIdAndBookingStatusNot(
 						cls.getClassId(), member.getMemberId(), ClassBooking.BookingStatus.CANCELLED);
 		if (existing.isPresent())
 			throw new BusinessRuleException("You already have a booking or waitlist spot for this class.");
 
-		long confirmed = bookingRepo.countByClassesClassIdAndBookingStatus(
+		long confirmed = bookingRepo.countByFitnessClassClassIdAndBookingStatus(
 				cls.getClassId(), ClassBooking.BookingStatus.CONFIRMED);
 
 		ClassBooking booking = ClassBooking.builder()
@@ -52,7 +52,7 @@ public class ClassBookingService {
 		if (confirmed < cls.getCapacity()) {
 			booking.setBookingStatus(ClassBooking.BookingStatus.CONFIRMED);
 		} else {
-			long waitlistCount = bookingRepo.countByClassesClassIdAndBookingStatus(
+			long waitlistCount = bookingRepo.countByFitnessClassClassIdAndBookingStatus(
 					cls.getClassId(), ClassBooking.BookingStatus.WAITLISTED);
 			booking.setBookingStatus(ClassBooking.BookingStatus.WAITLISTED);
 			booking.setWaitlistPosition((int) waitlistCount + 1);
@@ -74,7 +74,7 @@ public class ClassBookingService {
 		bookingRepo.save(booking);
 
 		// Promote next on waitlist (FIFO)
-		bookingRepo.findFirstByClassesClassIdAndBookingStatusOrderByWaitlistPositionAsc(
+		bookingRepo.findFirstByFitnessClassClassIdAndBookingStatusOrderByWaitlistPositionAsc(
 				booking.getFitnessClass().getClassId(), ClassBooking.BookingStatus.WAITLISTED)
 				.ifPresent(next -> {
 					next.setBookingStatus(ClassBooking.BookingStatus.CONFIRMED);
@@ -89,7 +89,7 @@ public class ClassBookingService {
 	}
 
 	public List<ClassBookingDTO> getBookingsByClass(Long classId) {
-		return bookingRepo.findByClassesClassId(classId).stream()
+		return bookingRepo.findByFitnessClassClassId(classId).stream()
 				.map(b -> mapper.map(b, ClassBookingDTO.class)).collect(Collectors.toList());
 	}
 }

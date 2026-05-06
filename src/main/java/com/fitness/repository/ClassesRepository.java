@@ -17,18 +17,18 @@ public interface ClassesRepository extends JpaRepository<Classes, Long> {
 
 	List<Classes> findByStatus(Status status);
 
-	@Query("SELECT c FROM Classes c WHERE c.room.facilityId = :roomId " +
+	@Query(value = "SELECT c.* FROM classes c WHERE c.facility_id = :roomId " +
 			"AND c.status = 'ACTIVE' " +
-			"AND c.classTime < :endTime " +
-			"AND (ADDTIME(c.classTime, SEC_TO_TIME(c.durationMins * 60))) > :startTime")
+			"AND c.class_time < :endTime " +
+			"AND ADDTIME(c.class_time, SEC_TO_TIME(c.duration_mins * 60)) > :startTime", nativeQuery = true)
 	List<Classes> findConflictingByRoom(@Param("roomId") Long roomId,
 			@Param("startTime") LocalTime startTime,
 			@Param("endTime") LocalTime endTime);
 
-	@Query("SELECT c FROM Classes c WHERE c.trainer.trainerId = :trainerId " +
+	@Query(value = "SELECT c.* FROM classes c WHERE c.trainer_id = :trainerId " +
 			"AND c.status = 'ACTIVE' " +
-			"AND c.classTime < :endTime " +
-			"AND (ADDTIME(c.classTime, SEC_TO_TIME(c.durationMins * 60))) > :startTime")
+			"AND c.class_time < :endTime " +
+			"AND ADDTIME(c.class_time, SEC_TO_TIME(c.duration_mins * 60)) > :startTime", nativeQuery = true)
 	List<Classes> findConflictingByTrainer(@Param("trainerId") Long trainerId,
 			@Param("startTime") LocalTime startTime,
 			@Param("endTime") LocalTime endTime);
