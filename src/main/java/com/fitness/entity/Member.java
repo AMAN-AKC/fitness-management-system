@@ -57,6 +57,7 @@ public class Member {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
+	@Builder.Default
 	private Status status = Status.PROSPECT;
 
 	@ManyToOne
