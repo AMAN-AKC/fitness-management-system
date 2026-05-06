@@ -1,0 +1,540 @@
+TABLE OF CONTENTS
+
+1.	PROJECT DESCRIPTION	3
+2.	USER STORIES	3
+3.	FRONTEND COMPONENTS	7
+4.	ENVIRONMENT REQUIREMENTS	11
+
+
+
+
+
+ 
+1.	 PROJECT DESCRIPTION 
+•	The system manages end to end fitness club operations including member onboarding, plan purchases/renewals, class scheduling, trainer assignments, attendance tracking, billing, and support.
+•	Members can discover and purchase membership plans (monthly/annual), add-ons (personal training, locker), and book classes or training sessions based on availability.
+•	Staff (front-desk, trainers, managers) can enroll members, verify payments, manage schedules, check-in members via QR/cards, and handle day-to-day operations.
+•	A robust role-based access control (RBAC) ensures data privacy and enforces authorization for member data, billing, and staff operations.
+•	The app supports recurring billing, prorations for mid-cycle changes, discounts/coupons, payment receipts, and dunning (failed payment follow-ups).
+•	Class & facility scheduling includes capacity management, waitlists, trainer substitution, and attendance logging for compliance and utilization analysis.
+•	Health & consent forms, medical disclaimers, and basic PAR-Q info are recorded with versioned member acknowledgements and renewal reminders.
+•	Analytics dashboards provide metrics for active members, churn/renewals, revenue by plan, class utilization, trainer productivity, and peak/off-peak usage.
+•	Integration scope for interns is CSV-first (imports/exports), while payment gateways/biometric access are stubbed and feature-flagged for later.
+•	Notifications (email/in-app) keep members informed about bookings, expiries, renewals, and schedule changes; staff get reminders for follow-ups and expiring memberships.
+•	Non-functional goals: secure (HTTPS/JWT), responsive UI, accessible forms (WCAG basics), testable endpoints, pagination for lists, and clear audit trails.
+
+2.	 USER STORIES
+US 01	Priority: Must Have
+User Story Description
+As a system user, I want secure login access to ensure member data remains protected.
+Acceptance Criteria 
+•	Users must authenticate using secure credentials.
+•	Passwords must be encrypted using industry-standard hashing.
+•	JWT-based session management required.
+•	Session timeout configurable.
+•	Account lockout after configurable failed attempts.
+•	Role-based dashboard access.
+•	Unauthorized access must return HTTP 401/403.
+•	All login attempts logged.
+•	HTTPS-only access enforced.
+•	Password complexity policy configurable.
+•	Session invalidation on logout.
+
+
+
+
+
+
+
+
+
+
+
+US 02	Priority: Must Have
+User Story Description
+As a front-desk staff, I want to register a new member with essential details so I can activate their account.
+Acceptance Criteria 
+•	Required fields: name, email/phone, date of birth, address, emergency contact.
+•	Optional fields: referral code, corporate code, notes.
+•	Email/phone must be unique and validated.
+•	Member status set to “Prospect” until plan is purchased.
+•	Consent/waiver acknowledgement captured with timestamp and version.
+•	Photo/ID capture (file upload) with type/size validation.
+•	Audit log records who created/edited the profile.
+•	Only authorized roles can view/edit sensitive fields.
+•	Deactivated members cannot log in or book classes.
+•	CSV import supports bulk onboarding with row-level validation report.
+
+
+
+
+
+US 03	Priority: Must Have
+User Story Description
+As an admin, I want to configure plan catalog so members can buy the right memberships and add-ons.
+Acceptance Criteria 
+•	Plan fields: name, duration (days/months), price, access hours (peak/off-peak), facilities included.
+•	Add-ons: locker, PT sessions, guest passes, towel service, etc.
+•	Eligibility rules (e.g., student/senior/corporate) with validation.
+•	Discounts and promo codes with expiry and usage limits.
+•	Plan visibility toggles (active/inactive, branch visibility).
+•	Proration rule configuration for mid-cycle upgrades/downgrades.
+•	Versioning of plans with effective dates.
+•	Taxes configurable per plan/add-on.
+•	Deleting a plan that’s in use is prevented; allow deactivation instead.
+•	All changes are audit-logged.
+
+
+
+
+
+
+US 04	Priority: Must Have
+User Story Description
+As a member, I want to purchase or renew a plan and receive an invoice and receipt.
+Acceptance Criteria 
+•	Plan selection shows price breakdown (base, taxes, discounts).
+•	Payment methods: cash/UPI/card marked (gateway stub for interns).
+•	Invoice generated with unique number and downloadable PDF/CSV.
+•	Receipt issued on successful payment with email notification.
+•	Recurring billing schedule created for eligible plans (stub).
+•	Proration applied for upgrades with clear calculations.
+•	Failed payment status changes to “Pending/Dunning” (stub).
+•	Payment history visible in member profile.
+•	Refunds/voids restricted to Manager/Admin with reason.
+•	Billing actions are audit-logged.
+
+
+
+
+US 05	Priority: Must Have
+User Story Description
+As a manager, I want to schedule classes and allocate rooms so usage is efficient.
+Acceptance Criteria 
+•	Create recurring classes with start/end dates and weekdays.
+•	Assign trainer, room, capacity, and prerequisites.
+•	Conflict detection for room/trainer/time overlaps.
+•	Class visibility controlled by plan eligibility.
+•	Temporary trainer substitutions with notification to booked members.
+•	Class cancellation requires a reason and notifies booked members.
+•	Room maintenance blocks bookings during downtime.
+•	Calendar views: daily/weekly/monthly with filters.
+•	CSV import/export for schedules.
+•	All schedule changes are audit-logged.
+
+
+
+
+
+
+US 06	Priority: Must Have
+User Story Description
+As a member, I want to book or cancel a class and be added to a waitlist if the class is full.
+Acceptance Criteria 
+•	Booking allowed only for active members with eligible plans.
+•	Capacity enforced; new bookings go to waitlist when full.
+•	Waitlist auto-promotes in FIFO order on cancellation.
+•	Cancellation cutoff policy enforced (e.g., no cancel within 2 hours).
+•	No-show penalties configurable and applied on repeated offenses.
+•	Booking confirmation & cancellation emails sent.
+•	Members can view their upcoming/past classes.
+•	Staff can override booking rules with justification.
+•	Double-booking at overlapping times prevented.
+•	All booking actions are audit-logged.
+
+
+
+
+
+
+US 07	Priority: Must Have
+User Story Description
+As a front-desk staff, I want to check members in via QR/card and log attendance.
+Acceptance Criteria 
+•	Member check-in via QR/barcode or manual lookup.
+•	Only active memberships allow check-in; expired/suspended blocked.
+•	Class attendance recorded when check-in occurs within window.
+•	Duplicate check-ins prevented within a configurable timeframe.
+•	Check-in screen shows flags (unpaid dues, health note alerts).
+•	Offline mode stub: queue check-ins for later sync (intern scope: local cache).
+•	Daily attendance report viewable/exportable as CSV.
+•	Trainer can mark attendance from class roster.
+•	Staff overrides require reason and are logged.
+•	All check-ins are audit-logged.
+
+
+
+
+
+US 08	Priority: Must Have
+User Story Description
+As a member, I want to view trainer profiles and book personal training (PT) sessions.
+Acceptance Criteria 
+•	Trainer profile fields: bio, certifications, specialties, ratings (simple).
+•	Trainer availability slots configurable and visible.
+•	PT packages (sessions, price) purchasable like add-ons.
+•	Booking a PT session decrements remaining sessions.
+•	Rescheduling rules and cutoffs enforced.
+•	Trainer can accept/decline requested sessions.
+•	Completed sessions marked with notes by trainer.
+•	Member and trainer receive notifications for changes.
+•	Overlapping PT sessions for the same trainer prevented.
+•	All PT actions are audit-logged.
+
+
+
+
+
+
+US 09	Priority: Must Have
+User Story Description
+As a member, I want to complete health/waiver forms so I can access the facility safely.
+Acceptance Criteria 
+•	PAR-Q style questionnaire with required acknowledgements.
+•	E-consent recorded with timestamp, version, and IP.
+•	Sensitive fields masked in UI; exposure limited by role.
+•	Forms must be re-confirmed on policy updates (version bump).
+•	Members can view/download their own consent history.
+•	Staff can add administrative notes (non-diagnostic).
+•	Alerts displayed on check-in if consent is missing/expired.
+•	Export of anonymized health stats (no PII) for reporting.
+•	Deletion/retention rules configurable per policy.
+•	All consent updates are audit-logged.
+
+
+
+
+
+
+US 10	Priority: Must Have
+User Story Description
+As an admin, I want to manage promo codes and referrals to increase conversions.
+Acceptance Criteria 
+•	Create promo codes with percent/fixed discounts and expiry.
+•	Usage limits per code and per member enforced.
+•	Eligibility rules (plans, time windows, new/returning).
+•	Referral codes grant credit after referred member’s first payment.
+•	Credits are visible and redeemable on checkout.
+•	Stacking rules prevent incompatible discounts.
+•	Promo application appears on invoice with breakdown.
+•	Inactive/expired codes rejected with clear message.
+•	Export promo usage as CSV.
+•	All promo/referral actions are audit-logged.
+
+
+
+
+
+US 11	Priority: Must Have
+User Story Description
+As a manager, I want a simple follow-up queue for failed or pending payments.
+Acceptance Criteria 
+•	Failed transactions flagged with reason/status.
+•	Member appears in a dunning list with contact details.
+•	Email/in-app reminder templates configurable.
+•	Staff can record manual follow-up attempts.
+•	Promise-to-pay date field and reminder.
+•	Partial payments recorded with outstanding balance.
+•	Account suspension rules configurable after grace period.
+•	Resolution updates status and removes from queue.
+•	CSV export of dunning list.
+•	All actions audit-logged.
+
+
+
+
+
+
+US 12	Priority: Must Have
+User Story Description
+As a user, I want timely notifications for bookings, renewals, and schedule changes.
+Acceptance Criteria 
+•	In-app notifications for bookings, cancellations, check-ins.
+•	Email notifications with templated content and variables.
+•	Renewal reminders sent X days before expiry (configurable).
+•	Schedule change alerts for affected members.
+•	Notification preferences configurable per user.
+•	Deep links in emails to relevant pages.
+•	Delivery failures logged and visible to Admin.
+•	Digest emails for daily/weekly summaries.
+•	Throttling to prevent spam.
+•	Notification history available in a bell center.
+
+
+
+
+
+US 13	Priority: Must Have
+User Story Description
+As a manager, I want dashboards to monitor membership, revenue, and utilization.
+Acceptance Criteria 
+•	KPI tiles: active members, new joins, churn, MRR/Revenue.
+•	Trend charts: joins, renewals, cancellations over time.
+•	Utilization: class occupancy, peak hours, trainer sessions.
+•	Drill-down from charts to transactional data.
+•	Filters by date range, plan, trainer, branch.
+•	Tabular reports exportable to CSV.
+•	Role-based data visibility.
+•	Cached endpoints for performance; pagination for tables.
+•	Chart loads within target performance (<2s p95 cached).
+•	Scheduled CSV exports (manual trigger for intern scope).
+
+
+
+
+
+US 14	Priority: Must Have
+User Story Description
+As an admin, I want to configure policies, hours, and feature flags to control system behavior.
+Acceptance Criteria 
+•	Manage users and roles (RBAC).
+•	Set center/branch hours, holidays, blackout dates.
+•	Configure cancellation/no-show penalties.
+•	Set currency, number/date formats, time zone.
+•	Password policies and session/lockout settings.
+•	Branding (logo, colors) for member-facing pages.
+•	Feature flags to enable/disable modules (e.g., dunning, PT).
+•	Versioned config with rollback.
+•	Access restricted to Admin and audit-logged.
+•	Validation prevents conflicting/invalid settings.
+
+
+
+
+
+
+US 15	Priority: Must Have
+User Story Description
+As an admin, I want to manage multiple branches so members and staff operate per location.
+Acceptance Criteria 
+•	Branch entity with address, hours, and contact details.
+•	Plans/classes can be branch-specific or global.
+•	Member home-branch with multi-branch access rules.
+•	Staff assigned to branches with permissions.
+•	Booking visibility filtered by branch access.
+•	Reports filter by branch.
+•	Transfers between branches logged with reason.
+•	Inventory/room allocation per branch.
+•	CSV imports/exports include branch codes.
+•	All branch actions are audit-logged.
+
+
+
+
+
+
+
+3.	FRONTEND COMPONENTS
+Auth Module
+Description: Login, JWT, guards, password policy UX.
+Features: 
+•	Login form + validation
+•	JWT storage/refresh/interceptor
+•	Role-based route guards
+•	Logout & session timeout handling
+
+Password Recovery Module
+Description: Forgot/reset password screens and lockout info.
+Features: 
+•	Request reset (email screen)
+•	Reset with policy checks
+•	Lockout/cooldown display
+
+App Shell / Dashboard Layout
+Description: Global layout, nav, breadcrumbs, role menus.
+Features: 
+•	Responsive sidebar/topbar
+•	Role-aware navigation
+•	Breadcrumbs and quick actions
+
+Member Profile Module
+Description: Onboarding forms and member profile view/edit.
+Features: 
+•	Personal info + emergency contact
+•	Photo/ID upload with preview
+•	Consent/waiver status display
+
+Plans Catalog Module
+Description: Browse/select membership plans & add-ons.
+Features: 
+•	Plan cards with features/pricing
+•	Filters by duration/access/branch
+•	Add-on picker & promo code entry
+
+Checkout Billing Module
+Description: Purchase/renewal flow with invoice/receipt.
+Features: 
+•	Price breakdown & taxes
+•	Payment capture UI (gateway stub)
+•	Invoice/receipt download & history
+
+Classes Scheduler Module
+Description: Create/manage schedules (manager view).
+Features: 
+•	Calendar (day/week/month)
+•	Class/trainer/room assignment
+•	Conflict warnings & substitutions
+
+Class Booking Module
+Description: Member class discovery and booking.
+Features: 
+•	Search/filter classes
+•	Book/cancel/waitlist
+•	Booking confirmation & reminders
+
+Attendance Checkin Module
+Description: Staff check-in screen & class rosters.
+Features: 
+•	QR/barcode scan + manual search
+•	Roster with mark-present/absent
+•	Alerts for expired/suspended status
+
+Trainers Module
+Description: Trainer profiles and PT session booking.
+Features: 
+•	Trainer bios/certifications
+•	Availability calendar
+•	PT package usage & booking
+
+Health Consent Module
+Description: Health forms, waivers, and versioned consents.
+Features: 
+•	PAR-Q form with e-sign/ack
+•	Consent history & download
+•	Alerts for missing/expired consents
+
+Promotions Module
+Description: Discounts, promo codes, referrals UI.
+Features: 
+•	Apply code in checkout
+•	Referral code display
+•	Promo usage feedback/errors
+
+Notifications Centre
+Description: In-app notification feed & settings link.
+Features: 
+•	Unread counters
+•	Deep links to entities
+•	Read/dismiss controls
+
+Reports Analytics Module
+Description: KPIs, charts, and tabular reports.
+Features: 
+•	KPI tiles & trend charts
+•	Filters & drill-down
+•	CSV export for tables
+
+Admin Console Module
+Description: Roles, policies, hours, feature flags, branding.
+Features: 
+•	RBAC management
+•	Cancellation/penalty settings
+•	Logo/theme configuration
+
+Branch Management Module
+Description: Multi-branch configuration and assignment.
+Features: 
+•	Branch CRUD
+•	Assign staff/members to branches
+•	Branch-specific visibility
+
+Csv Import Export Module
+Description: CSV utilities for members, plans, schedules.
+Features: 
+•	Upload with row error feedback
+•	Download templates
+•	Export filtered datasets
+
+Audit Log Viewer
+Description: Explore audit trails across entities.
+Features: 
+•	Filter by user/action/date
+•	Detail drawer for entries
+•	CSV export
+
+Settings Security Module
+Description: Security settings (timeouts, lockouts, password policy).
+Features: 
+•	Configure session timeout/lockout
+•	Password policy preview
+•	Feature flag toggles
+
+Error Handling & Observability Module
+Description: Global error pages, toasts, and client telemetry hooks.
+Features: 
+•	401/403/404/500 pages
+•	Retry/backoff patterns
+•	Client logs (console opt-in)
+
+
+4.	ENVIRONMENT REQUIREMENTS
+Technology Stack:
+•	Backend: Spring Boot, Spring Data, Spring REST, Spring Cloud Consul
+•	Frontend: Angular/React, Typescript/JavaScript HTML5, CSS3, Bootstrap
+•	Database: MySQL/NOSQL
+•	Security - OAuth/Spring Security
+Non-Functional Requirements:
+•	Performance: The application should be fast and responsive, with quick load times and minimal lag or delay.
+•	Scalability: The application should be able to handle large amounts of traffic and scale as needed to accommodate growth.
+•	Security: The application should be secure and protect user data from unauthorized access, with measures such as encryption and secure authentication. Secure password storage using hashing. Protect against common web vulnerabilities (e.g., SQL injection, XSS).
+•	Reliability: The application should be reliable and available, with minimal downtime or outages.
+•	Usability: The application should be easy to use and intuitive, with a clear and consistent user interface.
+•	Maintainability: The application should be easy to maintain and update, with clear and well-organized code that is easy to understand and modify.
+•	Compatibility: The application should be compatible with a wide range of devices and browsers, with support for different screen sizes and resolutions.
+•	Implement caching mechanisms to improve performance.
+•	Session Management: Implement secure session management techniques to prevent unauthorized access. Consider using short-lived sessions with automatic timeouts.
+•	Lazy Loading: Implement lazy loading techniques for images and other content, ensuring faster initial page loads and smoother user experience.
+•	User Interface (UI) and User Experience (UX) Design: Design an intuitive user interface that is easy to navigate and provides a seamless user experience. Prioritize responsiveness and clarity across all devices (desktop, mobile, tablets).
+Final Deliverables:
+•	Application archive (.jar ) with source code
+•	Database DDL Script
+•	Complete Source code
+•	Sample screenshots of important screens 
+Implementation Guidelines:
+•	Utilize Lombok for model class creation and logging.
+•	Implement logic using Lambdas and Streams.
+•	Organize code into logical layers (controller, service, DTO, entity, etc).
+•	Use meaningful package names reflecting the domain.
+•	Employ Spring dependency injection for effective component management.
+
+General Guidelines:
+Error Handling:
+•	Handle cases where the user attempts to access without authorization.
+•	Implement a custom exception to throw user-defined messages.
+•	Centralized exception handling mechanism should be used to capture exceptions and translate them into HTTP response.
+•	Implement proper error handling mechanisms to catch any issues and log all the service exceptions using LoggingAspect
+•	Handle success and error responses appropriately with proper messages. 
+DTOs and Mapping:
+•	Data Transfer Objects (DTOs) should be used for API request and response.
+•	Entities should not be exposed directly to APIs.
+•	Use ModelMapper to convert from entities to dto and vice versa.
+Database Interaction:
+•	Spring Data Repository should be used for database operation.
+•	Add appropriate properties specific to the application like database properties and table generation strategies.
+API Design:
+•	All the api should be mapped with the base URI
+•	Set server port number of your choice.
+•	Use appropriate HTTP methods and status code for all rest end points.
+•	Use Swagger for generating the API documentation.
+Microservice Communication:
+•	Circuit Breaker pattern should be implemented for all the critical services with a timeout of 3 seconds and error threshold of 50%. The circuit breaker should open after 10 consecutive failures and remain open for 60 seconds. Upon circuit breaker opening, a fallback mechanism should return a generic message to the client.
+•	Fallback behaviors should be defined for all critical operations.
+•	Create two instances for any Microservice and implement load balancing.
+Validation:
+•	Bean validation should be used for all inputs throughout the process.
+•	Custom Validators should be used for complex validation.
+•	All request parameters must be validated for null or empty values. For any such invalid values, ‘Please provide a valid <attribute name>’ should be the error message.
+•	Any date and time value should not start with zero.
+Testing:
+•	Write JUnit test cases for all service methods using Mockito.
+•	80% code coverage should be achieved.
+Code Quality: To ensure adherence to coding standards, the project should be analyzed using SonarQube. The following minimum acceptable values must be met:
+SonarQube Metrics	Minimum Acceptable Value
+Security	A
+Reliability	A
+Issues	<= 5
+Coverage	>= 80%
+Duplications	<=3%
+Security Hotspots	A
+ 
+Postman: Once done with implemen¬¬ting the requirements, use Postman or Swagger to test whether the REST endpoints are working fine

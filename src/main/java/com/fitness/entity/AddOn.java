@@ -3,6 +3,7 @@ package com.fitness.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "add_on")
@@ -35,6 +36,22 @@ public class AddOn {
 	@Column(nullable = false)
 	@Builder.Default
 	private Boolean isActive = true;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = updatedAt = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		updatedAt = LocalDateTime.now();
+	}
 
 	public enum AddonType {
 		LOCKER, PT_SESSIONS, GUEST_PASS, TOWEL, OTHER

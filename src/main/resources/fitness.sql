@@ -1,16 +1,15 @@
 create table SYSTEM_USER(
-    user_id bigint primary key auto_increment;
-    user_name varchar(80) not null unique,
+    user_id bigint primary key auto_increment,
+    username varchar(80) not null unique,
     email varchar(150) not null unique,
     password_hash varchar(255) not null,
-    role not null,
-    is_active boolean default true,
+    role varchar(50) not null,
+    active boolean default true,
     failed_attempts int default 0,
     locked_until datetime null,
     last_login datetime null,
-    password_changed datetime null,
-    created_at datetime not null,
-    updated_at datetime not null
+    created_at datetime not null default current_timestamp,
+    updated_at datetime not null default current_timestamp on update current_timestamp
 );
 
 CREATE TABLE BRANCH (
@@ -21,7 +20,7 @@ CREATE TABLE BRANCH (
   op_hours VARCHAR(100) NOT NULL,
   timezone VARCHAR(60) NOT NULL,
   is_active BOOLEAN DEFAULT TRUE,
-  created_at DATETIME NOT NULL
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -35,7 +34,7 @@ CREATE TABLE PLAN (
     eligibility_type VARCHAR(50) NOT NULL,
     proration_rule VARCHAR(50) NULL,
     tax_percent DECIMAL(5,2) DEFAULT 0,
-    versionINT DEFAULT 1,
+    version INT DEFAULT 1,
     effective_from DATE NOT NULL,
     branch_visibility VARCHAR(255) NULL,
     is_active BOOLEAN DEFAULT TRUE,
@@ -51,7 +50,8 @@ CREATE TABLE FACILITY (
   branch_id BIGINT NOT NULL,
   capacity INT NOT NULL,
   is_active BOOLEAN DEFAULT TRUE,
-  created_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   
   CONSTRAINT fk_facility_branch FOREIGN KEY (branch_id) REFERENCES branch(branch_id)
 );
@@ -64,7 +64,9 @@ CREATE TABLE ADD_ON(
   capacity INT NULL,
   addon_type VARCHAR(30) NOT NULL,
   tax_percent DECIMAL(5,2) DEFAULT 0,
-  is_active BOOLEAN DEFAULT TRUE
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ); 
 
 
@@ -78,21 +80,22 @@ CREATE TABLE PROMO_CODE(
   per_member_limit INT DEFAULT 1,
   eligibility VARCHAR(30) DEFAULT 'ALL',
   is_active BOOLEAN DEFAULT TRUE,
-  created_at DATETIME NOT NULL
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 
 CREATE TABLE TRAINER(
   trainer_id BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT NOT NULL UNIQUE,
-  trainer_name VARCHAR(120) NOT NULL,
   bio TEXT,
-  certificate TEXT,
+  certifications VARCHAR(255),
   specialties VARCHAR(255),
   rating DECIMAL(3,2) DEFAULT 0,
   branch_id BIGINT NOT NULL,
   is_active BOOLEAN DEFAULT TRUE,
-  created_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   CONSTRAINT fk_trainer_user FOREIGN KEY (user_id) REFERENCES system_user(user_id),
   CONSTRAINT fk_trainer_branch FOREIGN KEY (branch_id) REFERENCES branch(branch_id)
@@ -109,15 +112,16 @@ create table MEMBER (
     emg_contact varchar(120) not null,
     emg_phone varchar(20) not null,
     referral_code varchar(30),
-    coporate_code varchar(30),
-    status not null,
+    corporate_code varchar(30),
+    status varchar(50) not null,
     home_branch_id bigint not null,
     photo_path varchar(255),
     notes text,
     created_by bigint not null,
-    created_at datetime not null,
-    updated_at datetime not null,
+    created_at datetime not null default current_timestamp,
+    updated_at datetime not null default current_timestamp on update current_timestamp,
     foreign key(user_id) references SYSTEM_USER(user_id),
+    foreign key(home_branch_id) references BRANCH(branch_id),
     foreign key(created_by) references SYSTEM_USER(user_id)
 );
 
@@ -126,13 +130,15 @@ CREATE TABLE PLAN_FACILITY (
     facility_id BIGINT NOT NULL,
     PRIMARY KEY (plan_id, facility_id),
     CONSTRAINT FK_PLANFACILITY_PLAN FOREIGN KEY (plan_id) REFERENCES PLAN(plan_id),
-    CONSTRAINT FK_PLANFACILITY_FACILITY FOREIGN KEY (facility_id) REFERENCES FACILITY(facility_id)
+    CONSTRAINT FK_PLANFACILITY_FACILITY FOREIGN KEY (facility_id) REFERENCES FACILITY(facility_id),
+    INDEX idx_plan (plan_id),
+    INDEX idx_facility (facility_id)
 );
 
 
 create table CLASSES(
 class_id bigint auto_increment primary key,
-classes_name varchar(120) not null,
+class_name varchar(120) not null,
 trainer_id bigint not null,
 room_id bigint not null,
 branch_id bigint not null,
@@ -146,8 +152,8 @@ prerequisites text null,
 plan_eligibility varchar(255) null,
 status varchar(20) default 'active',
 cancel_reason text null,
-created_at datetime not null,
-updated_at datetime not null,
+created_at datetime not null default current_timestamp,
+updated_at datetime not null default current_timestamp on update current_timestamp,
 foreign key (trainer_id) references trainer(trainer_id),
 foreign key (room_id) references facility(facility_id),
 foreign key (branch_id) references branch(branch_id)
@@ -159,15 +165,17 @@ create table MEMBERSHIP(
     plan_id bigint not null,
     start_date date not null,
     end_date date not null,
-    status not null,
+    status varchar(50) not null,
     duration int not null,
     price decimal(10,2) not null,
     discount_amount decimal(10,2) default 0,
     promo_code_used varchar(30),
     branch_id bigint not null,
-    created_at datetime not null,
-    updated_at datetime not null,
-    foreign key(member_id) references MEMBER(member_id)
+    created_at datetime not null default current_timestamp,
+    updated_at datetime not null default current_timestamp on update current_timestamp,
+    foreign key(member_id) references MEMBER(member_id),
+    foreign key(plan_id) references PLAN(plan_id),
+    foreign key(branch_id) references BRANCH(branch_id)
 );
 
 CREATE TABLE INVOICE (
@@ -197,26 +205,28 @@ CREATE TABLE PAYMENT (
     payment_method VARCHAR(50) NOT NULL,
     amount_paid DECIMAL(10,2) NOT NULL,
     payment_date DATETIME NOT NULL,
-    paymnet_status VARCHAR(50) NOT NULL,
+    payment_status VARCHAR(50) NOT NULL,
     failure_reason VARCHAR(250) NULL,
     refund_by BIGINT NULL,
     refund_reason TEXT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT FK_PAYMENT_INVOICE FOREIGN KEY (invoice_id) REFERENCES INVOICE(invoice_id),
     CONSTRAINT FK_PAYMENT_MEMBER FOREIGN KEY (member_id) REFERENCES MEMBER(member_id),
-    CONSTRAINT FK_PAYMENT_REFUND_BY FOREIGN KEY (refund_by) REFERENCES SYSTEM_USER(refund_by)
+    CONSTRAINT FK_PAYMENT_REFUND_BY FOREIGN KEY (refund_by) REFERENCES SYSTEM_USER(user_id)
 );
 
 create table CLASS_BOOKING(
     booking_id bigint primary key auto_increment,
     class_id bigint not null,
     member_id bigint not null,
-    booking_status not null,
+    booking_status varchar(50) not null,
     waitlist_position int,
     cancelled_at datetime,
     override_by bigint,
-    ovrride_reason text,
-    created_at datetime not null,
+    override_reason text,
+    created_at datetime not null default current_timestamp,
+    unique key uk_class_member (class_id, member_id),
+    foreign key (class_id) references CLASSES(class_id),
     foreign key (member_id) references MEMBER(member_id),
     foreign key (override_by) references SYSTEM_USER(user_id)
 );
@@ -229,7 +239,8 @@ scheduled_at datetime not null,
 duration_mins int not null,
 status varchar(20) not null,
 trainer_notes text null,
-created_at datetime not null,
+created_at datetime not null default current_timestamp,
+updated_at datetime not null default current_timestamp on update current_timestamp,
 foreign key(member_id) references member(member_id),
 foreign key (trainer_id) references trainer(trainer_id)
 );
@@ -247,7 +258,7 @@ sync_status varchar(20) not null,
 class_id bigint null,
 override_by bigint null,
 override_reason text null,
-created_at datetime not null,
+created_at datetime not null default current_timestamp,
 foreign key (member_id) references member(member_id),
 foreign key (branch_id) references branch(branch_id),
 foreign key (class_id) references classes(class_id),
@@ -262,7 +273,8 @@ acknowledged_at datetime not null,
 ip_address varchar(45) not null,
 status varchar(20) not null,
 staff_notes text null,
-created_at datetime not null,
+created_at datetime not null default current_timestamp,
+updated_at datetime not null default current_timestamp on update current_timestamp,
 foreign key (member_id) references member(member_id)
 );
 
@@ -271,12 +283,12 @@ CREATE TABLE NOTIFICATION (
   notif_id BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT NOT NULL,
   type VARCHAR(40) NOT NULL,
-  channel VARCHAR(30) NOT NUL,
+  channel VARCHAR(30) NOT NULL,
   title VARCHAR(200) NOT NULL,
   body TEXT NOT NULL,
   is_read BOOLEAN DEFAULT FALSE,
   delivery_status VARCHAR(30) NOT NULL,
-  created_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES system_user(user_id)
 );
