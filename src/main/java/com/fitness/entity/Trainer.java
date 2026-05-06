@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -33,6 +34,10 @@ public class Trainer {
 	@JoinColumn(name = "user_id", nullable = false, unique = true)
 	private SystemUser user;
 
+	@ManyToOne
+	@JoinColumn(name = "branch_id", nullable = false)
+	private Branch branch;
+
 	@Column(columnDefinition = "TEXT")
 	private String bio;
 
@@ -45,6 +50,10 @@ public class Trainer {
 	@Column(nullable = false)
 	@Builder.Default
 	private Double rating = 0.0;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean isActive = true;
 
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;

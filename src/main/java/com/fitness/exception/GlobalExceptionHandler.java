@@ -99,7 +99,7 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<Map<String, Object>> handleBusinessRule(
 			BusinessRuleException ex, WebRequest request) {
 		log.warn("BusinessRule: {}", ex.getMessage());
-		return buildError(HttpStatus.UNPROCESSABLE_ENTITY, "Business Rule Violation",
+		return buildError(HttpStatus.BAD_REQUEST, "Business Rule Violation",
 				ex.getMessage(), request.getDescription(false));
 	}
 

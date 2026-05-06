@@ -36,15 +36,18 @@ public class Plan {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
+	@Builder.Default
 	private EligibilityType eligibilityType = EligibilityType.GENERAL;
 
 	@Column(length = 50)
 	private String prorationRule;
 
 	@Column(precision = 5, scale = 2)
+	@Builder.Default
 	private BigDecimal taxPercent = BigDecimal.ZERO;
 
 	@Column(nullable = false)
+	@Builder.Default
 	private Integer version = 1;
 
 	@Column(nullable = false)
@@ -54,6 +57,7 @@ public class Plan {
 	private String branchVisibility;
 
 	@Column(nullable = false)
+	@Builder.Default
 	private Boolean isActive = true;
 
 	@Column(nullable = false, updatable = false)

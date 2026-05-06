@@ -27,7 +27,7 @@ public class SystemUserService {
 			throw new DuplicateResourceException("User", "email", dto.getEmail());
 		SystemUser user = mapper.map(dto, SystemUser.class);
 		user.setPasswordHash(passwordEncoder.encode(rawPassword));
-		user.setIsActive(true);
+		user.setActive(true);
 		user.setFailedAttempts(0);
 		return mapper.map(userRepo.save(user), SystemUserDTO.class);
 	}
@@ -50,7 +50,7 @@ public class SystemUserService {
 
 	public void deactivateUser(Long id) {
 		SystemUser user = findById(id);
-		user.setIsActive(false);
+		user.setActive(false);
 		userRepo.save(user);
 	}
 

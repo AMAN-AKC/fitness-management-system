@@ -1,6 +1,5 @@
 package com.fitness.dto;
 
-import com.fitness.entity.SystemUser;
 import com.fitness.enums.Role;
 
 import jakarta.validation.constraints.Email;

@@ -19,6 +19,7 @@ public class PaymentService {
 	private final PaymentRepository paymentRepo;
 	private final InvoiceRepository invoiceRepo;
 	private final MemberRepository memberRepo;
+	private final SystemUserRepository userRepo;
 	private final ModelMapper mapper;
 
 	public PaymentDTO processPayment(PaymentDTO dto) {
@@ -42,13 +43,15 @@ public class PaymentService {
 		return mapper.map(paymentRepo.save(payment), PaymentDTO.class);
 	}
 
-	public PaymentDTO refundPayment(Long paymentId, Long refundBy, String reason) {
+	public PaymentDTO refundPayment(Long paymentId, Long refundByUserId, String reason) {
 		Payment payment = paymentRepo.findById(paymentId)
 				.orElseThrow(() -> new ResourceNotFoundException("Payment", "id", paymentId));
 		if (payment.getPaymentStatus() != Payment.PaymentStatus.SUCCESS)
 			throw new BusinessRuleException("Only successful payments can be refunded.");
+		SystemUser refundUser = userRepo.findById(refundByUserId)
+				.orElseThrow(() -> new ResourceNotFoundException("SystemUser", "id", refundByUserId));
 		payment.setPaymentStatus(Payment.PaymentStatus.REFUNDED);
-		payment.setRefundBy(refundBy);
+		payment.setRefundBy(refundUser);
 		payment.setRefundReason(reason);
 		return mapper.map(paymentRepo.save(payment), PaymentDTO.class);
 	}

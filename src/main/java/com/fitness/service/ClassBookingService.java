@@ -45,7 +45,7 @@ public class ClassBookingService {
 				cls.getClassId(), ClassBooking.BookingStatus.CONFIRMED);
 
 		ClassBooking booking = ClassBooking.builder()
-				.classes(cls)
+				.fitnessClass(cls)
 				.member(member)
 				.build();
 
@@ -64,8 +64,8 @@ public class ClassBookingService {
 		ClassBooking booking = bookingRepo.findById(bookingId)
 				.orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
 
-		LocalDateTime classDateTime = booking.getClasses().getStartDate()
-				.atTime(booking.getClasses().getClassTime());
+		LocalDateTime classDateTime = booking.getFitnessClass().getStartDate()
+				.atTime(booking.getFitnessClass().getClassTime());
 		if (LocalDateTime.now().isAfter(classDateTime.minusHours(CANCEL_CUTOFF_HOURS)))
 			throw new BusinessRuleException("Cannot cancel within " + CANCEL_CUTOFF_HOURS + " hours of the class.");
 
@@ -75,7 +75,7 @@ public class ClassBookingService {
 
 		// Promote next on waitlist (FIFO)
 		bookingRepo.findFirstByClassesClassIdAndBookingStatusOrderByWaitlistPositionAsc(
-				booking.getClasses().getClassId(), ClassBooking.BookingStatus.WAITLISTED)
+				booking.getFitnessClass().getClassId(), ClassBooking.BookingStatus.WAITLISTED)
 				.ifPresent(next -> {
 					next.setBookingStatus(ClassBooking.BookingStatus.CONFIRMED);
 					next.setWaitlistPosition(null);

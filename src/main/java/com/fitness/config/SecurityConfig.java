@@ -1,6 +1,5 @@
 package com.fitness.config;
 
-import com.fitness.config.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

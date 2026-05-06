@@ -45,4 +45,18 @@ public class SystemUser {
 	@Column(nullable = false)
 	private Role role;
 
+	@Column(nullable = false)
+	@Builder.Default
+	private boolean active = true;
+
+	@Column(name = "locked_until")
+	private java.time.LocalDateTime lockedUntil;
+
+	@Column(name = "failed_attempts")
+	@Builder.Default
+	private int failedAttempts = 0;
+
+	@Column(name = "last_login")
+	private java.time.LocalDateTime lastLogin;
+
 }

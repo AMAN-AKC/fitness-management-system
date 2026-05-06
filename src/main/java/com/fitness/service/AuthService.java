@@ -13,7 +13,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,14 +22,13 @@ public class AuthService implements UserDetailsService {
 	private final SystemUserRepository userRepo;
 	private final JwtConfig jwtConfig;
 	private final AuthenticationManager authManager;
-	private final PasswordEncoder passwordEncoder;
 	private static final int MAX_ATTEMPTS = 5;
 
 	public JwtResponse login(LoginRequest req) {
 		SystemUser user = userRepo.findByUsername(req.getUsername())
 				.orElseThrow(() -> new ResourceNotFoundException("User", "username", req.getUsername()));
 
-		if (!user.getIsActive())
+		if (!user.isActive())
 			throw new BusinessRuleException("Account is deactivated.");
 
 		if (user.getLockedUntil() != null &&
@@ -58,7 +56,7 @@ public class AuthService implements UserDetailsService {
 		userRepo.save(user);
 
 		String token = jwtConfig.generateToken(loadUserByUsername(user.getUsername()));
-		return new JwtResponse(token, user.getRole().name(), user.getUserId());
+		return new JwtResponse(token, user.getRole().name(), user.getUserId(), user.getUsername());
 	}
 
 	@Override
@@ -70,7 +68,7 @@ public class AuthService implements UserDetailsService {
 						.roles(u.getRole().name())
 						.accountLocked(u.getLockedUntil() != null &&
 								u.getLockedUntil().isAfter(java.time.LocalDateTime.now()))
-						.disabled(!u.getIsActive())
+						.disabled(!u.isActive())
 						.build())
 				.orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 	}
