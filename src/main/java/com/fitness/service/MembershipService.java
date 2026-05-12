@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,6 +22,9 @@ public class MembershipService {
 	private final PlanRepository planRepo;
 	private final BranchRepository branchRepo;
 	private final ModelMapper mapper;
+	private final ProratedPriceService proratedPriceService;
+	private final AuditLogService auditLogService;
+	private final RecurringBillingService recurringBillingService;
 
 	public MembershipDTO createMembership(MembershipDTO dto) {
 		Member member = memberRepo.findById(dto.getMemberId())
@@ -45,7 +49,46 @@ public class MembershipService {
 		member.setStatus(Member.Status.ACTIVE);
 		memberRepo.save(member);
 
-		return mapper.map(membershipRepo.save(membership), MembershipDTO.class);
+		Membership saved = membershipRepo.save(membership);
+
+		auditLogService.logForCurrentUser("Membership", saved.getMemId(), AuditLog.Action.CREATE,
+				null,
+				"Plan purchased: " + plan.getPlanName() + " for member " + member.getMemName());
+
+		return mapper.map(saved, MembershipDTO.class);
+	}
+
+	/**
+	 * Upgrade existing membership to a new plan
+	 */
+	public MembershipDTO upgradeMembership(Long memberId, Long newPlanId, BigDecimal discountAmount) {
+		Member member = memberRepo.findById(memberId)
+				.orElseThrow(() -> new ResourceNotFoundException("Member", "id", memberId));
+		Membership currentMembership = membershipRepo.findByMemberMemberIdAndStatus(memberId, Membership.Status.ACTIVE)
+				.orElseThrow(() -> new ResourceNotFoundException("Active membership", "memberId", memberId));
+		Plan newPlan = planRepo.findById(newPlanId)
+				.orElseThrow(() -> new ResourceNotFoundException("Plan", "id", newPlanId));
+
+		// Calculate remaining value and upgrade cost
+		BigDecimal remainingValue = proratedPriceService.calculateRemainingValue(currentMembership);
+		BigDecimal upgradeCost = newPlan.getPrice().subtract(remainingValue).subtract(
+				discountAmount != null ? discountAmount : java.math.BigDecimal.ZERO);
+		upgradeCost = upgradeCost.max(java.math.BigDecimal.ZERO);
+
+		// Update membership
+		currentMembership.setEndDate(java.time.LocalDate.now().plusDays(newPlan.getDurationDays()));
+		currentMembership.setDuration(newPlan.getDurationDays());
+		currentMembership.setPlan(newPlan);
+		currentMembership.setPrice(newPlan.getPrice());
+		currentMembership.setDiscountAmount(discountAmount != null ? discountAmount : java.math.BigDecimal.ZERO);
+
+		membershipRepo.save(currentMembership);
+
+		auditLogService.logForCurrentUser("Membership", currentMembership.getMemId(), AuditLog.Action.UPDATE,
+				"Plan: " + currentMembership.getPlan().getPlanName(),
+				"Plan upgraded to " + newPlan.getPlanName() + " with upgrade cost ₹" + upgradeCost);
+
+		return mapper.map(currentMembership, MembershipDTO.class);
 	}
 
 	public List<MembershipDTO> getMembershipsByMember(Long memberId) {

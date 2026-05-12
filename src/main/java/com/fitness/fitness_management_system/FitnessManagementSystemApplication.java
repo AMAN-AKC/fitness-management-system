@@ -5,11 +5,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = "com.fitness")
 @EnableJpaRepositories(basePackages = "com.fitness.repository")
 @EntityScan(basePackages = "com.fitness.entity")
 @EnableAspectJAutoProxy
+@EnableScheduling
 public class FitnessManagementSystemApplication {
 
 	public static void main(String[] args) {

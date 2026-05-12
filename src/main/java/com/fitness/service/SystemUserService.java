@@ -19,8 +19,12 @@ public class SystemUserService {
 	private final SystemUserRepository userRepo;
 	private final ModelMapper mapper;
 	private final PasswordEncoder passwordEncoder;
+	private final PasswordValidationService passwordValidator;
 
 	public SystemUserDTO createUser(SystemUserDTO dto, String rawPassword) {
+		// Validate password complexity
+		passwordValidator.validatePassword(rawPassword);
+
 		if (userRepo.existsByUsername(dto.getUsername()))
 			throw new DuplicateResourceException("User", "username", dto.getUsername());
 		if (userRepo.existsByEmail(dto.getEmail()))

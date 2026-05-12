@@ -2,10 +2,12 @@ package com.fitness.service;
 
 import com.fitness.dto.PromoCodeDTO;
 import com.fitness.entity.PromoCode;
+import com.fitness.entity.AuditLog.Action;
 import com.fitness.exception.BusinessRuleException;
 import com.fitness.exception.DuplicateResourceException;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.PromoCodeRepository;
+import com.fitness.repository.PromoCodeUsageRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
 public class PromoCodeService {
 
 	private final PromoCodeRepository promoRepo;
+	private final PromoCodeUsageRepository promoUsageRepo;
+	private final AuditLogService auditLogService;
 	private final ModelMapper mapper;
 
 	public PromoCodeDTO createPromoCode(PromoCodeDTO dto) {
@@ -25,7 +29,10 @@ public class PromoCodeService {
 			throw new DuplicateResourceException("PromoCode", "code", dto.getCode());
 		PromoCode promo = mapper.map(dto, PromoCode.class);
 		promo.setIsActive(true);
-		return mapper.map(promoRepo.save(promo), PromoCodeDTO.class);
+		PromoCode saved = promoRepo.save(promo);
+		auditLogService.logForCurrentUser("PromoCode", saved.getPromoId(), Action.CREATE,
+			"Promo code created: " + saved.getCode(), null);
+		return mapper.map(saved, PromoCodeDTO.class);
 	}
 
 	public PromoCodeDTO validateAndGet(String code) {
@@ -47,5 +54,6 @@ public class PromoCodeService {
 				.orElseThrow(() -> new ResourceNotFoundException("PromoCode", "id", id));
 		promo.setIsActive(false);
 		promoRepo.save(promo);
+		auditLogService.logForCurrentUser("PromoCode", id, Action.UPDATE, "isActive=true", "isActive=false");
 	}
 }

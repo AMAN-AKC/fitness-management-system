@@ -43,10 +43,21 @@ public class SecurityConfig {
 		http
 				.cors(org.springframework.security.config.Customizer.withDefaults())
 				.csrf(AbstractHttpConfigurer::disable)
+				// AC09: HTTPS enforcement in production
+				// Uncomment the line below to require HTTPS in production
+				// .requiresChannel(channel -> channel.anyRequest().requiresSecure())
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(PUBLIC_URLS).permitAll()
 						.anyRequest().authenticated())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				// Security Headers
+				.headers(headers -> headers
+						.contentSecurityPolicy(csp -> csp
+								.policyDirectives(
+										"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"))
+						.xssProtection(xss -> {
+						})
+						.frameOptions(frameOptions -> frameOptions.deny()))
 				.authenticationProvider(authenticationProvider)
 				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

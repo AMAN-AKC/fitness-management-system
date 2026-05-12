@@ -102,7 +102,21 @@ public class MemberService {
 		if (!userRepo.existsByUsername(username)) {
 			return username;
 		}
-		String suffix = dto.getPhone().length() > 4 ? dto.getPhone().substring(dto.getPhone().length() - 4) : dto.getPhone();
+		String suffix = dto.getPhone().length() > 4 ? dto.getPhone().substring(dto.getPhone().length() - 4)
+				: dto.getPhone();
 		return username + suffix;
+	}
+
+	/**
+	 * Update member's photo/ID path (AC06)
+	 * 
+	 * @param id        Member ID
+	 * @param photoPath File path of uploaded photo
+	 * @return Updated MemberDTO
+	 */
+	public MemberDTO updatePhotoPath(Long id, String photoPath) {
+		Member member = findById(id);
+		member.setPhotoPath(photoPath);
+		return mapper.map(memberRepo.save(member), MemberDTO.class);
 	}
 }

@@ -16,4 +16,6 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 	List<Invoice> findByStatus(Status status);
 
 	boolean existsByInvoiceNumber(String invoiceNumber);
+
+	boolean existsByMembershipMemIdAndStatusIn(Long membershipId, List<Status> statuses);
 }

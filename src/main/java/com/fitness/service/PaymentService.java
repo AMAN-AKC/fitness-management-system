@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import com.fitness.entity.AuditLog;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,26 +22,68 @@ public class PaymentService {
 	private final MemberRepository memberRepo;
 	private final SystemUserRepository userRepo;
 	private final ModelMapper mapper;
+	private final AuditLogService auditLogService;
+	private final ReceiptService receiptService;
+	private final EmailService emailService;
+	private final DunningService dunningService;
+	private final List<PaymentGatewayProcessor> paymentGatewayProcessors;
 
 	public PaymentDTO processPayment(PaymentDTO dto) {
 		Invoice invoice = invoiceRepo.findById(dto.getInvoiceId())
 				.orElseThrow(() -> new ResourceNotFoundException("Invoice", "id", dto.getInvoiceId()));
 		Member member = memberRepo.findById(dto.getMemberId())
 				.orElseThrow(() -> new ResourceNotFoundException("Member", "id", dto.getMemberId()));
+		PaymentGatewayProcessor processor = paymentGatewayProcessors.stream()
+				.filter(candidate -> candidate.supports(dto.getPaymentMethod()))
+				.findFirst()
+				.orElseThrow(() -> new BusinessRuleException("Unsupported payment method: " + dto.getPaymentMethod()));
+		PaymentProcessingResult paymentResult = processor.process(dto, invoice, member);
 
 		Payment payment = mapper.map(dto, Payment.class);
 		payment.setInvoice(invoice);
 		payment.setMember(member);
 		payment.setPaymentDate(LocalDateTime.now());
-		payment.setPaymentStatus(Payment.PaymentStatus.SUCCESS);
+		payment.setPaymentStatus(paymentResult.getPaymentStatus());
+		payment.setFailureReason(paymentResult.getFailureReason());
 
-		invoice.setPaidAmount(invoice.getPaidAmount().add(dto.getAmountPaid()));
-		invoice.setOutstanding(invoice.getFinalAmount().subtract(invoice.getPaidAmount()));
-		if (invoice.getOutstanding().compareTo(java.math.BigDecimal.ZERO) <= 0)
-			invoice.setStatus(Invoice.Status.PAID);
+		if (paymentResult.isSuccessful()) {
+			invoice.setPaidAmount(invoice.getPaidAmount().add(dto.getAmountPaid()));
+			invoice.setOutstanding(invoice.getFinalAmount().subtract(invoice.getPaidAmount()));
+			if (invoice.getOutstanding().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+				invoice.setStatus(Invoice.Status.PAID);
+			}
+		} else {
+			invoice.setStatus(Invoice.Status.OVERDUE);
+		}
 		invoiceRepo.save(invoice);
 
-		return mapper.map(paymentRepo.save(payment), PaymentDTO.class);
+		// Save payment
+		Payment savedPayment = paymentRepo.save(payment);
+
+		if (!paymentResult.isSuccessful()) {
+			dunningService.handleFailedPayment(invoice.getInvoiceId(), paymentResult.getFailureReason());
+			auditLogService.logForCurrentUser("Payment", savedPayment.getPaymentId(), AuditLog.Action.UPDATE,
+					null, "Payment failed: " + paymentResult.getFailureReason());
+			return mapper.map(savedPayment, PaymentDTO.class);
+		}
+
+		// Generate receipt (DTO)
+		com.fitness.dto.ReceiptDTO receipt = receiptService.generateReceipt(invoice.getInvoiceId(),
+				savedPayment.getPaymentId());
+
+		// Send email receipt (by DTO)
+		emailService.sendReceiptEmail(receipt);
+
+		// Audit log
+		auditLogService.logForCurrentUser("Payment", savedPayment.getPaymentId(), AuditLog.Action.CREATE,
+				null, "Payment processed: " + dto.getAmountPaid() + " via " + dto.getPaymentMethod());
+
+		// Resolve dunning if any
+		if (invoice.getMembership() != null) {
+			dunningService.resolveDunning(invoice.getMembership().getMemId());
+		}
+
+		return mapper.map(savedPayment, PaymentDTO.class);
 	}
 
 	public PaymentDTO refundPayment(Long paymentId, Long refundByUserId, String reason) {
@@ -53,6 +96,8 @@ public class PaymentService {
 		payment.setPaymentStatus(Payment.PaymentStatus.REFUNDED);
 		payment.setRefundBy(refundUser);
 		payment.setRefundReason(reason);
+		auditLogService.logForCurrentUser("Payment", paymentId, AuditLog.Action.UPDATE,
+				null, "Refunded by " + refundUser.getUsername() + ": " + reason);
 		return mapper.map(paymentRepo.save(payment), PaymentDTO.class);
 	}
 

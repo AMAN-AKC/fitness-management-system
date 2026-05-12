@@ -2,6 +2,7 @@ package com.fitness.service;
 
 import com.fitness.dto.PlanDTO;
 import com.fitness.entity.Plan;
+import com.fitness.entity.AuditLog.Action;
 import com.fitness.exception.BusinessRuleException;
 import com.fitness.exception.DuplicateResourceException;
 import com.fitness.exception.ResourceNotFoundException;
@@ -19,6 +20,7 @@ public class PlanService {
 
 	private final PlanRepository planRepo;
 	private final MembershipRepository membershipRepo;
+	private final AuditLogService auditLogService;
 	private final ModelMapper mapper;
 
 	public PlanDTO createPlan(PlanDTO dto) {
@@ -27,7 +29,10 @@ public class PlanService {
 		Plan plan = mapper.map(dto, Plan.class);
 		plan.setIsActive(true);
 		plan.setVersion(1);
-		return mapper.map(planRepo.save(plan), PlanDTO.class);
+		Plan saved = planRepo.save(plan);
+		auditLogService.logForCurrentUser("Plan", saved.getPlanId(), Action.CREATE, 
+			"Plan created: " + saved.getPlanName(), null);
+		return mapper.map(saved, PlanDTO.class);
 	}
 
 	public List<PlanDTO> getAllPlans() {
@@ -45,9 +50,15 @@ public class PlanService {
 
 	public PlanDTO updatePlan(Long id, PlanDTO dto) {
 		Plan plan = findById(id);
+		String oldValues = String.format("price=%s, taxPercent=%s, version=%d", 
+			plan.getPrice(), plan.getTaxPercent(), plan.getVersion());
 		mapper.map(dto, plan);
 		plan.setVersion(plan.getVersion() + 1);
-		return mapper.map(planRepo.save(plan), PlanDTO.class);
+		Plan updated = planRepo.save(plan);
+		String newValues = String.format("price=%s, taxPercent=%s, version=%d", 
+			updated.getPrice(), updated.getTaxPercent(), updated.getVersion());
+		auditLogService.logForCurrentUser("Plan", id, Action.UPDATE, oldValues, newValues);
+		return mapper.map(updated, PlanDTO.class);
 	}
 
 	public void deactivatePlan(Long id) {
@@ -60,6 +71,7 @@ public class PlanService {
 					"Plan is currently in use by active memberships. Cannot delete — deactivate instead.");
 		plan.setIsActive(false);
 		planRepo.save(plan);
+		auditLogService.logForCurrentUser("Plan", id, Action.UPDATE, "isActive=true", "isActive=false");
 	}
 
 	private Plan findById(Long id) {
