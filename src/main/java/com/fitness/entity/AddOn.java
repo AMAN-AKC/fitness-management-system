@@ -54,6 +54,6 @@ public class AddOn {
 	}
 
 	public enum AddonType {
-		LOCKER, PT_SESSIONS, GUEST_PASS, TOWEL, OTHER
+		SERVICE, FACILITY, OTHER
 	}
 }

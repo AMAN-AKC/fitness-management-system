@@ -38,8 +38,25 @@ public class HealthConsent {
 	@Column(nullable = false, length = 20)
 	private String formVersion;
 
+	@Column(columnDefinition = "TEXT")
+	private String parqResponses;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean medicalAcknowledged = false;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean liabilityAcknowledged = false;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean privacyAcknowledged = false;
+
 	@Column(nullable = false)
 	private LocalDateTime acknowledgedAt;
+
+	private LocalDateTime expiresAt;
 
 	@Column(nullable = false, length = 45)
 	private String ipAddress;

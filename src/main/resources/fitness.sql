@@ -50,6 +50,8 @@ CREATE TABLE FACILITY (
   branch_id BIGINT NOT NULL,
   capacity INT NOT NULL,
   is_active BOOLEAN DEFAULT TRUE,
+  under_maintenance BOOLEAN DEFAULT FALSE,
+  maintenance_reason TEXT,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   
@@ -269,7 +271,12 @@ create table HEALTH_CONSENT(
 consent_id bigint auto_increment primary key,
 member_id bigint not null,
 form_version varchar(20) not null,
+parq_responses text null,
+medical_acknowledged boolean not null default false,
+liability_acknowledged boolean not null default false,
+privacy_acknowledged boolean not null default false,
 acknowledged_at datetime not null,
+expires_at datetime null,
 ip_address varchar(45) not null,
 status varchar(20) not null,
 staff_notes text null,
@@ -299,13 +306,13 @@ CREATE TABLE AUDIT_LOG(
   audit_id BIGINT PRIMARY KEY AUTO_INCREMENT,
   performed_by BIGINT NOT NULL,
   entity_name VARCHAR(60) NOT NULL,
+  entity_id BIGINT NOT NULL,
   action VARCHAR(30) NOT NULL,
   old_value JSON,
   new_value JSON,
   created_at DATETIME NOT NULL,
 
   CONSTRAINT fk_audit_user FOREIGN KEY (performed_by) REFERENCES system_user(user_id)
-
 );
 
 
@@ -455,12 +462,12 @@ INSERT INTO ATTENDANCE (log_id, member_id, branch_id, check_in_time, check_out_t
 (7,  3, 1, '2026-05-07 09:00:00', '2026-05-07 10:20:00', 0, 'MANUAL', 'SYNCED',  3, NULL, NULL, CURRENT_TIMESTAMP),
 (8,  1, 1, '2026-05-05 07:10:00', '2026-05-05 08:05:00', 0, 'QR',     'SYNCED',  1, NULL, NULL, CURRENT_TIMESTAMP);
 
-INSERT INTO HEALTH_CONSENT (consent_id, member_id, form_version, acknowledged_at, ip_address, status, staff_notes, created_at, updated_at) VALUES
-(1, 1, 'v1.0', '2026-01-01 09:00:00', '127.0.0.1',    'VALID',   'Initial consent received',          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 2, 'v1.0', '2026-04-01 09:15:00', '127.0.0.1',    'EXPIRED', 'Renewal pending',                   CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, 3, 'v1.0', '2026-02-01 08:45:00', '192.168.1.10', 'VALID',   'Consent signed at front desk',      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(4, 4, 'v1.0', '2026-03-15 13:55:00', '192.168.1.12', 'VALID',   'Student ID verified at intake',     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(5, 5, 'v1.0', '2025-12-20 10:00:00', '192.168.1.15', 'EXPIRED', 'Form expired; re-consent required', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO HEALTH_CONSENT (consent_id, member_id, form_version, parq_responses, medical_acknowledged, liability_acknowledged, privacy_acknowledged, acknowledged_at, expires_at, ip_address, status, staff_notes, created_at, updated_at) VALUES
+(1, 1, 'v1.0', '{"heartCondition":false,"chestPain":false,"dizziness":false,"boneJointProblem":false,"bloodPressureMedication":false,"otherReason":false,"pregnancy":false}', 1, 1, 1, '2026-01-01 09:00:00', '2027-01-01 09:00:00', '127.0.0.1',    'ACTIVE',  'Initial consent received',          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 2, 'v1.0', '{"heartCondition":false,"chestPain":true,"dizziness":false,"boneJointProblem":false,"bloodPressureMedication":false,"otherReason":false,"pregnancy":false}', 1, 1, 1, '2026-04-01 09:15:00', '2026-04-01 09:15:00', '127.0.0.1',    'EXPIRED', 'Renewal pending',                   CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 3, 'v1.0', '{"heartCondition":false,"chestPain":false,"dizziness":false,"boneJointProblem":false,"bloodPressureMedication":false,"otherReason":false,"pregnancy":false}', 1, 1, 1, '2026-02-01 08:45:00', '2027-02-01 08:45:00', '192.168.1.10', 'ACTIVE',  'Consent signed at front desk',      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 4, 'v1.0', '{"heartCondition":false,"chestPain":false,"dizziness":false,"boneJointProblem":true,"bloodPressureMedication":false,"otherReason":false,"pregnancy":false}', 1, 1, 1, '2026-03-15 13:55:00', '2027-03-15 13:55:00', '192.168.1.12', 'ACTIVE',  'Student ID verified at intake',     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 5, 'v1.0', '{"heartCondition":false,"chestPain":false,"dizziness":false,"boneJointProblem":false,"bloodPressureMedication":false,"otherReason":false,"pregnancy":false}', 1, 1, 1, '2025-12-20 10:00:00', '2025-12-20 10:00:00', '192.168.1.15', 'EXPIRED', 'Form expired; re-consent required', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT INTO NOTIFICATION (notif_id, user_id, type, channel, title, body, is_read, delivery_status, created_at) VALUES
 (1,  5, 'MEMBERSHIP', 'IN_APP', 'Membership Renewed',          'Your membership is active until 2027-01-01.',                           0, 'DELIVERED', CURRENT_TIMESTAMP),
@@ -474,14 +481,14 @@ INSERT INTO NOTIFICATION (notif_id, user_id, type, channel, title, body, is_read
 (9,  7, 'TRAINER',    'IN_APP', 'New PT Session Request',      'Member Vikram Nair has requested a flexibility assessment session.',     0, 'DELIVERED', CURRENT_TIMESTAMP),
 (10, 3, 'SYSTEM',     'EMAIL',  'New Member Registration',     'New member Pooja Reddy registered at South Side Studio.',               1, 'DELIVERED', CURRENT_TIMESTAMP);
 
-INSERT INTO AUDIT_LOG (audit_id, performed_by, entity_name, action, old_value, new_value, created_at) VALUES
-(1,  1, 'SYSTEM_USER', 'CREATED', NULL,                         '{"username":"member1","role":"MEMBER"}',                 '2026-01-01 09:00:00'),
-(2,  2, 'MEMBER',      'UPDATED', '{"status":"PROSPECT"}',       '{"status":"ACTIVE"}',                                   '2026-05-01 12:00:00'),
-(3,  1, 'INVOICE',     'PAID',    '{"status":"PENDING"}',        '{"status":"PAID"}',                                     '2026-05-06 13:00:00'),
-(4,  1, 'SYSTEM_USER', 'CREATED', NULL,                         '{"username":"member2","role":"MEMBER"}',                 '2026-04-01 08:00:00'),
-(5,  1, 'PLAN',        'CREATED', NULL,                         '{"plan_name":"Student Monthly","price":999.00}',          '2025-01-01 10:00:00'),
-(6,  3, 'MEMBERSHIP',  'UPDATED', '{"status":"ACTIVE"}',         '{"status":"SUSPENDED"}',                                '2026-02-02 09:00:00'),
-(7,  2, 'CLASS',       'UPDATED', '{"status":"active"}',         '{"status":"cancelled","cancel_reason":"Trainer unavailable in slot"}', '2026-04-28 15:00:00'),
-(8,  1, 'MEMBER',      'CREATED', NULL,                         '{"mem_name":"Vikram Nair","status":"ACTIVE"}',           '2026-02-01 08:40:00'),
-(9,  2, 'ATTENDANCE',  'CREATED', NULL,                         '{"member_id":5,"alert_flag":true}',                      '2026-05-05 09:01:00'),
-(10, 1, 'PROMO_CODE',  'CREATED', NULL,                         '{"code":"SUMMER20","discount_type":"PERCENT","discount_value":20.00}', '2026-04-15 11:00:00');
+INSERT INTO AUDIT_LOG (audit_id, performed_by, entity_name, entity_id, action, old_value, new_value, created_at) VALUES
+(1,  1, 'SYSTEM_USER', 5, 'CREATE', NULL,                         '{"username":"member1","role":"MEMBER"}',                 '2026-01-01 09:00:00'),
+(2,  2, 'MEMBER',      1, 'UPDATE', '{"status":"PROSPECT"}',       '{"status":"ACTIVE"}',                                   '2026-05-01 12:00:00'),
+(3,  1, 'INVOICE',     1, 'UPDATE', '{"status":"PENDING"}',        '{"status":"PAID"}',                                     '2026-05-06 13:00:00'),
+(4,  1, 'SYSTEM_USER', 6, 'CREATE', NULL,                         '{"username":"member2","role":"MEMBER"}',                 '2026-04-01 08:00:00'),
+(5,  1, 'PLAN',        4, 'CREATE', NULL,                         '{"plan_name":"Student Monthly","price":999.00}',          '2025-01-01 10:00:00'),
+(6,  3, 'MEMBERSHIP',  1, 'UPDATE', '{"status":"ACTIVE"}',         '{"status":"SUSPENDED"}',                                '2026-02-02 09:00:00'),
+(7,  2, 'CLASS',       1, 'UPDATE', '{"status":"active"}',         '{"status":"cancelled","cancel_reason":"Trainer unavailable in slot"}', '2026-04-28 15:00:00'),
+(8,  1, 'MEMBER',      3, 'CREATE', NULL,                         '{"mem_name":"Vikram Nair","status":"ACTIVE"}',           '2026-02-01 08:40:00'),
+(9,  2, 'ATTENDANCE',  1, 'CREATE', NULL,                         '{"member_id":5,"alert_flag":true}',                      '2026-05-05 09:01:00'),
+(10, 1, 'PROMO_CODE',  4, 'CREATE', NULL,                         '{"code":"SUMMER20","discount_type":"PERCENT","discount_value":20.00}', '2026-04-15 11:00:00');

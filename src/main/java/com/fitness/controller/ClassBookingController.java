@@ -2,6 +2,7 @@ package com.fitness.controller;
 
 import com.fitness.dto.ClassBookingDTO;
 import com.fitness.service.ClassBookingService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,5 +43,29 @@ public class ClassBookingController {
 	@PreAuthorize("hasAnyRole('TRAINER','FRONT_DESK','MANAGER','ADMIN')")
 	public ResponseEntity<List<ClassBookingDTO>> getBookingsByClass(@PathVariable Long classId) {
 		return ResponseEntity.ok(bookingService.getBookingsByClass(classId));
+	}
+
+	/**
+	 * AC08: Staff override booking rules with justification
+	 */
+	@PostMapping("/override")
+	@PreAuthorize("hasAnyRole('FRONT_DESK','MANAGER','ADMIN')")
+	@Operation(summary = "Override booking rules (staff only, requires justification)")
+	public ResponseEntity<ClassBookingDTO> overrideBooking(
+			@Valid @RequestBody ClassBookingDTO dto,
+			@RequestParam Long overrideByUserId,
+			@RequestParam String reason) {
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(bookingService.overrideBooking(dto, overrideByUserId, reason));
+	}
+
+	/**
+	 * AC05: Mark a booking as no-show
+	 */
+	@PatchMapping("/{id}/no-show")
+	@PreAuthorize("hasAnyRole('TRAINER','FRONT_DESK','MANAGER','ADMIN')")
+	@Operation(summary = "Mark a booking as no-show (triggers penalty check)")
+	public ResponseEntity<ClassBookingDTO> markNoShow(@PathVariable Long id) {
+		return ResponseEntity.ok(bookingService.markNoShow(id));
 	}
 }

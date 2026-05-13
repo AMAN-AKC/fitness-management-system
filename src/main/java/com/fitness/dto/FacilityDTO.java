@@ -23,4 +23,6 @@ public class FacilityDTO {
 	private Integer capacity;
 
 	private Boolean isActive;
+	private Boolean underMaintenance;
+	private String maintenanceReason;
 }

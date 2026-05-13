@@ -77,10 +77,10 @@ public class PromoCode {
 	}
 
 	public enum DiscountType {
-		PERCENT, FIXED
+		PERCENT, FLAT
 	}
 
 	public enum Eligibility {
-		ALL, NEW, RETURNING
+		ALL, NEW, RETURNING, CORPORATE, STUDENT
 	}
 }

@@ -48,4 +48,15 @@ public class FacilityController {
 	public void deactivateFacility(@PathVariable Long id) {
 		facilityService.deactivateFacility(id);
 	}
+
+	/**
+	 * AC07: Toggle room maintenance mode — blocks bookings during downtime
+	 */
+	@PatchMapping("/{id}/maintenance")
+	@PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+	public ResponseEntity<FacilityDTO> toggleMaintenance(@PathVariable Long id,
+			@RequestParam boolean underMaintenance,
+			@RequestParam(required = false) String reason) {
+		return ResponseEntity.ok(facilityService.toggleMaintenance(id, underMaintenance, reason));
+	}
 }

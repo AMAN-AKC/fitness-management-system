@@ -16,4 +16,6 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
 	boolean existsByMemberMemberIdAndCheckInTimeBetween(
 			Long memberId, LocalDateTime from, LocalDateTime to);
+
+	List<Attendance> findBySyncStatus(Attendance.SyncStatus syncStatus);
 }

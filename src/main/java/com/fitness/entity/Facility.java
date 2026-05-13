@@ -30,6 +30,13 @@ public class Facility {
 	@Builder.Default
 	private Boolean isActive = true;
 
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean underMaintenance = false;
+
+	@Column(columnDefinition = "TEXT")
+	private String maintenanceReason;
+
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 

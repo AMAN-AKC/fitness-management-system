@@ -18,6 +18,7 @@ public class FacilityService {
 
 	private final FacilityRepository facilityRepo;
 	private final BranchRepository branchRepo;
+	private final AuditLogService auditLogService;
 	private final ModelMapper mapper;
 
 	public FacilityDTO createFacility(FacilityDTO dto) {
@@ -26,6 +27,7 @@ public class FacilityService {
 		Facility facility = mapper.map(dto, Facility.class);
 		facility.setBranch(branch);
 		facility.setIsActive(true);
+		facility.setUnderMaintenance(false);
 		return mapper.map(facilityRepo.save(facility), FacilityDTO.class);
 	}
 
@@ -48,6 +50,24 @@ public class FacilityService {
 		Facility f = findById(id);
 		f.setIsActive(false);
 		facilityRepo.save(f);
+	}
+
+	/**
+	 * AC07: Toggle maintenance mode — blocks bookings during downtime
+	 */
+	public FacilityDTO toggleMaintenance(Long id, boolean underMaintenance, String reason) {
+		Facility facility = findById(id);
+		facility.setUnderMaintenance(underMaintenance);
+		facility.setMaintenanceReason(underMaintenance ? reason : null);
+		Facility saved = facilityRepo.save(facility);
+
+		auditLogService.logForCurrentUser("Facility", id,
+				com.fitness.entity.AuditLog.Action.UPDATE, null,
+				underMaintenance
+						? "Room set to maintenance: " + (reason != null ? reason : "No reason")
+						: "Room maintenance ended");
+
+		return mapper.map(saved, FacilityDTO.class);
 	}
 
 	private Facility findById(Long id) {

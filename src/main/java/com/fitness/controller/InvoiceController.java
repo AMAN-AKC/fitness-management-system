@@ -2,6 +2,7 @@ package com.fitness.controller;
 
 import com.fitness.dto.InvoiceDTO;
 import com.fitness.service.InvoiceService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,5 +36,16 @@ public class InvoiceController {
 	@PreAuthorize("hasAnyRole('MEMBER','FRONT_DESK','MANAGER','ADMIN')")
 	public ResponseEntity<InvoiceDTO> getInvoiceById(@PathVariable Long id) {
 		return ResponseEntity.ok(invoiceService.getInvoiceById(id));
+	}
+
+	/**
+	 * AC09: Void an invoice — restricted to Manager/Admin with reason.
+	 */
+	@PatchMapping("/{id}/void")
+	@PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+	@Operation(summary = "Void an invoice (Manager/Admin only)")
+	public ResponseEntity<InvoiceDTO> voidInvoice(@PathVariable Long id,
+			@RequestParam String reason) {
+		return ResponseEntity.ok(invoiceService.voidInvoice(id, reason));
 	}
 }
