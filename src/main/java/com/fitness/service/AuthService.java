@@ -7,8 +7,13 @@ import com.fitness.entity.AuditLog;
 import com.fitness.entity.SystemUser;
 import com.fitness.exception.BusinessRuleException;
 import com.fitness.exception.ResourceNotFoundException;
+import com.fitness.entity.PasswordResetToken;
+import com.fitness.repository.PasswordResetTokenRepository;
 import com.fitness.repository.SystemUserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -28,6 +33,8 @@ public class AuthService implements UserDetailsService {
 	private final JwtConfig jwtConfig;
 	private final PasswordEncoder passwordEncoder;
 	private final AuditLogService auditLogService;
+	private final PasswordResetTokenRepository passwordResetTokenRepo;
+	private final EmailService emailService;
 
 	@Value("${auth.max-failed-attempts:5}")
 	private int maxFailedAttempts;
@@ -102,5 +109,47 @@ public class AuthService implements UserDetailsService {
 						.disabled(!u.isActive())
 						.build())
 				.orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+	}
+
+	public void requestPasswordReset(String email) {
+		SystemUser user = userRepo.findByUsername(email)
+				.orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+		if (!user.isActive()) {
+			throw new BusinessRuleException("Account is deactivated.");
+		}
+
+		String token = UUID.randomUUID().toString();
+		PasswordResetToken resetToken = PasswordResetToken.builder()
+				.token(token)
+				.user(user)
+				.expiryDate(java.time.LocalDateTime.now().plusMinutes(5))
+				.used(false)
+				.build();
+
+		passwordResetTokenRepo.save(resetToken);
+		
+		emailService.sendPasswordResetEmail(email, token);
+		auditLogService.log(user.getUserId(), "SystemUser", user.getUserId(), AuditLog.Action.UPDATE, null, "Password reset requested");
+	}
+
+	public void resetPassword(String token, String newPassword) {
+		PasswordResetToken resetToken = passwordResetTokenRepo.findByToken(token)
+				.orElseThrow(() -> new BusinessRuleException("Invalid or expired reset token."));
+
+		if (resetToken.getUsed() || resetToken.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
+			throw new BusinessRuleException("Invalid or expired reset token.");
+		}
+
+		SystemUser user = resetToken.getUser();
+		user.setPasswordHash(passwordEncoder.encode(newPassword));
+		user.setFailedAttempts(0);
+		user.setLockedUntil(null);
+		userRepo.save(user);
+
+		resetToken.setUsed(true);
+		passwordResetTokenRepo.save(resetToken);
+		
+		auditLogService.log(user.getUserId(), "SystemUser", user.getUserId(), AuditLog.Action.UPDATE, null, "Password reset successfully completed");
 	}
 }

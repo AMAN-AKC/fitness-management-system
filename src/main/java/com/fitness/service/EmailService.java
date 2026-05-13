@@ -111,6 +111,22 @@ public class EmailService {
 		return sendTextEmail(toEmail, "Payment Receipt - " + receiptNumber, body);
 	}
 
+	public boolean sendPasswordResetEmail(String email, String resetToken) {
+		if (!emailEnabled) {
+			return false;
+		}
+
+		String subject = "Password Reset Request";
+		String resetUrl = "http://localhost:4200/reset-password?token=" + resetToken;
+		String body = "You have requested a password reset.\n\n"
+				+ "Please click the following link to securely reset your password:\n"
+				+ resetUrl + "\n\n"
+				+ "This link will expire in 5 minutes.\n"
+				+ "If you did not request this, please ignore this email.";
+
+		return sendTextEmail(email, subject, body);
+	}
+
 	private boolean sendTextEmail(String toEmail, String subject, String body) {
 		if (!emailEnabled) {
 			return false;
