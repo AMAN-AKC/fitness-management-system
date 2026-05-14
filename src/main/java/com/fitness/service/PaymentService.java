@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import com.fitness.entity.AuditLog;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -109,5 +110,11 @@ public class PaymentService {
 	public List<PaymentDTO> getFailedPayments() {
 		return paymentRepo.findByPaymentStatus(Payment.PaymentStatus.FAILED).stream()
 				.map(p -> mapper.map(p, PaymentDTO.class)).collect(Collectors.toList());
+	}
+
+	public BigDecimal getRevenueMTD() {
+		LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+		BigDecimal revenue = paymentRepo.sumRevenueSince(startOfMonth);
+		return revenue != null ? revenue : BigDecimal.ZERO;
 	}
 }

@@ -24,7 +24,6 @@ public class MembershipService {
 	private final ModelMapper mapper;
 	private final ProratedPriceService proratedPriceService;
 	private final AuditLogService auditLogService;
-	private final RecurringBillingService recurringBillingService;
 
 	public MembershipDTO createMembership(MembershipDTO dto) {
 		Member member = memberRepo.findById(dto.getMemberId())
@@ -62,10 +61,14 @@ public class MembershipService {
 	 * Upgrade existing membership to a new plan
 	 */
 	public MembershipDTO upgradeMembership(Long memberId, Long newPlanId, BigDecimal discountAmount) {
-		Member member = memberRepo.findById(memberId)
-				.orElseThrow(() -> new ResourceNotFoundException("Member", "id", memberId));
-		Membership currentMembership = membershipRepo.findByMemberMemberIdAndStatus(memberId, Membership.Status.ACTIVE)
-				.orElseThrow(() -> new ResourceNotFoundException("Active membership", "memberId", memberId));
+		if (!memberRepo.existsById(memberId)) {
+			throw new ResourceNotFoundException("Member", "id", memberId);
+		}
+		List<Membership> activeList = membershipRepo.findByMemberMemberIdAndStatus(memberId, Membership.Status.ACTIVE);
+		if (activeList.isEmpty()) {
+			throw new ResourceNotFoundException("Active membership", "memberId", memberId);
+		}
+		Membership currentMembership = activeList.get(0);
 		Plan newPlan = planRepo.findById(newPlanId)
 				.orElseThrow(() -> new ResourceNotFoundException("Plan", "id", newPlanId));
 

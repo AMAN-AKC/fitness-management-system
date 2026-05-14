@@ -2,17 +2,13 @@ package com.fitness.service;
 
 import com.fitness.entity.Invoice;
 import com.fitness.entity.Membership;
-import com.fitness.entity.Payment;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.InvoiceRepository;
 import com.fitness.repository.MembershipRepository;
-import com.fitness.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import com.fitness.entity.AuditLog;
 import org.springframework.stereotype.Service;
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,7 +18,6 @@ public class DunningService {
 
 	private final InvoiceRepository invoiceRepo;
 	private final MembershipRepository membershipRepo;
-	private final PaymentRepository paymentRepo;
 	private final AuditLogService auditLogService;
 
 	/**

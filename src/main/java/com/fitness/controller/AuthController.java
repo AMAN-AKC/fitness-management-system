@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,8 +21,12 @@ public class AuthController {
 
 	@PostMapping("/login")
 	@Operation(summary = "Login and receive JWT token")
-	public ResponseEntity<JwtResponse> login(@Valid @RequestBody LoginRequest req) {
-		return ResponseEntity.ok(authService.login(req));
+	public ResponseEntity<JwtResponse> login(@Valid @RequestBody LoginRequest req, HttpServletRequest request) {
+		String ip = request.getHeader("X-Forwarded-For");
+		if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getRemoteAddr();
+		}
+		return ResponseEntity.ok(authService.login(req, ip));
 	}
 
 	@PostMapping("/forgot-password")

@@ -51,13 +51,13 @@ public class ClassBookingService {
 
 		// AC01: Plan eligibility check
 		if (cls.getPlanEligibility() != null && !cls.getPlanEligibility().isBlank()) {
-			Optional<Membership> activeMembership = membershipRepo
+			List<Membership> activeMemberships = membershipRepo
 					.findByMemberMemberIdAndStatus(member.getMemberId(), Membership.Status.ACTIVE);
-			if (activeMembership.isEmpty()) {
+			if (activeMemberships.isEmpty()) {
 				throw new BusinessRuleException("You must have an active membership to book this class.");
 			}
 			String planElig = cls.getPlanEligibility().toUpperCase();
-			String memberPlanType = activeMembership.get().getPlan().getEligibilityType().name();
+			String memberPlanType = activeMemberships.get(0).getPlan().getEligibilityType().name();
 			if (!planElig.contains("ALL") && !planElig.contains(memberPlanType)) {
 				throw new BusinessRuleException(
 						"Your plan (" + memberPlanType + ") is not eligible for this class. Required: "

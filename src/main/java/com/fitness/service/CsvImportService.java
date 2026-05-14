@@ -3,10 +3,8 @@ package com.fitness.service;
 import com.fitness.dto.BulkImportReport;
 import com.fitness.dto.BulkImportRowResult;
 import com.fitness.dto.MemberDTO;
-import com.fitness.entity.Member;
 import com.fitness.entity.Branch;
 import com.fitness.exception.DuplicateResourceException;
-import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.BranchRepository;
 import com.fitness.repository.MemberRepository;
 import com.fitness.repository.SystemUserRepository;
@@ -37,13 +35,6 @@ public class CsvImportService {
 	private final MemberRepository memberRepository;
 	private final SystemUserRepository systemUserRepository;
 	private final AuditLogService auditLogService;
-	private final PasswordValidationService passwordValidationService;
-
-	// CSV expected headers
-	private static final String[] EXPECTED_HEADERS = {
-			"memName", "email", "phone", "dob", "address",
-			"emgContact", "emgPhone", "homeBranchId", "referralCode", "corporateCode", "notes"
-	};
 
 	// Validation patterns
 	private static final Pattern PHONE_PATTERN = Pattern.compile("^[6-9]\\d{9}$");
@@ -63,9 +54,13 @@ public class CsvImportService {
 				.rowResults(new ArrayList<>())
 				.build();
 
-		CSVFormat format = CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreEmptyLines();
+		CSVFormat format = CSVFormat.DEFAULT.builder()
+				.setHeader()
+				.setSkipHeaderRecord(true)
+				.setIgnoreEmptyLines(true)
+				.build();
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
-				CSVParser csvParser = CSVParser.parse(reader, format)) {
+				CSVParser csvParser = new CSVParser(reader, format)) {
 			int rowNumber = 1;
 
 			for (CSVRecord record : csvParser) {

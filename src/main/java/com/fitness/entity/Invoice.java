@@ -42,6 +42,9 @@ public class Invoice {
 	@JoinColumn(name = "membership_id")
 	private Membership membership;
 
+	@Column(length = 100)
+	private String planName;
+
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal mrp;
 
@@ -81,6 +84,6 @@ public class Invoice {
 	}
 
 	public enum Status {
-		DRAFT, ISSUED, PAID, OVERDUE, VOID
+		DRAFT, ISSUED, PAID, OVERDUE, VOID, PENDING, UNPAID
 	}
 }

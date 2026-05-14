@@ -1,7 +1,6 @@
 package com.fitness.dto;
 
 import com.fitness.entity.Member;
-import com.fitness.validator.DateNotStartingWithZero;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -25,7 +24,6 @@ public class MemberDTO {
 	private String phone;
 
 	@NotBlank(message = "Please provide a valid date of birth")
-	@DateNotStartingWithZero
 	private String dob; // "yyyy-MM-dd"
 
 	@NotBlank(message = "Please provide a valid address")

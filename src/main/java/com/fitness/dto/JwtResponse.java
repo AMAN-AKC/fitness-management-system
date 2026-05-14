@@ -10,4 +10,5 @@ public class JwtResponse {
 	private String role;
 	private Long userId;
 	private String username;
+	private String fullName;
 }

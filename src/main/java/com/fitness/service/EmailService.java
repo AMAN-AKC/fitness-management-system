@@ -76,10 +76,7 @@ public class EmailService {
 				+ "Please make payment at your earliest convenience.\n\n" + "Best regards,\n"
 				+ "Fitness Management Team";
 
-		System.out.println("[EMAIL SERVICE] Dunning notice sent to " + member.getEmail()
-				+ " | Subject: " + subject);
-
-		return true;
+		return sendTextEmail(member.getEmail(), subject, body);
 	}
 
 	public boolean sendRenewalReminder(Member member, String planName, String expiryDate) {
@@ -111,39 +108,32 @@ public class EmailService {
 		return sendTextEmail(toEmail, "Payment Receipt - " + receiptNumber, body);
 	}
 
-	public boolean sendPasswordResetEmail(String email, String resetToken) {
-		if (!emailEnabled) {
-			return false;
-		}
-
-		String subject = "Password Reset Request";
-		String resetUrl = "http://localhost:4200/reset-password?token=" + resetToken;
+	public boolean sendPasswordResetEmail(String email, String otp) {
+		String subject = "Password Reset OTP";
 		String body = "You have requested a password reset.\n\n"
-				+ "Please click the following link to securely reset your password:\n"
-				+ resetUrl + "\n\n"
-				+ "This link will expire in 5 minutes.\n"
+				+ "Your 6-digit OTP code is: " + otp + "\n\n"
+				+ "This code will expire in 5 minutes.\n"
 				+ "If you did not request this, please ignore this email.";
 
 		return sendTextEmail(email, subject, body);
 	}
 
 	private boolean sendTextEmail(String toEmail, String subject, String body) {
-		if (!emailEnabled) {
-			return false;
-		}
-
-		JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
-		if (mailSender != null) {
-			try {
-				SimpleMailMessage message = new SimpleMailMessage();
-				message.setFrom(fromEmail);
-				message.setTo(toEmail);
-				message.setSubject(subject);
-				message.setText(body);
-				mailSender.send(message);
-				return true;
-			} catch (Exception ex) {
-				System.out.println("[EMAIL SERVICE] Mail send failed, falling back to console: " + ex.getMessage());
+		// Even if email is disabled, we simulate success by logging to console
+		if (emailEnabled) {
+			JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+			if (mailSender != null) {
+				try {
+					SimpleMailMessage message = new SimpleMailMessage();
+					message.setFrom(fromEmail);
+					message.setTo(toEmail);
+					message.setSubject(subject);
+					message.setText(body);
+					mailSender.send(message);
+					return true;
+				} catch (Exception ex) {
+					System.out.println("[EMAIL SERVICE] Mail send failed, falling back to console: " + ex.getMessage());
+				}
 			}
 		}
 

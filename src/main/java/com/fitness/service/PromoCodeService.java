@@ -7,7 +7,6 @@ import com.fitness.exception.BusinessRuleException;
 import com.fitness.exception.DuplicateResourceException;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.PromoCodeRepository;
-import com.fitness.repository.PromoCodeUsageRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -20,7 +19,6 @@ import java.util.stream.Collectors;
 public class PromoCodeService {
 
 	private final PromoCodeRepository promoRepo;
-	private final PromoCodeUsageRepository promoUsageRepo;
 	private final AuditLogService auditLogService;
 	private final ModelMapper mapper;
 

@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -43,5 +44,11 @@ public class PaymentController {
 	@PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
 	public ResponseEntity<List<PaymentDTO>> getFailedPayments() {
 		return ResponseEntity.ok(paymentService.getFailedPayments());
+	}
+
+	@GetMapping("/revenue/mtd")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<BigDecimal> getRevenueMTD() {
+		return ResponseEntity.ok(paymentService.getRevenueMTD());
 	}
 }

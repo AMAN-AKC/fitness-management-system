@@ -17,6 +17,7 @@ public class SystemUserDTO {
 	@NotBlank(message = "Please provide a valid username")
 	@Size(min = 3, max = 80, message = "Username must be between 3 and 80 characters")
 	private String username;
+	private String fullName;
 
 	@NotBlank(message = "Please provide a valid email")
 	@Email(message = "Please provide a valid email")

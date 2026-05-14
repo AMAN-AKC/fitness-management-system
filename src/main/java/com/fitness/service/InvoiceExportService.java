@@ -6,7 +6,6 @@ import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
-import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
@@ -33,8 +32,11 @@ public class InvoiceExportService {
 		csv.append("Paid Amount,Outstanding,Status,Created Date\n");
 		csv.append(invoice.getInvoiceNumber()).append(",");
 		csv.append(invoice.getMember().getMemName()).append(",");
-		csv.append(invoice.getMembership() != null ? invoice.getMembership().getPlan().getPlanName()
-				: "N/A").append(",");
+		String pName = invoice.getPlanName();
+		if (pName == null && invoice.getMembership() != null) {
+			pName = invoice.getMembership().getPlan().getPlanName();
+		}
+		csv.append(pName != null ? pName : "N/A").append(",");
 		csv.append(invoice.getMrp()).append(",");
 		csv.append(invoice.getTaxes()).append(",");
 		csv.append(invoice.getDiscount()).append(",");
@@ -58,9 +60,11 @@ public class InvoiceExportService {
 		for (Invoice inv : invoices) {
 			csv.append(inv.getInvoiceNumber()).append(",");
 			csv.append(inv.getMember().getMemName()).append(",");
-			csv.append(inv.getMembership() != null
-					? inv.getMembership().getPlan().getPlanName()
-					: "N/A").append(",");
+			String pName = inv.getPlanName();
+			if (pName == null && inv.getMembership() != null) {
+				pName = inv.getMembership().getPlan().getPlanName();
+			}
+			csv.append(pName != null ? pName : "N/A").append(",");
 			csv.append(inv.getMrp()).append(",");
 			csv.append(inv.getTaxes()).append(",");
 			csv.append(inv.getDiscount()).append(",");
@@ -99,7 +103,11 @@ public class InvoiceExportService {
 			table.addCell(new PdfPCell(new Phrase("Field")));
 			table.addCell(new PdfPCell(new Phrase("Value")));
 			table.addCell("Plan Name");
-			table.addCell(invoice.getMembership() != null ? invoice.getMembership().getPlan().getPlanName() : "N/A");
+			String pName = invoice.getPlanName();
+			if (pName == null && invoice.getMembership() != null) {
+				pName = invoice.getMembership().getPlan().getPlanName();
+			}
+			table.addCell(pName != null ? pName : "N/A");
 			table.addCell("Base Amount");
 			table.addCell(String.valueOf(invoice.getMrp()));
 			table.addCell("Taxes");

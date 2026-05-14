@@ -4,7 +4,6 @@ import com.fitness.dto.InvoiceDTO;
 import com.fitness.entity.*;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.*;
-import com.fitness.exception.BusinessRuleException;
 import lombok.RequiredArgsConstructor;
 import com.fitness.entity.AuditLog;
 import org.modelmapper.ModelMapper;
@@ -22,7 +21,6 @@ public class InvoiceService {
 	private final MemberRepository memberRepo;
 	private final ModelMapper mapper;
 	private final AuditLogService auditLogService;
-	private final PriceBreakdownService priceBreakdownService;
 
 	public InvoiceDTO createInvoice(InvoiceDTO dto) {
 		Member member = memberRepo.findById(dto.getMemberId())

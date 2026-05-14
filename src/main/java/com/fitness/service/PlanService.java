@@ -9,11 +9,13 @@ import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.MembershipRepository;
 import com.fitness.repository.PlanRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PlanService {
@@ -66,9 +68,11 @@ public class PlanService {
 		boolean inUse = !membershipRepo.findByStatus(com.fitness.entity.Membership.Status.ACTIVE).stream()
 				.filter(m -> m.getPlan().getPlanId().equals(id))
 				.toList().isEmpty();
-		if (inUse)
-			throw new BusinessRuleException(
-					"Plan is currently in use by active memberships. Cannot delete — deactivate instead.");
+		// AC09: allow deactivation even if in use, but prevent physical deletion (not implemented here)
+		// We just log a warning if in use
+		if (inUse) {
+			log.info("Deactivating plan {} which has active memberships", id);
+		}
 		plan.setIsActive(false);
 		planRepo.save(plan);
 		auditLogService.logForCurrentUser("Plan", id, Action.UPDATE, "isActive=true", "isActive=false");

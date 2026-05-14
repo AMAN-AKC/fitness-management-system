@@ -16,4 +16,9 @@ public class AuditLogDTO {
 	private String oldValue;
 	private String newValue;
 	private String createdAt;
+	
+	// Virtual fields for frontend
+	private String username;
+	private String entity;
+	private String timestamp;
 }

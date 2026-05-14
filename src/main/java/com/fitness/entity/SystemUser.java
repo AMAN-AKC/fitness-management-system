@@ -31,6 +31,8 @@ public class SystemUser {
 	@NotBlank
 	@Column(nullable = false, unique = true, length = 80)
 	private String username;
+	@Column(name = "full_name", length = 150)
+	private String fullName;
 
 	@Email
 	@NotBlank

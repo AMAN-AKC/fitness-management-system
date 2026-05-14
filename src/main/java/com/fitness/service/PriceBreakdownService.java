@@ -8,6 +8,7 @@ import com.fitness.repository.PlanRepository;
 import com.fitness.repository.MembershipRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.util.List;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -54,10 +55,12 @@ public class PriceBreakdownService {
 	 */
 	public PriceBreakdownDTO calculateUpgradeBreakdown(Long memberId, Long newPlanId,
 			BigDecimal discountAmount) {
-		Membership currentMembership = membershipRepo.findByMemberMemberIdAndStatus(memberId,
-				Membership.Status.ACTIVE)
-				.orElseThrow(() -> new ResourceNotFoundException("Active membership", "memberId",
-						memberId));
+		List<Membership> activeList = membershipRepo.findByMemberMemberIdAndStatus(memberId,
+				Membership.Status.ACTIVE);
+		if (activeList.isEmpty()) {
+			throw new ResourceNotFoundException("Active membership", "memberId", memberId);
+		}
+		Membership currentMembership = activeList.get(0);
 
 		Plan currentPlan = currentMembership.getPlan();
 		Plan newPlan = planRepo.findById(newPlanId)

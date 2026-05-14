@@ -6,6 +6,7 @@ import com.fitness.entity.Branch;
 import com.fitness.entity.Member;
 import com.fitness.entity.SystemUser;
 import com.fitness.enums.Role;
+import com.fitness.exception.BusinessRuleException;
 import com.fitness.exception.DuplicateResourceException;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.BranchRepository;
@@ -20,6 +21,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class MemberService {
 
 	private final MemberRepository memberRepo;
@@ -40,13 +43,19 @@ public class MemberService {
 	private final PasswordEncoder passwordEncoder;
 	private final AuditLogService auditLogService;
 
+	@Transactional
 	public MemberDTO createMember(MemberDTO dto) {
+		log.info("Creating member with DTO: {}", dto);
 		if (memberRepo.existsByEmail(dto.getEmail()))
 			throw new DuplicateResourceException("Member", "email", dto.getEmail());
 		if (memberRepo.existsByPhone(dto.getPhone()))
 			throw new DuplicateResourceException("Member", "phone", dto.getPhone());
 		if (userRepo.existsByEmail(dto.getEmail()))
 			throw new DuplicateResourceException("User", "email", dto.getEmail());
+
+		if (dto.getDob() == null || dto.getDob().isBlank()) {
+			throw new BusinessRuleException("Date of birth is required.");
+		}
 
 		Branch branch = branchRepo.findById(dto.getHomeBranchId())
 				.orElseThrow(() -> new ResourceNotFoundException("Branch", "id", dto.getHomeBranchId()));
@@ -62,6 +71,7 @@ public class MemberService {
 				.build();
 
 		Member member = mapper.map(dto, Member.class);
+		member.setDob(java.time.LocalDate.parse(dto.getDob()));
 		member.setHomeBranch(branch);
 		member.setUser(userRepo.save(memberUser));
 		member.setCreatedBy(createdBy);
@@ -86,10 +96,14 @@ public class MemberService {
 		return mapper.map(findById(id), MemberDTO.class);
 	}
 
+	@Transactional
 	public MemberDTO updateMember(Long id, MemberDTO dto) {
 		Member member = findById(id);
 		String oldStatus = member.getStatus().name();
 		mapper.map(dto, member);
+		if (dto.getDob() != null && !dto.getDob().isBlank()) {
+			member.setDob(java.time.LocalDate.parse(dto.getDob()));
+		}
 		Member saved = memberRepo.save(member);
 
 		// AC07: Audit log for member update
@@ -101,6 +115,7 @@ public class MemberService {
 		return mapper.map(saved, MemberDTO.class);
 	}
 
+	@Transactional
 	public void deactivateMember(Long id) {
 		Member member = findById(id);
 		String oldStatus = member.getStatus().name();
@@ -129,6 +144,7 @@ public class MemberService {
 	/**
 	 * Update member's photo/ID path (AC06)
 	 */
+	@Transactional
 	public MemberDTO updatePhotoPath(Long id, String photoPath) {
 		Member member = findById(id);
 		member.setPhotoPath(photoPath);
@@ -142,6 +158,7 @@ public class MemberService {
 	 *
 	 * @return A list of maps, one per row, containing "row", "status", and "message"
 	 */
+	@Transactional
 	public List<Map<String, String>> bulkUploadMembers(MultipartFile file) {
 		List<Map<String, String>> report = new ArrayList<>();
 

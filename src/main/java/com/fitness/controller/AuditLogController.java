@@ -16,6 +16,12 @@ import java.util.List;
 public class AuditLogController {
 
 	private final AuditLogService auditService;
+	
+	@GetMapping
+	@PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+	public ResponseEntity<List<AuditLogDTO>> getAllLogs() {
+		return ResponseEntity.ok(auditService.getAllLogs());
+	}
 
 	@GetMapping("/user/{userId}")
 	@PreAuthorize("hasAnyRole('MANAGER','ADMIN')")

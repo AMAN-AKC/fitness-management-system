@@ -11,6 +11,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigDecimal;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AttendanceService {
 
 	private final AttendanceRepository attendanceRepo;
@@ -44,6 +46,7 @@ public class AttendanceService {
 	/**
 	 * AC01/AC02/AC03/AC04/AC05/AC10: Check-in with full validation.
 	 */
+	@Transactional
 	public AttendanceDTO checkIn(AttendanceDTO dto) {
 		Member member = memberRepo.findById(dto.getMemberId())
 				.orElseThrow(() -> new ResourceNotFoundException("Member", "id", dto.getMemberId()));
@@ -51,9 +54,9 @@ public class AttendanceService {
 				.orElseThrow(() -> new ResourceNotFoundException("Branch", "id", dto.getBranchId()));
 
 		// AC02: Verify active membership — block expired/suspended
-		Optional<Membership> activeMembership = membershipRepo
+		List<Membership> activeMemberships = membershipRepo
 				.findByMemberMemberIdAndStatus(member.getMemberId(), Membership.Status.ACTIVE);
-		if (activeMembership.isEmpty())
+		if (activeMemberships.isEmpty())
 			throw new BusinessRuleException("Member does not have an active membership. Check-in denied.");
 
 		// AC04: Duplicate check-in guard (configurable timeframe)
@@ -142,6 +145,7 @@ public class AttendanceService {
 	/**
 	 * AC09/AC10: Staff override check-in with reason (bypasses membership check).
 	 */
+	@Transactional
 	public AttendanceDTO overrideCheckIn(AttendanceDTO dto, Long overrideByUserId, String reason) {
 		if (reason == null || reason.isBlank())
 			throw new BusinessRuleException("Override reason is required.");
@@ -213,6 +217,7 @@ public class AttendanceService {
 	/**
 	 * AC06: Queue check-in for offline sync (stub — saves with PENDING status).
 	 */
+	@Transactional
 	public AttendanceDTO queueOfflineCheckIn(AttendanceDTO dto) {
 		Member member = memberRepo.findById(dto.getMemberId())
 				.orElseThrow(() -> new ResourceNotFoundException("Member", "id", dto.getMemberId()));
@@ -235,6 +240,7 @@ public class AttendanceService {
 	/**
 	 * AC06: Sync all pending check-ins (batch process).
 	 */
+	@Transactional
 	public List<AttendanceDTO> syncPendingCheckIns() {
 		List<Attendance> pending = attendanceRepo.findBySyncStatus(Attendance.SyncStatus.PENDING);
 		for (Attendance a : pending) {
@@ -267,10 +273,10 @@ public class AttendanceService {
 		flags.put("hasUnpaidDues", totalDues.compareTo(BigDecimal.ZERO) > 0);
 
 		// Check active membership
-		Optional<Membership> active = membershipRepo
+		List<Membership> activeList = membershipRepo
 				.findByMemberMemberIdAndStatus(memberId, Membership.Status.ACTIVE);
-		flags.put("hasActiveMembership", active.isPresent());
-		flags.put("membershipStatus", active.map(m -> m.getStatus().name()).orElse("NONE"));
+		flags.put("hasActiveMembership", !activeList.isEmpty());
+		flags.put("membershipStatus", activeList.isEmpty() ? "NONE" : activeList.get(0).getStatus().name());
 
 		// Notes (health alerts)
 		flags.put("notes", member.getNotes());

@@ -8,6 +8,7 @@ import com.fitness.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ClassesService {
 
 	private final ClassesRepository classesRepo;
@@ -36,6 +38,7 @@ public class ClassesService {
 	 * AC01/AC02/AC03/AC07/AC10: Create class with conflict detection, maintenance
 	 * check, and audit logging.
 	 */
+	@Transactional
 	public ClassesDTO createClass(ClassesDTO dto) {
 		Trainer trainer = trainerRepo.findById(dto.getTrainerId())
 				.orElseThrow(() -> new ResourceNotFoundException("Trainer", "id", dto.getTrainerId()));
@@ -90,6 +93,7 @@ public class ClassesService {
 	/**
 	 * AC10: Update class with audit logging.
 	 */
+	@Transactional
 	public ClassesDTO updateClass(Long id, ClassesDTO dto) {
 		Classes cls = findById(id);
 		String oldState = cls.getClassName() + " | Trainer:" + cls.getTrainer().getTrainerId();
@@ -105,6 +109,7 @@ public class ClassesService {
 	/**
 	 * AC06/AC10: Cancel class with reason, notify booked members, audit log.
 	 */
+	@Transactional
 	public void cancelClass(Long id, String reason) {
 		Classes cls = findById(id);
 		if (reason == null || reason.isBlank())
@@ -126,6 +131,7 @@ public class ClassesService {
 	/**
 	 * AC05: Substitute trainer with conflict check and member notification.
 	 */
+	@Transactional
 	public ClassesDTO substituteTrainer(Long classId, Long newTrainerId, String reason) {
 		Classes cls = findById(classId);
 		Trainer newTrainer = trainerRepo.findById(newTrainerId)
@@ -188,6 +194,7 @@ public class ClassesService {
 	/**
 	 * AC09: Import classes from CSV with row-level validation.
 	 */
+	@Transactional
 	public List<Map<String, Object>> importClassesFromCsv(MultipartFile file) {
 		List<Map<String, Object>> results = new ArrayList<>();
 		try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
@@ -200,7 +207,7 @@ public class ClassesService {
 				result.put("row", row);
 				try {
 					ClassesDTO dto = ClassesDTO.builder()
-							.classesName(record.get("className"))
+							.className(record.get("className"))
 							.trainerId(Long.parseLong(record.get("trainerId")))
 							.roomId(Long.parseLong(record.get("roomId")))
 							.branchId(Long.parseLong(record.get("branchId")))

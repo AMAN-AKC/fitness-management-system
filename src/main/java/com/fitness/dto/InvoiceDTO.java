@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 public class InvoiceDTO {
 	private Long invoiceId;
 	private String invoiceNumber;
+	private String planName;
 
 	@NotNull(message = "Please provide a valid member")
 	private Long memberId;

@@ -1,7 +1,6 @@
 package com.fitness.dto;
 
 import com.fitness.entity.Classes;
-import com.fitness.validator.DateNotStartingWithZero;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -13,7 +12,7 @@ public class ClassesDTO {
 	private Long classId;
 
 	@NotBlank(message = "Please provide a valid class name")
-	private String classesName;
+	private String className;
 
 	@NotNull(message = "Please provide a valid trainer")
 	private Long trainerId;
@@ -25,18 +24,15 @@ public class ClassesDTO {
 	private Long branchId;
 
 	@NotBlank(message = "Please provide a valid start date")
-	@DateNotStartingWithZero
 	private String startDate;
 
 	@NotBlank(message = "Please provide a valid end date")
-	@DateNotStartingWithZero
 	private String endDate;
 
 	@NotBlank(message = "Please provide a valid weekdays")
 	private String weekdays;
 
 	@NotBlank(message = "Please provide a valid class time")
-	@DateNotStartingWithZero
 	private String classTime;
 
 	@NotNull(message = "Please provide a valid duration")

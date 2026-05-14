@@ -72,8 +72,8 @@ public class Classes {
 	@Column(length = 255)
 	private String planEligibility;
 
-	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
+	@jakarta.persistence.Convert(converter = ClassStatusConverter.class)
 	@Builder.Default
 	private Status status = Status.ACTIVE;
 
