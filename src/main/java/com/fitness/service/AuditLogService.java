@@ -58,27 +58,46 @@ public class AuditLogService {
 		}
 	}
 
+	private AuditLogDTO mapToDTO(AuditLog l) {
+		if (l == null) return null;
+		AuditLogDTO dto = new AuditLogDTO();
+		dto.setAuditId(l.getAuditId());
+		if (l.getPerformedBy() != null) {
+			dto.setPerformedBy(l.getPerformedBy().getUserId());
+			dto.setUsername(l.getPerformedBy().getUsername());
+			if (l.getPerformedBy().getRole() != null) {
+				dto.setPerformedByRole(l.getPerformedBy().getRole().toString());
+			}
+		}
+		dto.setEntityName(l.getEntityName());
+		dto.setEntity(l.getEntityName());
+		dto.setEntityId(l.getEntityId());
+		dto.setAction(l.getAction());
+		dto.setOldValue(l.getOldValue());
+		dto.setNewValue(l.getNewValue());
+		if (l.getCreatedAt() != null) {
+			dto.setCreatedAt(l.getCreatedAt().toString());
+			dto.setTimestamp(l.getCreatedAt().toString());
+		}
+		return dto;
+	}
+
 	public List<AuditLogDTO> getAllLogs() {
 		return auditRepo.findAllByOrderByCreatedAtDesc().stream()
-				.map(l -> {
-					AuditLogDTO dto = mapper.map(l, AuditLogDTO.class);
-					if (l.getPerformedBy() != null) {
-						dto.setUsername(l.getPerformedBy().getUsername());
-					}
-					dto.setEntity(l.getEntityName());
-					dto.setTimestamp(l.getCreatedAt().toString());
-					return dto;
-				}).collect(Collectors.toList());
+				.map(this::mapToDTO)
+				.collect(Collectors.toList());
 	}
 
 	public List<AuditLogDTO> getLogsByUser(Long userId) {
 		return auditRepo.findByPerformedByUserIdOrderByCreatedAtDesc(userId).stream()
-				.map(l -> mapper.map(l, AuditLogDTO.class)).collect(Collectors.toList());
+				.map(this::mapToDTO)
+				.collect(Collectors.toList());
 	}
 
 	public List<AuditLogDTO> getLogsByEntity(String entityName, Long entityId) {
 		return auditRepo.findByEntityNameAndEntityId(entityName, entityId).stream()
-				.map(l -> mapper.map(l, AuditLogDTO.class)).collect(Collectors.toList());
+				.map(this::mapToDTO)
+				.collect(Collectors.toList());
 	}
 
 	/**

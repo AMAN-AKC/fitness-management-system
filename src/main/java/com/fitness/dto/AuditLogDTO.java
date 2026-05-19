@@ -21,4 +21,5 @@ public class AuditLogDTO {
 	private String username;
 	private String entity;
 	private String timestamp;
+	private String performedByRole;
 }

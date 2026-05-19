@@ -60,6 +60,6 @@ public class Notification {
 	}
 
 	public enum DeliveryStatus {
-		SENT, FAILED, PENDING
+		SENT, FAILED, PENDING, DELIVERED
 	}
 }

@@ -40,7 +40,7 @@ public class ClassBookingController {
 	}
 
 	@GetMapping("/class/{classId}")
-	@PreAuthorize("hasAnyRole('TRAINER','FRONT_DESK','MANAGER','ADMIN')")
+	@PreAuthorize("hasAnyRole('MEMBER','TRAINER','FRONT_DESK','MANAGER','ADMIN')")
 	public ResponseEntity<List<ClassBookingDTO>> getBookingsByClass(@PathVariable Long classId) {
 		return ResponseEntity.ok(bookingService.getBookingsByClass(classId));
 	}

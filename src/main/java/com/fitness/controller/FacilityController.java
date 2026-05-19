@@ -25,6 +25,11 @@ public class FacilityController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(facilityService.createFacility(dto));
 	}
 
+	@GetMapping
+	public ResponseEntity<List<FacilityDTO>> getAllFacilities() {
+		return ResponseEntity.ok(facilityService.getAllFacilities());
+	}
+
 	@GetMapping("/branch/{branchId}")
 	public ResponseEntity<List<FacilityDTO>> getFacilitiesByBranch(@PathVariable Long branchId) {
 		return ResponseEntity.ok(facilityService.getFacilitiesByBranch(branchId));

@@ -36,6 +36,11 @@ public class FacilityService {
 				.map(f -> mapper.map(f, FacilityDTO.class)).collect(Collectors.toList());
 	}
 
+	public List<FacilityDTO> getAllFacilities() {
+		return facilityRepo.findAll().stream()
+				.map(f -> mapper.map(f, FacilityDTO.class)).collect(Collectors.toList());
+	}
+
 	public FacilityDTO getFacilityById(Long id) {
 		return mapper.map(findById(id), FacilityDTO.class);
 	}
