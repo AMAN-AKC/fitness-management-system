@@ -34,8 +34,36 @@ public class ModelMapperConfig {
 		Converter<LocalDate, String> fromLocalDate = ctx -> ctx.getSource() == null ? null
 				: ctx.getSource().format(DateTimeFormatter.ISO_LOCAL_DATE);
 
+		// String -> LocalTime
+		Converter<String, java.time.LocalTime> toStringTime = ctx -> {
+			if (ctx.getSource() == null) return null;
+			String val = ctx.getSource().trim();
+			if (val.length() == 5) {
+				return java.time.LocalTime.parse(val, DateTimeFormatter.ofPattern("HH:mm"));
+			} else if (val.length() == 8) {
+				return java.time.LocalTime.parse(val, DateTimeFormatter.ofPattern("HH:mm:ss"));
+			}
+			return java.time.LocalTime.parse(val);
+		};
+
+		// LocalTime -> String
+		Converter<java.time.LocalTime, String> fromLocalTime = ctx -> ctx.getSource() == null ? null
+				: ctx.getSource().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+		// String -> LocalDateTime
+		Converter<String, java.time.LocalDateTime> toStringDateTime = ctx -> ctx.getSource() == null ? null
+				: java.time.LocalDateTime.parse(ctx.getSource(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+
+		// LocalDateTime -> String
+		Converter<java.time.LocalDateTime, String> fromLocalDateTime = ctx -> ctx.getSource() == null ? null
+				: ctx.getSource().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+
 		mapper.addConverter(toStringDate);
 		mapper.addConverter(fromLocalDate);
+		mapper.addConverter(toStringTime);
+		mapper.addConverter(fromLocalTime);
+		mapper.addConverter(toStringDateTime);
+		mapper.addConverter(fromLocalDateTime);
 
 		return mapper;
 	}

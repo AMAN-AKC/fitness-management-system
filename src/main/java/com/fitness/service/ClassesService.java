@@ -16,6 +16,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -62,7 +63,8 @@ public class ClassesService {
 		if (!classesRepo.findConflictingByTrainer(trainer.getTrainerId(), start, end).isEmpty())
 			throw new BusinessRuleException("Trainer is already assigned to another class at this time.");
 
-		Classes cls = mapper.map(dto, Classes.class);
+		Classes cls = new Classes();
+		mapDtoToEntity(dto, cls);
 		cls.setTrainer(trainer);
 		cls.setRoom(room);
 		cls.setBranch(branch);
@@ -74,20 +76,20 @@ public class ClassesService {
 				null, "Class created: " + saved.getClassName() + " | Trainer: " + trainer.getTrainerId()
 						+ " | Room: " + room.getFacilityName());
 
-		return mapper.map(saved, ClassesDTO.class);
+		return convertToDto(saved);
 	}
 
 	public List<ClassesDTO> getAllClasses() {
-		return classesRepo.findAll().stream().map(c -> mapper.map(c, ClassesDTO.class)).collect(Collectors.toList());
+		return classesRepo.findAll().stream().map(this::convertToDto).collect(Collectors.toList());
 	}
 
 	public List<ClassesDTO> getClassesByBranch(Long branchId) {
-		return classesRepo.findByBranchBranchId(branchId).stream().map(c -> mapper.map(c, ClassesDTO.class))
+		return classesRepo.findByBranchBranchId(branchId).stream().map(this::convertToDto)
 				.collect(Collectors.toList());
 	}
 
 	public ClassesDTO getClassById(Long id) {
-		return mapper.map(findById(id), ClassesDTO.class);
+		return convertToDto(findById(id));
 	}
 
 	/**
@@ -97,13 +99,25 @@ public class ClassesService {
 	public ClassesDTO updateClass(Long id, ClassesDTO dto) {
 		Classes cls = findById(id);
 		String oldState = cls.getClassName() + " | Trainer:" + cls.getTrainer().getTrainerId();
-		mapper.map(dto, cls);
+		
+		Trainer trainer = trainerRepo.findById(dto.getTrainerId())
+				.orElseThrow(() -> new ResourceNotFoundException("Trainer", "id", dto.getTrainerId()));
+		Facility room = facilityRepo.findById(dto.getRoomId())
+				.orElseThrow(() -> new ResourceNotFoundException("Facility", "id", dto.getRoomId()));
+		Branch branch = branchRepo.findById(dto.getBranchId())
+				.orElseThrow(() -> new ResourceNotFoundException("Branch", "id", dto.getBranchId()));
+		
+		mapDtoToEntity(dto, cls);
+		cls.setTrainer(trainer);
+		cls.setRoom(room);
+		cls.setBranch(branch);
+		
 		Classes saved = classesRepo.save(cls);
 
 		auditLogService.logForCurrentUser("Class", id, AuditLog.Action.UPDATE,
 				oldState, "Class updated: " + saved.getClassName());
 
-		return mapper.map(saved, ClassesDTO.class);
+		return convertToDto(saved);
 	}
 
 	/**
@@ -160,7 +174,7 @@ public class ClassesService {
 				"Trainer Change: " + cls.getClassName(),
 				"The trainer for '" + cls.getClassName() + "' has been changed. Reason: " + reason);
 
-		return mapper.map(saved, ClassesDTO.class);
+		return convertToDto(saved);
 	}
 
 	/**
@@ -250,6 +264,48 @@ public class ClassesService {
 				// Best-effort notification
 			}
 		}
+	}
+
+	public List<ClassesDTO> getClassesByTrainer(Long trainerId) {
+		return classesRepo.findByTrainerTrainerId(trainerId).stream()
+				.map(this::convertToDto)
+				.collect(Collectors.toList());
+	}
+
+	private ClassesDTO convertToDto(Classes cls) {
+		return ClassesDTO.builder()
+				.classId(cls.getClassId())
+				.className(cls.getClassName())
+				.trainerId(cls.getTrainer() != null ? cls.getTrainer().getTrainerId() : null)
+				.roomId(cls.getRoom() != null ? cls.getRoom().getFacilityId() : null)
+				.branchId(cls.getBranch() != null ? cls.getBranch().getBranchId() : null)
+				.startDate(cls.getStartDate() != null ? cls.getStartDate().toString() : null)
+				.endDate(cls.getEndDate() != null ? cls.getEndDate().toString() : null)
+				.weekdays(cls.getWeekdays())
+				.classTime(cls.getClassTime() != null ? cls.getClassTime().toString() : null)
+				.durationMins(cls.getDurationMins())
+				.capacity(cls.getCapacity())
+				.prerequisites(cls.getPrerequisites())
+				.planEligibility(cls.getPlanEligibility())
+				.status(cls.getStatus())
+				.cancelReason(cls.getCancelReason())
+				.build();
+	}
+
+	private void mapDtoToEntity(ClassesDTO dto, Classes cls) {
+		cls.setClassName(dto.getClassName());
+		cls.setStartDate(dto.getStartDate() != null ? LocalDate.parse(dto.getStartDate()) : null);
+		cls.setEndDate(dto.getEndDate() != null ? LocalDate.parse(dto.getEndDate()) : null);
+		cls.setWeekdays(dto.getWeekdays());
+		cls.setClassTime(dto.getClassTime() != null ? LocalTime.parse(dto.getClassTime()) : null);
+		cls.setDurationMins(dto.getDurationMins());
+		cls.setCapacity(dto.getCapacity());
+		cls.setPrerequisites(dto.getPrerequisites());
+		cls.setPlanEligibility(dto.getPlanEligibility());
+		if (dto.getStatus() != null) {
+			cls.setStatus(dto.getStatus());
+		}
+		cls.setCancelReason(dto.getCancelReason());
 	}
 
 	private Classes findById(Long id) {

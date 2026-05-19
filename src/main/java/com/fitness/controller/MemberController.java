@@ -43,13 +43,13 @@ public class MemberController {
 	}
 
 	@GetMapping
-	@PreAuthorize("hasAnyRole('FRONT_DESK','MANAGER','ADMIN')")
+	@PreAuthorize("hasAnyRole('FRONT_DESK','MANAGER','ADMIN','TRAINER')")
 	public ResponseEntity<List<MemberDTO>> getAllMembers() {
 		return ResponseEntity.ok(memberService.getAllMembers());
 	}
 
 	@GetMapping("/{id}")
-	@PreAuthorize("hasAnyRole('MEMBER','FRONT_DESK','MANAGER','ADMIN')")
+	@PreAuthorize("hasAnyRole('MEMBER','FRONT_DESK','MANAGER','ADMIN','TRAINER')")
 	public ResponseEntity<MemberDTO> getMemberById(@PathVariable Long id) {
 		return ResponseEntity.ok(memberService.getMemberById(id));
 	}
@@ -69,7 +69,7 @@ public class MemberController {
 	}
 
 	@GetMapping("/branch/{branchId}")
-	@PreAuthorize("hasAnyRole('FRONT_DESK','MANAGER','ADMIN')")
+	@PreAuthorize("hasAnyRole('FRONT_DESK','MANAGER','ADMIN','TRAINER')")
 	public ResponseEntity<List<MemberDTO>> getMembersByBranch(@PathVariable Long branchId) {
 		return ResponseEntity.ok(memberService.getMembersByBranch(branchId));
 	}

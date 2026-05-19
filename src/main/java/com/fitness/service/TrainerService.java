@@ -28,26 +28,26 @@ public class TrainerService {
 		trainer.setUser(user);
 		trainer.setBranch(branch);
 		trainer.setIsActive(true);
-		return mapper.map(trainerRepo.save(trainer), TrainerDTO.class);
+		return convertToDto(trainerRepo.save(trainer));
 	}
 
 	public List<TrainerDTO> getAllTrainers() {
-		return trainerRepo.findAll().stream().map(t -> mapper.map(t, TrainerDTO.class)).collect(Collectors.toList());
+		return trainerRepo.findAll().stream().map(this::convertToDto).collect(Collectors.toList());
 	}
 
 	public List<TrainerDTO> getTrainersByBranch(Long branchId) {
-		return trainerRepo.findByBranchBranchId(branchId).stream().map(t -> mapper.map(t, TrainerDTO.class))
+		return trainerRepo.findByBranchBranchId(branchId).stream().map(this::convertToDto)
 				.collect(Collectors.toList());
 	}
 
 	public TrainerDTO getTrainerById(Long id) {
-		return mapper.map(findById(id), TrainerDTO.class);
+		return convertToDto(findById(id));
 	}
 
 	public TrainerDTO updateTrainer(Long id, TrainerDTO dto) {
 		Trainer trainer = findById(id);
 		mapper.map(dto, trainer);
-		return mapper.map(trainerRepo.save(trainer), TrainerDTO.class);
+		return convertToDto(trainerRepo.save(trainer));
 	}
 
 	public void deactivateTrainer(Long id) {
@@ -56,8 +56,25 @@ public class TrainerService {
 		trainerRepo.save(t);
 	}
 
+	public TrainerDTO getTrainerByUserId(Long userId) {
+		Trainer trainer = trainerRepo.findByUserUserId(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("Trainer", "userId", userId));
+		return convertToDto(trainer);
+	}
+
+	private TrainerDTO convertToDto(Trainer trainer) {
+		TrainerDTO dto = mapper.map(trainer, TrainerDTO.class);
+		if (trainer.getUser() != null) {
+			dto.setTrainerName(trainer.getUser().getFullName() != null && !trainer.getUser().getFullName().trim().isEmpty()
+					? trainer.getUser().getFullName()
+					: trainer.getUser().getUsername());
+		}
+		return dto;
+	}
+
 	private Trainer findById(Long id) {
 		return trainerRepo.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Trainer", "id", id));
 	}
 }
+

@@ -17,7 +17,7 @@ public interface ClassesRepository extends JpaRepository<Classes, Long> {
 
 	List<Classes> findByStatus(Status status);
 
-	@Query(value = "SELECT c.* FROM classes c WHERE c.facility_id = :roomId " +
+	@Query(value = "SELECT c.* FROM classes c WHERE c.room_id = :roomId " +
 			"AND c.status = 'ACTIVE' " +
 			"AND c.class_time < :endTime " +
 			"AND ADDTIME(c.class_time, SEC_TO_TIME(c.duration_mins * 60)) > :startTime", nativeQuery = true)

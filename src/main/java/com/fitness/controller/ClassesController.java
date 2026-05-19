@@ -41,6 +41,11 @@ public class ClassesController {
 		return ResponseEntity.ok(classesService.getClassesByBranch(branchId));
 	}
 
+	@GetMapping("/trainer/{trainerId}")
+	public ResponseEntity<List<ClassesDTO>> getClassesByTrainer(@PathVariable Long trainerId) {
+		return ResponseEntity.ok(classesService.getClassesByTrainer(trainerId));
+	}
+
 	@GetMapping("/{id}")
 	public ResponseEntity<ClassesDTO> getClassById(@PathVariable Long id) {
 		return ResponseEntity.ok(classesService.getClassById(id));

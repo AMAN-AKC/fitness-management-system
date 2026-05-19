@@ -40,6 +40,12 @@ public class TrainerController {
 		return ResponseEntity.ok(trainerService.getTrainerById(id));
 	}
 
+	@GetMapping("/user/{userId}")
+	@PreAuthorize("hasAnyRole('ADMIN','TRAINER')")
+	public ResponseEntity<TrainerDTO> getTrainerByUserId(@PathVariable Long userId) {
+		return ResponseEntity.ok(trainerService.getTrainerByUserId(userId));
+	}
+
 	@PutMapping("/{id}")
 	@PreAuthorize("hasAnyRole('ADMIN','TRAINER')")
 	public ResponseEntity<TrainerDTO> updateTrainer(@PathVariable Long id,
