@@ -77,7 +77,7 @@ public class AttendanceController {
 	}
 
 	@GetMapping("/branch/{branchId}/today")
-	@PreAuthorize("hasAnyRole('FRONT_DESK','MANAGER','ADMIN')")
+	@PreAuthorize("hasAnyRole('TRAINER','FRONT_DESK','MANAGER','ADMIN')")
 	public ResponseEntity<List<AttendanceDTO>> getTodayAttendance(@PathVariable Long branchId) {
 		return ResponseEntity.ok(attendanceService.getTodayAttendanceByBranch(branchId));
 	}

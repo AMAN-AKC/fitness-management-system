@@ -54,7 +54,16 @@ public class MemberService {
 			throw new DuplicateResourceException("User", "email", dto.getEmail());
 
 		if (dto.getDob() == null || dto.getDob().isBlank()) {
-			throw new BusinessRuleException("Date of birth is required.");
+			throw new BusinessRuleException("Please provide a valid Date of Birth");
+		}
+		java.time.LocalDate dob;
+		try {
+			dob = java.time.LocalDate.parse(dto.getDob());
+		} catch (Exception e) {
+			throw new BusinessRuleException("Please provide a valid Date of Birth");
+		}
+		if (java.time.Period.between(dob, java.time.LocalDate.now()).getYears() < 14) {
+			throw new BusinessRuleException("Please provide a valid Date of Birth");
 		}
 
 		Branch branch = branchRepo.findById(dto.getHomeBranchId())
@@ -102,7 +111,16 @@ public class MemberService {
 		String oldStatus = member.getStatus().name();
 		mapper.map(dto, member);
 		if (dto.getDob() != null && !dto.getDob().isBlank()) {
-			member.setDob(java.time.LocalDate.parse(dto.getDob()));
+			java.time.LocalDate dob;
+			try {
+				dob = java.time.LocalDate.parse(dto.getDob());
+			} catch (Exception e) {
+				throw new BusinessRuleException("Please provide a valid Date of Birth");
+			}
+			if (java.time.Period.between(dob, java.time.LocalDate.now()).getYears() < 14) {
+				throw new BusinessRuleException("Please provide a valid Date of Birth");
+			}
+			member.setDob(dob);
 		}
 		Member saved = memberRepo.save(member);
 
@@ -234,20 +252,32 @@ public class MemberService {
 
 	private List<String> validateMemberDto(MemberDTO dto) {
 		List<String> errors = new ArrayList<>();
-		if (dto.getMemName() == null || dto.getMemName().isBlank())
-			errors.add("Name is required");
+		if (dto.getMemName() == null || !dto.getMemName().matches("^[a-zA-Z\\s]{2,70}$"))
+			errors.add("Please provide a valid Full Name");
 		if (dto.getEmail() == null || !dto.getEmail().matches("^[\\w.+-]+@[\\w.-]+\\.[a-zA-Z]{2,}$"))
-			errors.add("Valid email is required");
-		if (dto.getPhone() == null || !dto.getPhone().matches("^[6-9]\\d{9}$"))
-			errors.add("Valid 10-digit phone starting with 6-9 is required");
-		if (dto.getDob() == null || dto.getDob().isBlank())
-			errors.add("Date of birth is required");
+			errors.add("Please provide a valid Email Address");
+		if (dto.getPhone() == null || !dto.getPhone().matches("^\\d{10,15}$"))
+			errors.add("Please provide a valid Phone Number");
+		
+		if (dto.getDob() == null || dto.getDob().isBlank()) {
+			errors.add("Please provide a valid Date of Birth");
+		} else {
+			try {
+				java.time.LocalDate dob = java.time.LocalDate.parse(dto.getDob());
+				if (java.time.Period.between(dob, java.time.LocalDate.now()).getYears() < 14) {
+					errors.add("Please provide a valid Date of Birth");
+				}
+			} catch (Exception e) {
+				errors.add("Please provide a valid Date of Birth");
+			}
+		}
+
 		if (dto.getAddress() == null || dto.getAddress().isBlank())
-			errors.add("Address is required");
+			errors.add("Please provide a valid Physical Address");
 		if (dto.getEmgContact() == null || dto.getEmgContact().isBlank())
-			errors.add("Emergency contact name is required");
-		if (dto.getEmgPhone() == null || !dto.getEmgPhone().matches("^[6-9]\\d{9}$"))
-			errors.add("Valid emergency phone is required");
+			errors.add("Please provide a valid Emergency Contact");
+		if (dto.getEmgPhone() == null || !dto.getEmgPhone().matches("^\\d{10,15}$"))
+			errors.add("Please provide a valid Emergency Contact");
 		return errors;
 	}
 

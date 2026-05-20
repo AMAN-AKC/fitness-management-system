@@ -70,6 +70,10 @@ public class Member {
 	@Column(columnDefinition = "TEXT")
 	private String notes;
 
+	@Column(nullable = false)
+	@Builder.Default
+	private Integer ptSessionCredits = 10;
+
 	@ManyToOne
 	@JoinColumn(name = "created_by", nullable = false)
 	private SystemUser createdBy;

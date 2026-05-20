@@ -55,6 +55,13 @@ public class Trainer {
 	@Builder.Default
 	private Boolean isActive = true;
 
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean acceptingPtClients = true;
+
+	@Column(columnDefinition = "TEXT")
+	private String availability;
+
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 

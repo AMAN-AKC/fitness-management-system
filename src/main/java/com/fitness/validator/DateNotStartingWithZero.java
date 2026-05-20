@@ -10,7 +10,7 @@ import jakarta.validation.Payload;
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DateNotStartingWithZero {
-	String message() default "Date/time value must not start with zero";
+	String message() default "Invalid format selection: Date and time values must not start with zero. Please utilize the calendar dropdown selector tool.";
 
 	Class<?>[] groups() default {};
 

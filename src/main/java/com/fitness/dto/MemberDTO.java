@@ -1,6 +1,7 @@
 package com.fitness.dto;
 
 import com.fitness.entity.Member;
+import com.fitness.validator.DateNotStartingWithZero;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -11,29 +12,30 @@ import lombok.*;
 public class MemberDTO {
 	private Long memberId;
 
-	@NotBlank(message = "Please provide a valid name")
-	@Size(max = 120, message = "Name must not exceed 120 characters")
+	@NotBlank(message = "Please provide a valid Full Name")
+	@Pattern(regexp = "^[a-zA-Z\\s]{2,70}$", message = "Please provide a valid Full Name")
 	private String memName;
 
-	@NotBlank(message = "Please provide a valid email")
-	@Email(message = "Please provide a valid email")
+	@NotBlank(message = "Please provide a valid Email Address")
+	@Email(message = "Please provide a valid Email Address")
 	private String email;
 
-	@NotBlank(message = "Please provide a valid phone")
-	@Pattern(regexp = "^[6-9]\\d{9}$", message = "Please provide a valid phone")
+	@NotBlank(message = "Please provide a valid Phone Number")
+	@Pattern(regexp = "^\\d{10,15}$", message = "Please provide a valid Phone Number")
 	private String phone;
 
-	@NotBlank(message = "Please provide a valid date of birth")
+	@NotBlank(message = "Please provide a valid Date of Birth")
+	@DateNotStartingWithZero
 	private String dob; // "yyyy-MM-dd"
 
-	@NotBlank(message = "Please provide a valid address")
+	@NotBlank(message = "Please provide a valid Physical Address")
 	private String address;
 
-	@NotBlank(message = "Please provide a valid emergency contact")
+	@NotBlank(message = "Please provide a valid Emergency Contact")
 	private String emgContact;
 
-	@NotBlank(message = "Please provide a valid emergency phone")
-	@Pattern(regexp = "^[6-9]\\d{9}$", message = "Please provide a valid emergency phone")
+	@NotBlank(message = "Please provide a valid Emergency Contact")
+	@Pattern(regexp = "^\\d{10,15}$", message = "Please provide a valid Emergency Contact")
 	private String emgPhone;
 
 	private String referralCode;
@@ -45,4 +47,5 @@ public class MemberDTO {
 	private Long homeBranchId;
 
 	private String photoPath;
+	private Integer ptSessionCredits;
 }

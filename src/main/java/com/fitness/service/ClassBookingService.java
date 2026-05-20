@@ -49,6 +49,20 @@ public class ClassBookingService {
 		if (cls.getStatus() != Classes.Status.ACTIVE)
 			throw new BusinessRuleException("This class is not available for booking.");
 
+		// Late Cutoff Restriction: All class registration and waitlist movements lock 15 minutes before the class begins
+		LocalDateTime classDateTime = cls.getStartDate().atTime(cls.getClassTime());
+		if (LocalDateTime.now().isAfter(classDateTime.minusMinutes(15))) {
+			throw new BusinessRuleException("Class registration is closed (locks 15 minutes before class starts).");
+		}
+
+		// Enforce No-Show/Late Cancellation ban: 3 infractions in 30 days results in a 7-day class booking ban
+		if (isBookingBanned(member.getMemberId())) {
+			throw new BusinessRuleException("You are currently banned from booking classes due to excessive no-shows/late cancellations (3 strikes in 30 days).");
+		}
+
+		// Clean up any expired waitlist promotions before determining spots
+		checkAndEvictExpiredWaitlistPromotions(cls.getClassId());
+
 		// AC01: Plan eligibility check
 		if (cls.getPlanEligibility() != null && !cls.getPlanEligibility().isBlank()) {
 			List<Membership> activeMemberships = membershipRepo
@@ -71,7 +85,8 @@ public class ClassBookingService {
 		List<ClassBooking> memberActiveBookings = bookingRepo.findByMemberMemberId(member.getMemberId())
 				.stream()
 				.filter(b -> b.getBookingStatus() == ClassBooking.BookingStatus.CONFIRMED
-						|| b.getBookingStatus() == ClassBooking.BookingStatus.WAITLISTED)
+						|| b.getBookingStatus() == ClassBooking.BookingStatus.WAITLISTED
+						|| b.getBookingStatus() == ClassBooking.BookingStatus.PENDING_CONFIRMATION)
 				.collect(Collectors.toList());
 
 		for (ClassBooking existingBooking : memberActiveBookings) {
@@ -79,8 +94,8 @@ public class ClassBookingService {
 			if (existingClass.getClassId().equals(cls.getClassId())) {
 				throw new BusinessRuleException("You already have a booking or waitlist spot for this class.");
 			}
-			// Check time overlap on same date range
-			if (datesOverlap(cls, existingClass)) {
+			// Check time overlap on same date range and weekdays
+			if (datesOverlap(cls, existingClass) && weekdaysOverlap(cls, existingClass)) {
 				LocalTime existStart = existingClass.getClassTime();
 				LocalTime existEnd = existStart.plusMinutes(existingClass.getDurationMins());
 				if (classStart.isBefore(existEnd) && classEnd.isAfter(existStart)) {
@@ -93,7 +108,9 @@ public class ClassBookingService {
 
 		// AC02: Capacity + waitlist
 		long confirmed = bookingRepo.countByFitnessClassClassIdAndBookingStatus(
-				cls.getClassId(), ClassBooking.BookingStatus.CONFIRMED);
+				cls.getClassId(), ClassBooking.BookingStatus.CONFIRMED) +
+				bookingRepo.countByFitnessClassClassIdAndBookingStatus(
+				cls.getClassId(), ClassBooking.BookingStatus.PENDING_CONFIRMATION);
 
 		ClassBooking booking = ClassBooking.builder()
 				.fitnessClass(cls)
@@ -127,25 +144,24 @@ public class ClassBookingService {
 					"Booking: " + cls.getClassName(),
 					statusMsg + " Class: " + cls.getClassName() + " at " + cls.getClassTime());
 		} catch (Exception ignored) {
-			// Best-effort
 		}
 
 		return mapper.map(saved, ClassBookingDTO.class);
 	}
 
-	/**
-	 * AC03/AC04/AC06/AC10: Cancel booking with cutoff, waitlist promotion,
-	 * notification, audit.
-	 */
 	public void cancelBooking(Long bookingId) {
 		ClassBooking booking = bookingRepo.findById(bookingId)
 				.orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
 
-		// AC04: Cutoff policy
 		LocalDateTime classDateTime = booking.getFitnessClass().getStartDate()
 				.atTime(booking.getFitnessClass().getClassTime());
-		if (LocalDateTime.now().isAfter(classDateTime.minusHours(CANCEL_CUTOFF_HOURS)))
-			throw new BusinessRuleException("Cannot cancel within " + CANCEL_CUTOFF_HOURS + " hours of the class.");
+		
+		if (LocalDateTime.now().isAfter(classDateTime)) {
+			throw new BusinessRuleException("Cannot cancel a class that has already started.");
+		}
+
+		// Check if it is a late cancellation (less than 2 hours before start)
+		boolean isLateCancel = LocalDateTime.now().isAfter(classDateTime.minusHours(CANCEL_CUTOFF_HOURS));
 
 		booking.setBookingStatus(ClassBooking.BookingStatus.CANCELLED);
 		booking.setCancelledAt(LocalDateTime.now());
@@ -153,45 +169,68 @@ public class ClassBookingService {
 
 		// AC10: Audit log
 		auditLogService.logForCurrentUser("ClassBooking", bookingId, AuditLog.Action.UPDATE,
-				"status=CONFIRMED", "status=CANCELLED");
+				"status=CONFIRMED", "status=CANCELLED" + (isLateCancel ? " (LATE_CANCEL)" : ""));
 
-		// AC06: Send cancellation notification
+		// Send cancellation notification
 		try {
 			Long userId = booking.getMember().getUser().getUserId();
 			notificationService.sendNotification(userId, Notification.NotifType.CANCELLATION,
 					Notification.Channel.IN_APP,
-					"Booking Cancelled",
-					"Your booking for '" + booking.getFitnessClass().getClassName() + "' has been cancelled.");
+					isLateCancel ? "Late Cancellation Infraction" : "Booking Cancelled",
+					isLateCancel ? "You cancelled '" + booking.getFitnessClass().getClassName() + "' less than 2 hours before the start. This counts as an infraction."
+								 : "Your booking for '" + booking.getFitnessClass().getClassName() + "' has been cancelled.");
 		} catch (Exception ignored) {
 		}
 
-		// AC03: Promote next on waitlist (FIFO)
-		bookingRepo.findFirstByFitnessClassClassIdAndBookingStatusOrderByWaitlistPositionAsc(
-				booking.getFitnessClass().getClassId(), ClassBooking.BookingStatus.WAITLISTED)
-				.ifPresent(next -> {
-					next.setBookingStatus(ClassBooking.BookingStatus.CONFIRMED);
-					next.setWaitlistPosition(null);
-					bookingRepo.save(next);
+		// Trigger active ban check if late cancellation infraction happened
+		if (isLateCancel && isBookingBanned(booking.getMember().getMemberId())) {
+			try {
+				Long userId = booking.getMember().getUser().getUserId();
+				notificationService.sendNotification(userId, Notification.NotifType.GENERAL,
+						Notification.Channel.IN_APP,
+						"Booking Ban Active",
+						"You have been banned from booking classes for 7 days due to accumulating 3 infractions (late cancellations/no-shows) in 30 days.");
+			} catch (Exception ignored) {
+			}
+		}
 
-					// Notify promoted member
-					try {
-						Long promoUserId = next.getMember().getUser().getUserId();
-						notificationService.sendNotification(promoUserId, Notification.NotifType.BOOKING,
-								Notification.Channel.IN_APP,
-								"Waitlist Promotion!",
-								"You've been promoted from the waitlist for '"
-										+ next.getFitnessClass().getClassName() + "'. Your booking is now confirmed!");
-					} catch (Exception ignored) {
-					}
-
-					auditLogService.logForCurrentUser("ClassBooking", next.getBookingId(), AuditLog.Action.UPDATE,
-							"status=WAITLISTED", "status=CONFIRMED (auto-promoted)");
-				});
+		// Evict expired promotions first and promote next
+		checkAndEvictExpiredWaitlistPromotions(booking.getFitnessClass().getClassId());
+		promoteNextWaitlist(booking.getFitnessClass());
 	}
 
-	/**
-	 * AC08: Staff override booking rules with justification.
-	 */
+	@org.springframework.transaction.annotation.Transactional
+	public ClassBookingDTO acceptWaitlistPromotion(Long bookingId) {
+		ClassBooking booking = bookingRepo.findById(bookingId)
+				.orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
+
+		checkAndEvictExpiredWaitlistPromotions(booking.getFitnessClass().getClassId());
+
+		// Re-fetch in case it got evicted
+		booking = bookingRepo.findById(bookingId)
+				.orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
+
+		if (booking.getBookingStatus() != ClassBooking.BookingStatus.PENDING_CONFIRMATION) {
+			throw new BusinessRuleException("This booking is not pending confirmation or the response window has expired.");
+		}
+
+		booking.setBookingStatus(ClassBooking.BookingStatus.CONFIRMED);
+		booking.setWaitlistPosition(null);
+		booking.setWaitlistExpiration(null);
+		ClassBooking saved = bookingRepo.save(booking);
+
+		try {
+			Long userId = booking.getMember().getUser().getUserId();
+			notificationService.sendNotification(userId, Notification.NotifType.BOOKING,
+					Notification.Channel.IN_APP,
+					"Booking Confirmed!",
+					"Your waitlist promotion for '" + booking.getFitnessClass().getClassName() + "' is confirmed.");
+		} catch (Exception ignored) {
+		}
+
+		return mapper.map(saved, ClassBookingDTO.class);
+	}
+
 	public ClassBookingDTO overrideBooking(ClassBookingDTO dto, Long overrideByUserId, String reason) {
 		if (reason == null || reason.isBlank())
 			throw new BusinessRuleException("Override reason is required.");
@@ -220,9 +259,6 @@ public class ClassBookingService {
 		return mapper.map(saved, ClassBookingDTO.class);
 	}
 
-	/**
-	 * AC05: Mark booking as no-show. Applies penalty if threshold exceeded.
-	 */
 	public ClassBookingDTO markNoShow(Long bookingId) {
 		ClassBooking booking = bookingRepo.findById(bookingId)
 				.orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
@@ -236,45 +272,188 @@ public class ClassBookingService {
 		auditLogService.logForCurrentUser("ClassBooking", bookingId, AuditLog.Action.UPDATE,
 				"status=CONFIRMED", "status=NO_SHOW");
 
-		// AC05: Check penalty threshold
-		long noShowCount = bookingRepo.findByMemberMemberId(booking.getMember().getMemberId())
-				.stream()
-				.filter(b -> b.getBookingStatus() == ClassBooking.BookingStatus.NO_SHOW)
-				.count();
-
-		if (noShowCount >= noShowPenaltyThreshold) {
+		// Check active ban warning/triggers
+		if (isBookingBanned(booking.getMember().getMemberId())) {
 			try {
 				Long userId = booking.getMember().getUser().getUserId();
 				notificationService.sendNotification(userId, Notification.NotifType.GENERAL,
 						Notification.Channel.IN_APP,
-						"No-Show Warning",
-						"You have " + noShowCount + " no-shows. Repeated no-shows may result in booking restrictions.");
+						"Booking Ban Active",
+						"You have been banned from booking classes for 7 days due to accumulating 3 infractions (late cancellations/no-shows) in 30 days.");
 			} catch (Exception ignored) {
 			}
-
-			auditLogService.logForCurrentUser("Member", booking.getMember().getMemberId(), AuditLog.Action.UPDATE,
-					null, "No-show penalty threshold reached: " + noShowCount + " no-shows");
+		} else {
+			long noShowCount = bookingRepo.findByMemberMemberId(booking.getMember().getMemberId())
+					.stream()
+					.filter(b -> b.getBookingStatus() == ClassBooking.BookingStatus.NO_SHOW)
+					.count();
+			if (noShowCount >= noShowPenaltyThreshold) {
+				try {
+					Long userId = booking.getMember().getUser().getUserId();
+					notificationService.sendNotification(userId, Notification.NotifType.GENERAL,
+							Notification.Channel.IN_APP,
+							"No-Show Warning",
+							"You have " + noShowCount + " no-shows. Repeated no-shows may result in booking restrictions.");
+				} catch (Exception ignored) {
+				}
+			}
 		}
 
 		return mapper.map(booking, ClassBookingDTO.class);
 	}
 
-	/**
-	 * AC07: Get bookings for a member.
-	 */
 	public List<ClassBookingDTO> getBookingsByMember(Long memberId) {
+		checkAndEvictExpiredWaitlistPromotionsForMember(memberId);
 		return bookingRepo.findByMemberMemberId(memberId).stream()
 				.map(b -> mapper.map(b, ClassBookingDTO.class)).collect(Collectors.toList());
 	}
 
 	public List<ClassBookingDTO> getBookingsByClass(Long classId) {
+		checkAndEvictExpiredWaitlistPromotions(classId);
 		return bookingRepo.findByFitnessClassClassId(classId).stream()
 				.map(b -> mapper.map(b, ClassBookingDTO.class)).collect(Collectors.toList());
 	}
 
-	/**
-	 * Check if two classes have overlapping date ranges.
-	 */
+	private void checkAndEvictExpiredWaitlistPromotions(Long classId) {
+		LocalDateTime now = LocalDateTime.now();
+		List<ClassBooking> expiredList = bookingRepo.findByFitnessClassClassId(classId).stream()
+				.filter(b -> b.getBookingStatus() == ClassBooking.BookingStatus.PENDING_CONFIRMATION)
+				.filter(b -> b.getWaitlistExpiration() != null && now.isAfter(b.getWaitlistExpiration()))
+				.collect(Collectors.toList());
+
+		for (ClassBooking expired : expiredList) {
+			expired.setBookingStatus(ClassBooking.BookingStatus.CANCELLED);
+			expired.setWaitlistPosition(null);
+			expired.setWaitlistExpiration(null);
+			bookingRepo.save(expired);
+
+			try {
+				Long promoUserId = expired.getMember().getUser().getUserId();
+				notificationService.sendNotification(promoUserId, Notification.NotifType.BOOKING,
+						Notification.Channel.IN_APP,
+						"Waitlist Promotion Expired",
+						"You failed to accept the promotion for '" + expired.getFitnessClass().getClassName() + "' within 15 minutes.");
+			} catch (Exception ignored) {
+			}
+
+			promoteNextWaitlist(expired.getFitnessClass());
+		}
+	}
+
+	private void checkAndEvictExpiredWaitlistPromotionsForMember(Long memberId) {
+		LocalDateTime now = LocalDateTime.now();
+		List<ClassBooking> expiredList = bookingRepo.findByMemberMemberId(memberId).stream()
+				.filter(b -> b.getBookingStatus() == ClassBooking.BookingStatus.PENDING_CONFIRMATION)
+				.filter(b -> b.getWaitlistExpiration() != null && now.isAfter(b.getWaitlistExpiration()))
+				.collect(Collectors.toList());
+
+		for (ClassBooking expired : expiredList) {
+			expired.setBookingStatus(ClassBooking.BookingStatus.CANCELLED);
+			expired.setWaitlistPosition(null);
+			expired.setWaitlistExpiration(null);
+			bookingRepo.save(expired);
+
+			try {
+				Long promoUserId = expired.getMember().getUser().getUserId();
+				notificationService.sendNotification(promoUserId, Notification.NotifType.BOOKING,
+						Notification.Channel.IN_APP,
+						"Waitlist Promotion Expired",
+						"You failed to accept the promotion for '" + expired.getFitnessClass().getClassName() + "' within 15 minutes.");
+			} catch (Exception ignored) {
+			}
+
+			promoteNextWaitlist(expired.getFitnessClass());
+		}
+	}
+
+	private void promoteNextWaitlist(Classes fitnessClass) {
+		LocalDateTime classDateTime = fitnessClass.getStartDate().atTime(fitnessClass.getClassTime());
+		if (LocalDateTime.now().isAfter(classDateTime.minusMinutes(15))) {
+			return; // Locked 15 mins before start
+		}
+
+		bookingRepo.findFirstByFitnessClassClassIdAndBookingStatusOrderByWaitlistPositionAsc(
+				fitnessClass.getClassId(), ClassBooking.BookingStatus.WAITLISTED)
+				.ifPresent(next -> {
+					if (LocalDateTime.now().isBefore(classDateTime.minusHours(2))) {
+						next.setBookingStatus(ClassBooking.BookingStatus.CONFIRMED);
+						next.setWaitlistPosition(null);
+						next.setWaitlistExpiration(null);
+						bookingRepo.save(next);
+
+						try {
+							Long promoUserId = next.getMember().getUser().getUserId();
+							notificationService.sendNotification(promoUserId, Notification.NotifType.BOOKING,
+									Notification.Channel.IN_APP,
+									"Waitlist Promotion!",
+									"You've been promoted from the waitlist for '"
+											+ next.getFitnessClass().getClassName() + "'. Your booking is now confirmed!");
+						} catch (Exception ignored) {
+						}
+					} else {
+						next.setBookingStatus(ClassBooking.BookingStatus.PENDING_CONFIRMATION);
+						next.setWaitlistExpiration(LocalDateTime.now().plusMinutes(15));
+						bookingRepo.save(next);
+
+						try {
+							Long promoUserId = next.getMember().getUser().getUserId();
+							notificationService.sendNotification(promoUserId, Notification.NotifType.BOOKING,
+									Notification.Channel.IN_APP,
+									"Waitlist Spot Open - Action Required!",
+									"A spot opened up for '" + next.getFitnessClass().getClassName() + "'. You have 15 minutes to accept the booking!");
+						} catch (Exception ignored) {
+						}
+					}
+				});
+	}
+
+	private boolean isBookingBanned(Long memberId) {
+		LocalDateTime now = LocalDateTime.now();
+		List<ClassBooking> infractions = bookingRepo.findByMemberMemberId(memberId).stream()
+				.filter(b -> {
+					if (b.getBookingStatus() == ClassBooking.BookingStatus.NO_SHOW) {
+						LocalDateTime classTime = b.getFitnessClass().getStartDate().atTime(b.getFitnessClass().getClassTime());
+						return classTime.isAfter(now.minusDays(30));
+					}
+					if (b.getBookingStatus() == ClassBooking.BookingStatus.CANCELLED && b.getCancelledAt() != null) {
+						LocalDateTime classTime = b.getFitnessClass().getStartDate().atTime(b.getFitnessClass().getClassTime());
+						if (classTime.isAfter(now.minusDays(30))) {
+							return b.getCancelledAt().isAfter(classTime.minusHours(CANCEL_CUTOFF_HOURS));
+						}
+					}
+					return false;
+				})
+				.sorted((b1, b2) -> getInfractionTime(b2).compareTo(getInfractionTime(b1))) // descending (most recent first)
+				.collect(Collectors.toList());
+
+		if (infractions.size() >= 3) {
+			LocalDateTime mostRecentInfractionTime = getInfractionTime(infractions.get(0));
+			return now.isBefore(mostRecentInfractionTime.plusDays(7));
+		}
+		return false;
+	}
+
+	private LocalDateTime getInfractionTime(ClassBooking b) {
+		if (b.getBookingStatus() == ClassBooking.BookingStatus.CANCELLED && b.getCancelledAt() != null) {
+			return b.getCancelledAt();
+		}
+		return b.getFitnessClass().getStartDate().atTime(b.getFitnessClass().getClassTime());
+	}
+
+	private boolean weekdaysOverlap(Classes a, Classes b) {
+		if (a.getWeekdays() == null || b.getWeekdays() == null) return true;
+		String[] aDays = a.getWeekdays().toUpperCase().split(",");
+		String[] bDays = b.getWeekdays().toUpperCase().split(",");
+		for (String ad : aDays) {
+			for (String bd : bDays) {
+				if (ad.trim().equals(bd.trim())) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	private boolean datesOverlap(Classes a, Classes b) {
 		return !a.getStartDate().isAfter(b.getEndDate()) && !a.getEndDate().isBefore(b.getStartDate());
 	}

@@ -109,6 +109,61 @@ public class MembershipService {
 				.stream().map(m -> mapper.map(m, MembershipDTO.class)).collect(Collectors.toList());
 	}
 
+	@org.springframework.transaction.annotation.Transactional
+	public MembershipDTO suspendMembership(Long id, Integer months, String reason) {
+		Membership membership = findById(id);
+		
+		int suspensionMonths = (months != null) ? months : 3;
+		if (suspensionMonths > 3 || suspensionMonths <= 0) {
+			throw new BusinessRuleException("Suspension duration must be between 1 and 3 months.");
+		}
+
+		membership.setStatus(Membership.Status.SUSPENDED);
+		membership.setEndDate(membership.getEndDate().plusMonths(suspensionMonths));
+		Membership saved = membershipRepo.save(membership);
+
+		Member member = membership.getMember();
+		member.setStatus(Member.Status.SUSPENDED);
+		memberRepo.save(member);
+
+		auditLogService.logForCurrentUser("Membership", id, AuditLog.Action.UPDATE,
+				"status=ACTIVE", "status=SUSPENDED (manual: " + reason + ", duration: " + suspensionMonths + " months)");
+
+		return mapper.map(saved, MembershipDTO.class);
+	}
+
+	@org.springframework.transaction.annotation.Transactional
+	public MembershipDTO deactivateMembership(Long id, String reason) {
+		Membership membership = findById(id);
+		membership.setStatus(Membership.Status.EXPIRED); 
+		Membership saved = membershipRepo.save(membership);
+
+		Member member = membership.getMember();
+		member.setStatus(Member.Status.DEACTIVATED);
+		memberRepo.save(member);
+
+		auditLogService.logForCurrentUser("Membership", id, AuditLog.Action.UPDATE,
+				"status=ACTIVE", "status=DEACTIVATED (" + reason + ")");
+
+		return mapper.map(saved, MembershipDTO.class);
+	}
+
+	@org.springframework.transaction.annotation.Transactional
+	public MembershipDTO reactivateMembership(Long id) {
+		Membership membership = findById(id);
+		membership.setStatus(Membership.Status.ACTIVE);
+		Membership saved = membershipRepo.save(membership);
+
+		Member member = membership.getMember();
+		member.setStatus(Member.Status.ACTIVE);
+		memberRepo.save(member);
+
+		auditLogService.logForCurrentUser("Membership", id, AuditLog.Action.UPDATE,
+				"status=SUSPENDED", "status=ACTIVE (reactivated)");
+
+		return mapper.map(saved, MembershipDTO.class);
+	}
+
 	private Membership findById(Long id) {
 		return membershipRepo.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Membership", "id", id));

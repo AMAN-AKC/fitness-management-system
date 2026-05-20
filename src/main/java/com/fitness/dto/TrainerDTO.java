@@ -27,4 +27,6 @@ public class TrainerDTO {
 	private Long branchId;
 
 	private Boolean isActive;
+	private Boolean acceptingPtClients;
+	private String availability;
 }

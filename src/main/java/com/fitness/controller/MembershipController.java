@@ -36,6 +36,38 @@ public class MembershipController {
 		return ResponseEntity.ok(membershipService.getMembershipById(id));
 	}
 
+	@PostMapping("/upgrade")
+	@PreAuthorize("hasAnyRole('MEMBER','FRONT_DESK','ADMIN')")
+	public ResponseEntity<MembershipDTO> upgradeMembership(
+			@RequestParam Long memberId,
+			@RequestParam Long newPlanId,
+			@RequestParam(required = false) java.math.BigDecimal discountAmount) {
+		return ResponseEntity.ok(membershipService.upgradeMembership(memberId, newPlanId, discountAmount));
+	}
+
+	@PatchMapping("/{id}/suspend")
+	@PreAuthorize("hasAnyRole('FRONT_DESK','MANAGER','ADMIN')")
+	public ResponseEntity<MembershipDTO> suspendMembership(
+			@PathVariable Long id,
+			@RequestParam(required = false) Integer months,
+			@RequestParam String reason) {
+		return ResponseEntity.ok(membershipService.suspendMembership(id, months, reason));
+	}
+
+	@PatchMapping("/{id}/deactivate")
+	@PreAuthorize("hasAnyRole('FRONT_DESK','MANAGER','ADMIN')")
+	public ResponseEntity<MembershipDTO> deactivateMembership(
+			@PathVariable Long id,
+			@RequestParam String reason) {
+		return ResponseEntity.ok(membershipService.deactivateMembership(id, reason));
+	}
+
+	@PatchMapping("/{id}/reactivate")
+	@PreAuthorize("hasAnyRole('FRONT_DESK','MANAGER','ADMIN')")
+	public ResponseEntity<MembershipDTO> reactivateMembership(@PathVariable Long id) {
+		return ResponseEntity.ok(membershipService.reactivateMembership(id));
+	}
+
 	@GetMapping("/expiring")
 	@PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
 	public ResponseEntity<List<MembershipDTO>> getExpiringMemberships(

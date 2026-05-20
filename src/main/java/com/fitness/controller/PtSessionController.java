@@ -34,6 +34,19 @@ public class PtSessionController {
 		return ResponseEntity.ok(ptService.updateStatus(id, status, notes));
 	}
 
+	@PatchMapping("/{id}/reschedule")
+	@PreAuthorize("hasAnyRole('MEMBER','TRAINER','ADMIN')")
+	public ResponseEntity<PtSessionDTO> rescheduleSession(@PathVariable Long id,
+			@RequestParam String newScheduledAt) {
+		return ResponseEntity.ok(ptService.rescheduleSession(id, newScheduledAt));
+	}
+
+	@PatchMapping("/{id}/cancel")
+	@PreAuthorize("hasAnyRole('MEMBER','TRAINER','ADMIN')")
+	public ResponseEntity<PtSessionDTO> cancelSession(@PathVariable Long id) {
+		return ResponseEntity.ok(ptService.cancelSession(id));
+	}
+
 	@GetMapping("/member/{memberId}")
 	@PreAuthorize("hasAnyRole('MEMBER','MANAGER','ADMIN')")
 	public ResponseEntity<List<PtSessionDTO>> getSessionsByMember(@PathVariable Long memberId) {

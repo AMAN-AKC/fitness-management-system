@@ -5,6 +5,7 @@ import com.fitness.entity.Membership;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.InvoiceRepository;
 import com.fitness.repository.MembershipRepository;
+import com.fitness.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import com.fitness.entity.AuditLog;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,46 @@ public class DunningService {
 
 	private final InvoiceRepository invoiceRepo;
 	private final MembershipRepository membershipRepo;
+	private final MemberRepository memberRepo;
 	private final AuditLogService auditLogService;
+
+	@org.springframework.scheduling.annotation.Scheduled(cron = "${billing.dunning.cron:0 0 3 * * *}")
+	@org.springframework.transaction.annotation.Transactional
+	public void checkAndProcessDunningGracePeriods() {
+		LocalDate now = LocalDate.now();
+		List<Invoice> overdueInvoices = invoiceRepo.findByStatus(Invoice.Status.OVERDUE);
+		for (Invoice invoice : overdueInvoices) {
+			if (invoice.getMembership() != null) {
+				Membership membership = invoice.getMembership();
+				LocalDate createdDate = invoice.getCreatedAt().toLocalDate();
+				long daysOverdue = java.time.temporal.ChronoUnit.DAYS.between(createdDate, now);
+
+				if (daysOverdue > 5) {
+					if (membership.getStatus() != Membership.Status.SUSPENDED) {
+						membership.setStatus(Membership.Status.SUSPENDED);
+						membershipRepo.save(membership);
+
+						com.fitness.entity.Member member = membership.getMember();
+						if (member.getStatus() != com.fitness.entity.Member.Status.SUSPENDED) {
+							member.setStatus(com.fitness.entity.Member.Status.SUSPENDED);
+							memberRepo.save(member);
+						}
+
+						auditLogService.logForCurrentUser("Membership", membership.getMemId(), AuditLog.Action.UPDATE,
+								null, "Membership and Member suspended - invoice " + invoice.getInvoiceNumber() + " overdue by " + daysOverdue + " days (> 5 days limit)");
+					}
+				} else if (daysOverdue >= 1) {
+					if (membership.getStatus() != Membership.Status.DUNNING) {
+						membership.setStatus(Membership.Status.DUNNING);
+						membershipRepo.save(membership);
+
+						auditLogService.logForCurrentUser("Membership", membership.getMemId(), AuditLog.Action.UPDATE,
+								null, "Membership in DUNNING - invoice " + invoice.getInvoiceNumber() + " overdue by " + daysOverdue + " days");
+					}
+				}
+			}
+		}
+	}
 
 	/**
 	 * Handle failed payment - update invoice and membership status to PENDING

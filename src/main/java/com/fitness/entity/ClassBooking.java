@@ -46,6 +46,7 @@ public class ClassBooking {
 
 	private Integer waitlistPosition;
 	private LocalDateTime cancelledAt;
+	private LocalDateTime waitlistExpiration;
 
 	@ManyToOne
 	@JoinColumn(name = "override_by")
@@ -63,6 +64,6 @@ public class ClassBooking {
 	}
 
 	public enum BookingStatus {
-		CONFIRMED, WAITLISTED, CANCELLED, NO_SHOW
+		CONFIRMED, WAITLISTED, CANCELLED, NO_SHOW, PENDING_CONFIRMATION
 	}
 }

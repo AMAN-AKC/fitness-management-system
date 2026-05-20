@@ -68,4 +68,11 @@ public class ClassBookingController {
 	public ResponseEntity<ClassBookingDTO> markNoShow(@PathVariable Long id) {
 		return ResponseEntity.ok(bookingService.markNoShow(id));
 	}
+
+	@PostMapping("/{id}/accept-promotion")
+	@PreAuthorize("hasRole('MEMBER')")
+	@Operation(summary = "Accept a waitlist promotion within 15 mins (under 2h class window)")
+	public ResponseEntity<ClassBookingDTO> acceptWaitlistPromotion(@PathVariable Long id) {
+		return ResponseEntity.ok(bookingService.acceptWaitlistPromotion(id));
+	}
 }

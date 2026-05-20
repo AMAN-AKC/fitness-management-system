@@ -10,6 +10,13 @@ import java.time.format.DateTimeFormatter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.fitness.entity.Attendance;
+import com.fitness.dto.AttendanceDTO;
+import com.fitness.entity.ClassBooking;
+import com.fitness.dto.ClassBookingDTO;
+import com.fitness.entity.Notification;
+import com.fitness.dto.NotificationDTO;
+
 @Configuration
 public class ModelMapperConfig {
 
@@ -64,6 +71,23 @@ public class ModelMapperConfig {
 		mapper.addConverter(fromLocalTime);
 		mapper.addConverter(toStringDateTime);
 		mapper.addConverter(fromLocalDateTime);
+
+		mapper.typeMap(Attendance.class, AttendanceDTO.class).addMappings(m -> {
+			m.map(src -> src.getMember().getMemberId(), AttendanceDTO::setMemberId);
+			m.map(src -> src.getBranch().getBranchId(), AttendanceDTO::setBranchId);
+			m.map(src -> src.getFitnessClass() != null ? src.getFitnessClass().getClassId() : null, AttendanceDTO::setClassId);
+			m.map(src -> src.getOverrideBy() != null ? src.getOverrideBy().getUserId() : null, AttendanceDTO::setOverrideBy);
+		});
+
+		mapper.typeMap(ClassBooking.class, ClassBookingDTO.class).addMappings(m -> {
+			m.map(src -> src.getFitnessClass().getClassId(), ClassBookingDTO::setClassId);
+			m.map(src -> src.getMember().getMemberId(), ClassBookingDTO::setMemberId);
+			m.map(src -> src.getOverrideBy() != null ? src.getOverrideBy().getUserId() : null, ClassBookingDTO::setOverrideBy);
+		});
+
+		mapper.typeMap(Notification.class, NotificationDTO.class).addMappings(m -> {
+			m.map(src -> src.getUser().getUserId(), NotificationDTO::setUserId);
+		});
 
 		return mapper;
 	}
