@@ -53,6 +53,10 @@ public class AttendanceService {
 		Branch branch = branchRepo.findById(dto.getBranchId())
 				.orElseThrow(() -> new ResourceNotFoundException("Branch", "id", dto.getBranchId()));
 
+		if (!member.getHomeBranch().getBranchId().equals(branch.getBranchId())) {
+			throw new BusinessRuleException("Cross-branch check-ins are not permitted.");
+		}
+
 		// AC02: Verify active membership — block expired/suspended
 		List<Membership> activeMemberships = membershipRepo
 				.findByMemberMemberIdAndStatus(member.getMemberId(), Membership.Status.ACTIVE);
@@ -187,6 +191,7 @@ public class AttendanceService {
 	/**
 	 * AC08: Trainer marks attendance from class roster.
 	 */
+	@Transactional
 	public AttendanceDTO markClassAttendance(Long memberId, Long classId, Long branchId) {
 		Member member = memberRepo.findById(memberId)
 				.orElseThrow(() -> new ResourceNotFoundException("Member", "id", memberId));
@@ -194,6 +199,10 @@ public class AttendanceService {
 				.orElseThrow(() -> new ResourceNotFoundException("Branch", "id", branchId));
 		Classes cls = classesRepo.findById(classId)
 				.orElseThrow(() -> new ResourceNotFoundException("Class", "id", classId));
+
+		if (!member.getHomeBranch().getBranchId().equals(branch.getBranchId())) {
+			throw new BusinessRuleException("Cross-branch attendance marking is not permitted.");
+		}
 
 		Attendance attendance = Attendance.builder()
 				.member(member)

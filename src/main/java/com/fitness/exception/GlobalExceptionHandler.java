@@ -109,7 +109,7 @@ public class GlobalExceptionHandler {
 			BadCredentialsException ex, WebRequest request) {
 		log.warn("BadCredentials from: {}", request.getDescription(false));
 		return buildError(HttpStatus.UNAUTHORIZED, "Unauthorized",
-				"Invalid username or password.", request.getDescription(false));
+				ex.getMessage() != null ? ex.getMessage() : "Invalid username or password.", request.getDescription(false));
 	}
 
 	// ── 401 Unauthorized — account disabled ─────────────────────────────────
@@ -125,7 +125,7 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<Map<String, Object>> handleLocked(
 			LockedException ex, WebRequest request) {
 		return buildError(HttpStatus.UNAUTHORIZED, "Unauthorized",
-				"Account is locked due to too many failed attempts.",
+				ex.getMessage() != null ? ex.getMessage() : "Account is locked due to too many failed attempts.",
 				request.getDescription(false));
 	}
 

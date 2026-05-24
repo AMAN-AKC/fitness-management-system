@@ -25,5 +25,11 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 	@org.springframework.data.jpa.repository.Query("SELECT SUM(i.finalAmount) FROM Invoice i WHERE i.status = 'PAID' AND i.createdAt BETWEEN ?1 AND ?2")
 	java.math.BigDecimal sumRevenueByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
 
+	@org.springframework.data.jpa.repository.Query("SELECT SUM(i.finalAmount) FROM Invoice i WHERE i.status = 'PAID' AND i.createdAt BETWEEN ?1 AND ?2 AND i.member.homeBranch.branchId = ?3")
+	java.math.BigDecimal sumRevenueByCreatedAtBetweenAndBranchId(java.time.LocalDateTime start, java.time.LocalDateTime end, Long branchId);
+
 	List<Invoice> findByStatusIn(List<Status> statuses);
+
+	@org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i WHERE i.status IN ?1 AND i.member.homeBranch.branchId = ?2")
+	List<Invoice> findByStatusInAndBranchId(List<Status> statuses, Long branchId);
 }

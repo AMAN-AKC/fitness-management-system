@@ -48,9 +48,11 @@ public class ClassBookingService {
 			throw new BusinessRuleException("Only active members can book classes.");
 		if (cls.getStatus() != Classes.Status.ACTIVE)
 			throw new BusinessRuleException("This class is not available for booking.");
+		if (!member.getHomeBranch().getBranchId().equals(cls.getBranch().getBranchId()))
+			throw new BusinessRuleException("You can only book classes at your home branch.");
 
 		// Late Cutoff Restriction: All class registration and waitlist movements lock 15 minutes before the class begins
-		LocalDateTime classDateTime = cls.getStartDate().atTime(cls.getClassTime());
+		LocalDateTime classDateTime = getNextOccurrence(cls);
 		if (LocalDateTime.now().isAfter(classDateTime.minusMinutes(15))) {
 			throw new BusinessRuleException("Class registration is closed (locks 15 minutes before class starts).");
 		}
@@ -112,10 +114,20 @@ public class ClassBookingService {
 				bookingRepo.countByFitnessClassClassIdAndBookingStatus(
 				cls.getClassId(), ClassBooking.BookingStatus.PENDING_CONFIRMATION);
 
-		ClassBooking booking = ClassBooking.builder()
-				.fitnessClass(cls)
-				.member(member)
-				.build();
+		Optional<ClassBooking> existingOpt = bookingRepo.findByFitnessClassClassIdAndMemberMemberId(cls.getClassId(), member.getMemberId());
+		ClassBooking booking;
+		if (existingOpt.isPresent()) {
+			booking = existingOpt.get();
+			booking.setCancelledAt(null);
+			booking.setWaitlistExpiration(null);
+			booking.setOverrideBy(null);
+			booking.setOverrideReason(null);
+		} else {
+			booking = ClassBooking.builder()
+					.fitnessClass(cls)
+					.member(member)
+					.build();
+		}
 
 		if (confirmed < cls.getCapacity()) {
 			booking.setBookingStatus(ClassBooking.BookingStatus.CONFIRMED);
@@ -153,8 +165,7 @@ public class ClassBookingService {
 		ClassBooking booking = bookingRepo.findById(bookingId)
 				.orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
 
-		LocalDateTime classDateTime = booking.getFitnessClass().getStartDate()
-				.atTime(booking.getFitnessClass().getClassTime());
+		LocalDateTime classDateTime = getNextOccurrence(booking.getFitnessClass());
 		
 		if (LocalDateTime.now().isAfter(classDateTime)) {
 			throw new BusinessRuleException("Cannot cancel a class that has already started.");
@@ -243,13 +254,24 @@ public class ClassBookingService {
 		Member member = memberRepo.findById(dto.getMemberId())
 				.orElseThrow(() -> new ResourceNotFoundException("Member", "id", dto.getMemberId()));
 
-		ClassBooking booking = ClassBooking.builder()
-				.fitnessClass(cls)
-				.member(member)
-				.bookingStatus(ClassBooking.BookingStatus.CONFIRMED)
-				.overrideBy(overrideUser)
-				.overrideReason(reason)
-				.build();
+		Optional<ClassBooking> existingOpt = bookingRepo.findByFitnessClassClassIdAndMemberMemberId(cls.getClassId(), member.getMemberId());
+		ClassBooking booking;
+		if (existingOpt.isPresent()) {
+			booking = existingOpt.get();
+			booking.setCancelledAt(null);
+			booking.setWaitlistExpiration(null);
+			booking.setBookingStatus(ClassBooking.BookingStatus.CONFIRMED);
+			booking.setOverrideBy(overrideUser);
+			booking.setOverrideReason(reason);
+		} else {
+			booking = ClassBooking.builder()
+					.fitnessClass(cls)
+					.member(member)
+					.bookingStatus(ClassBooking.BookingStatus.CONFIRMED)
+					.overrideBy(overrideUser)
+					.overrideReason(reason)
+					.build();
+		}
 
 		ClassBooking saved = bookingRepo.save(booking);
 
@@ -311,6 +333,7 @@ public class ClassBookingService {
 	public List<ClassBookingDTO> getBookingsByClass(Long classId) {
 		checkAndEvictExpiredWaitlistPromotions(classId);
 		return bookingRepo.findByFitnessClassClassId(classId).stream()
+				.filter(b -> b.getMember().getHomeBranch().getBranchId().equals(b.getFitnessClass().getBranch().getBranchId()))
 				.map(b -> mapper.map(b, ClassBookingDTO.class)).collect(Collectors.toList());
 	}
 
@@ -367,7 +390,7 @@ public class ClassBookingService {
 	}
 
 	private void promoteNextWaitlist(Classes fitnessClass) {
-		LocalDateTime classDateTime = fitnessClass.getStartDate().atTime(fitnessClass.getClassTime());
+		LocalDateTime classDateTime = getNextOccurrence(fitnessClass);
 		if (LocalDateTime.now().isAfter(classDateTime.minusMinutes(15))) {
 			return; // Locked 15 mins before start
 		}
@@ -437,7 +460,7 @@ public class ClassBookingService {
 		if (b.getBookingStatus() == ClassBooking.BookingStatus.CANCELLED && b.getCancelledAt() != null) {
 			return b.getCancelledAt();
 		}
-		return b.getFitnessClass().getStartDate().atTime(b.getFitnessClass().getClassTime());
+		return getNextOccurrence(b.getFitnessClass());
 	}
 
 	private boolean weekdaysOverlap(Classes a, Classes b) {
@@ -456,5 +479,47 @@ public class ClassBookingService {
 
 	private boolean datesOverlap(Classes a, Classes b) {
 		return !a.getStartDate().isAfter(b.getEndDate()) && !a.getEndDate().isBefore(b.getStartDate());
+	}
+
+	private LocalDateTime getNextOccurrence(Classes cls) {
+		LocalDateTime now = LocalDateTime.now();
+		LocalTime time = cls.getClassTime();
+		if (cls.getWeekdays() == null || cls.getWeekdays().isBlank()) {
+			return cls.getStartDate().atTime(time);
+		}
+		
+		String[] days = cls.getWeekdays().toUpperCase().split(",");
+		LocalDateTime bestDate = null;
+		for (String dayStr : days) {
+			java.time.DayOfWeek targetDay = getDayOfWeek(dayStr.trim());
+			if (targetDay == null) continue;
+			
+			LocalDateTime candidate = now.with(java.time.temporal.TemporalAdjusters.nextOrSame(targetDay)).with(time);
+			if (candidate.isBefore(now.plusMinutes(15)) && candidate.getDayOfWeek() == now.getDayOfWeek()) {
+				candidate = candidate.plusWeeks(1);
+			} else if (candidate.isBefore(now)) {
+				candidate = candidate.plusWeeks(1);
+			}
+			
+			if (bestDate == null || candidate.isBefore(bestDate)) {
+				bestDate = candidate;
+			}
+		}
+		
+		return bestDate != null ? bestDate : cls.getStartDate().atTime(time);
+	}
+
+	private java.time.DayOfWeek getDayOfWeek(String dayStr) {
+		if (dayStr.length() < 3) return null;
+		switch (dayStr.substring(0, 3)) {
+			case "MON": return java.time.DayOfWeek.MONDAY;
+			case "TUE": return java.time.DayOfWeek.TUESDAY;
+			case "WED": return java.time.DayOfWeek.WEDNESDAY;
+			case "THU": return java.time.DayOfWeek.THURSDAY;
+			case "FRI": return java.time.DayOfWeek.FRIDAY;
+			case "SAT": return java.time.DayOfWeek.SATURDAY;
+			case "SUN": return java.time.DayOfWeek.SUNDAY;
+		}
+		return null;
 	}
 }

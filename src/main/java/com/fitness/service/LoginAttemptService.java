@@ -26,7 +26,7 @@ public class LoginAttemptService {
     public void checkIpLockout(String ip) {
         attemptRepo.findByIpAddress(ip).ifPresent(attempt -> {
             if (attempt.isLocked()) {
-                throw new RuntimeException("This IP is temporarily locked due to too many failed attempts. Try again later.");
+                throw new org.springframework.security.authentication.LockedException("This IP is temporarily locked due to too many failed attempts. Try again later.");
             }
         });
     }

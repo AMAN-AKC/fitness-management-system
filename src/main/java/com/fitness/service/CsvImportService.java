@@ -90,10 +90,9 @@ public class CsvImportService {
 			report.generateSummary();
 
 			// Audit log the import
-			auditLogService.log(
-					null,
+			auditLogService.logForCurrentUser(
 					"BulkImport",
-					null,
+					0L,
 					com.fitness.entity.AuditLog.Action.CREATE,
 					"fileName=" + file.getOriginalFilename(),
 					"importResult=" + report.getOverallStatus() + "," + report.getSuccessCount() + "/"

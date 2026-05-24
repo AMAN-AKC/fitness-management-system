@@ -25,4 +25,8 @@ public class SystemUserDTO {
 
 	private Role role;
 	private Boolean isActive;
+	private Boolean isLocked;
+	private String lastLogin;
+	private String branchName;
+	private Long branchId;
 }

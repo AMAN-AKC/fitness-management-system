@@ -11,6 +11,7 @@ import com.fitness.exception.DuplicateResourceException;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.BranchRepository;
 import com.fitness.repository.MemberRepository;
+import com.fitness.repository.PromoCodeRepository;
 import com.fitness.repository.SystemUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,7 @@ public class MemberService {
 	private final ModelMapper mapper;
 	private final PasswordEncoder passwordEncoder;
 	private final AuditLogService auditLogService;
+	private final PromoCodeRepository promoRepo;
 
 	@Transactional
 	public MemberDTO createMember(MemberDTO dto) {
@@ -52,6 +54,17 @@ public class MemberService {
 			throw new DuplicateResourceException("Member", "phone", dto.getPhone());
 		if (userRepo.existsByEmail(dto.getEmail()))
 			throw new DuplicateResourceException("User", "email", dto.getEmail());
+
+		if (dto.getReferralCode() != null && !dto.getReferralCode().isBlank()) {
+			if (!promoRepo.existsByCode(dto.getReferralCode())) {
+				throw new BusinessRuleException("Invalid Referral Code: " + dto.getReferralCode());
+			}
+		}
+		if (dto.getCorporateCode() != null && !dto.getCorporateCode().isBlank()) {
+			if (!promoRepo.existsByCode(dto.getCorporateCode())) {
+				throw new BusinessRuleException("Invalid Corporate Code: " + dto.getCorporateCode());
+			}
+		}
 
 		if (dto.getDob() == null || dto.getDob().isBlank()) {
 			throw new BusinessRuleException("Please provide a valid Date of Birth");
@@ -72,11 +85,13 @@ public class MemberService {
 		SystemUser createdBy = getCurrentUser();
 		SystemUser memberUser = SystemUser.builder()
 				.username(generateUsername(dto))
+				.fullName(dto.getMemName())
 				.email(dto.getEmail())
 				.passwordHash(passwordEncoder.encode(dto.getPhone()))
 				.role(Role.MEMBER)
 				.active(true)
 				.failedAttempts(0)
+				.branch(branch)
 				.build();
 
 		Member member = mapper.map(dto, Member.class);
@@ -96,6 +111,12 @@ public class MemberService {
 	}
 
 	public List<MemberDTO> getAllMembers() {
+		SystemUser currentUser = getCurrentUser();
+		if (currentUser != null && currentUser.getRole() != Role.ADMIN && currentUser.getBranch() != null) {
+			return memberRepo.findByHomeBranchBranchId(currentUser.getBranch().getBranchId()).stream()
+					.map(m -> mapper.map(m, MemberDTO.class))
+					.collect(Collectors.toList());
+		}
 		return memberRepo.findAll().stream()
 				.map(m -> mapper.map(m, MemberDTO.class))
 				.collect(Collectors.toList());
@@ -123,6 +144,10 @@ public class MemberService {
 			member.setDob(dob);
 		}
 		Member saved = memberRepo.save(member);
+		if (saved.getUser() != null) {
+			saved.getUser().setBranch(saved.getHomeBranch());
+			userRepo.save(saved.getUser());
+		}
 
 		// AC07: Audit log for member update
 		auditLogService.logForCurrentUser("Member", saved.getMemberId(),

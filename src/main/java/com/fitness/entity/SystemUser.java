@@ -10,6 +10,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -61,4 +63,11 @@ public class SystemUser {
 	@Column(name = "last_login")
 	private java.time.LocalDateTime lastLogin;
 
+	@ManyToOne
+	@JoinColumn(name = "branch_id")
+	private Branch branch;
+
+	public boolean getIsLocked() {
+		return lockedUntil != null && java.time.LocalDateTime.now().isBefore(lockedUntil);
+	}
 }

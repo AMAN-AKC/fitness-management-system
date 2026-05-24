@@ -22,8 +22,10 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 	List<Member> findByStatus(Status status);
 
 	long countByStatus(Status status);
+	long countByStatusAndHomeBranchBranchId(Status status, Long branchId);
 
 	long countByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+	long countByCreatedAtBetweenAndHomeBranchBranchId(java.time.LocalDateTime start, java.time.LocalDateTime end, Long branchId);
 
 	List<Member> findByHomeBranchBranchId(Long branchId);
 }

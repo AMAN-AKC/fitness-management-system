@@ -16,6 +16,10 @@ import com.fitness.entity.ClassBooking;
 import com.fitness.dto.ClassBookingDTO;
 import com.fitness.entity.Notification;
 import com.fitness.dto.NotificationDTO;
+import com.fitness.entity.SystemUser;
+import com.fitness.entity.Classes;
+import com.fitness.entity.Member;
+import com.fitness.entity.Branch;
 
 @Configuration
 public class ModelMapperConfig {
@@ -72,17 +76,43 @@ public class ModelMapperConfig {
 		mapper.addConverter(toStringDateTime);
 		mapper.addConverter(fromLocalDateTime);
 
+		Converter<SystemUser, Long> userToId = ctx -> ctx.getSource() == null ? null : ctx.getSource().getUserId();
+		Converter<Classes, Long> classToId = ctx -> ctx.getSource() == null ? null : ctx.getSource().getClassId();
+		Converter<Member, Long> memberToId = ctx -> ctx.getSource() == null ? null : ctx.getSource().getMemberId();
+		Converter<Branch, Long> branchToId = ctx -> ctx.getSource() == null ? null : ctx.getSource().getBranchId();
+		Converter<com.fitness.entity.Plan, Long> planToId = ctx -> ctx.getSource() == null ? null : ctx.getSource().getPlanId();
+
 		mapper.typeMap(Attendance.class, AttendanceDTO.class).addMappings(m -> {
-			m.map(src -> src.getMember().getMemberId(), AttendanceDTO::setMemberId);
-			m.map(src -> src.getBranch().getBranchId(), AttendanceDTO::setBranchId);
-			m.map(src -> src.getFitnessClass() != null ? src.getFitnessClass().getClassId() : null, AttendanceDTO::setClassId);
-			m.map(src -> src.getOverrideBy() != null ? src.getOverrideBy().getUserId() : null, AttendanceDTO::setOverrideBy);
+			m.using(memberToId).map(Attendance::getMember, AttendanceDTO::setMemberId);
+			m.using(branchToId).map(Attendance::getBranch, AttendanceDTO::setBranchId);
+			m.using(classToId).map(Attendance::getFitnessClass, AttendanceDTO::setClassId);
+			m.using(userToId).map(Attendance::getOverrideBy, AttendanceDTO::setOverrideBy);
 		});
 
 		mapper.typeMap(ClassBooking.class, ClassBookingDTO.class).addMappings(m -> {
-			m.map(src -> src.getFitnessClass().getClassId(), ClassBookingDTO::setClassId);
-			m.map(src -> src.getMember().getMemberId(), ClassBookingDTO::setMemberId);
-			m.map(src -> src.getOverrideBy() != null ? src.getOverrideBy().getUserId() : null, ClassBookingDTO::setOverrideBy);
+			m.using(classToId).map(ClassBooking::getFitnessClass, ClassBookingDTO::setClassId);
+			m.using(memberToId).map(ClassBooking::getMember, ClassBookingDTO::setMemberId);
+			m.using(userToId).map(ClassBooking::getOverrideBy, ClassBookingDTO::setOverrideBy);
+		});
+		
+		mapper.typeMap(com.fitness.entity.Membership.class, com.fitness.dto.MembershipDTO.class).addMappings(m -> {
+			m.using(memberToId).map(com.fitness.entity.Membership::getMember, com.fitness.dto.MembershipDTO::setMemberId);
+			m.using(planToId).map(com.fitness.entity.Membership::getPlan, com.fitness.dto.MembershipDTO::setPlanId);
+			m.using(branchToId).map(com.fitness.entity.Membership::getBranch, com.fitness.dto.MembershipDTO::setBranchId);
+		});
+
+		mapper.typeMap(Member.class, com.fitness.dto.MemberDTO.class).addMappings(m -> {
+			m.using(branchToId).map(Member::getHomeBranch, com.fitness.dto.MemberDTO::setHomeBranchId);
+		});
+
+		mapper.typeMap(SystemUser.class, com.fitness.dto.SystemUserDTO.class).addMappings(m -> {
+			m.map(SystemUser::isActive, com.fitness.dto.SystemUserDTO::setIsActive);
+			m.map(SystemUser::getIsLocked, com.fitness.dto.SystemUserDTO::setIsLocked);
+			m.using(branchToId).map(SystemUser::getBranch, com.fitness.dto.SystemUserDTO::setBranchId);
+		});
+
+		mapper.typeMap(com.fitness.dto.SystemUserDTO.class, SystemUser.class).addMappings(m -> {
+			m.map(com.fitness.dto.SystemUserDTO::getIsActive, SystemUser::setActive);
 		});
 
 		mapper.typeMap(Notification.class, NotificationDTO.class).addMappings(m -> {

@@ -20,6 +20,9 @@ public class PtSessionDTO {
 	@NotNull(message = "Please provide a valid trainer")
 	private Long trainerId;
 
+	private String memberName;
+	private String trainerName;
+
 	@NotBlank(message = "Please provide a valid scheduled time")
 	@DateNotStartingWithZero
 	private String scheduledAt;

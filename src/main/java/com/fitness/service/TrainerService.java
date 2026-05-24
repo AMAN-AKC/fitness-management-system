@@ -46,7 +46,12 @@ public class TrainerService {
 
 	public TrainerDTO updateTrainer(Long id, TrainerDTO dto) {
 		Trainer trainer = findById(id);
-		mapper.map(dto, trainer);
+		if (dto.getBio() != null) trainer.setBio(dto.getBio());
+		if (dto.getCertifications() != null) trainer.setCertifications(dto.getCertifications());
+		if (dto.getSpecialties() != null) trainer.setSpecialties(dto.getSpecialties());
+		if (dto.getAcceptingPtClients() != null) trainer.setAcceptingPtClients(dto.getAcceptingPtClients());
+		if (dto.getAvailability() != null) trainer.setAvailability(dto.getAvailability());
+		if (dto.getIsActive() != null) trainer.setIsActive(dto.getIsActive());
 		return convertToDto(trainerRepo.save(trainer));
 	}
 
@@ -65,9 +70,13 @@ public class TrainerService {
 	private TrainerDTO convertToDto(Trainer trainer) {
 		TrainerDTO dto = mapper.map(trainer, TrainerDTO.class);
 		if (trainer.getUser() != null) {
+			dto.setUserId(trainer.getUser().getUserId());
 			dto.setTrainerName(trainer.getUser().getFullName() != null && !trainer.getUser().getFullName().trim().isEmpty()
 					? trainer.getUser().getFullName()
 					: trainer.getUser().getUsername());
+		}
+		if (trainer.getBranch() != null) {
+			dto.setBranchId(trainer.getBranch().getBranchId());
 		}
 		return dto;
 	}

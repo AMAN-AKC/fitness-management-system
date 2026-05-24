@@ -36,7 +36,7 @@ public class AttendanceController {
 	 * AC09: Staff override check-in with reason.
 	 */
 	@PostMapping("/checkin/override")
-	@PreAuthorize("hasAnyRole('FRONT_DESK','MANAGER','ADMIN')")
+	@PreAuthorize("hasAnyRole('TRAINER','FRONT_DESK','MANAGER','ADMIN')")
 	@Operation(summary = "Override check-in rules (staff only, requires justification)")
 	public ResponseEntity<AttendanceDTO> overrideCheckIn(
 			@Valid @RequestBody AttendanceDTO dto,

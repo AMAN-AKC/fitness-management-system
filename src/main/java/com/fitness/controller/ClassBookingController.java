@@ -27,7 +27,7 @@ public class ClassBookingController {
 	}
 
 	@PatchMapping("/{id}/cancel")
-	@PreAuthorize("hasAnyRole('MEMBER','FRONT_DESK','ADMIN')")
+	@PreAuthorize("hasAnyRole('MEMBER','TRAINER','FRONT_DESK','MANAGER','ADMIN')")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void cancelBooking(@PathVariable Long id) {
 		bookingService.cancelBooking(id);

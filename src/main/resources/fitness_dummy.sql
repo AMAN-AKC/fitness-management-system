@@ -374,7 +374,7 @@ VALUES
 (12, 'frontdesk1', 'Pooja Sharma',
  'frontdesk1@fitness.com',
  '$2a$12$xPo16zbpRRn8QeWdZ.Bnd.N5E9WAjPrNVbGU.3uA1bKUrMEOoYLu6',
- 'FRONT_DESK',
+ 'FRONTDESK',
  1, 0,
  '2026-01-01 00:00:00',
  '2026-05-19 07:30:00',
@@ -384,7 +384,7 @@ VALUES
 (13, 'frontdesk2', 'Rahul Nair',
  'frontdesk2@fitness.com',
  '$2a$12$xPo16zbpRRn8QeWdZ.Bnd.N5E9WAjPrNVbGU.3uA1bKUrMEOoYLu6',
- 'FRONT_DESK',
+ 'FRONTDESK',
  1, 0,
  '2026-01-01 00:00:00',
  '2026-05-18 08:15:00',
@@ -1294,60 +1294,4 @@ INSERT INTO FEATURE_FLAG (flag_name, is_enabled, last_modified_by) VALUES
 ('Online Class Booking',     1, 'Admin'),
 ('Refund Workflow',          0, 'Admin'),
 ('Member Mobile App Sync',   1, 'Admin');
-
--- ----------------------------------------------------------------
--- 21. PASSWORD_POLICY  (single-row table, admin-managed)
---     Used by: member registration (front-desk), password reset (member)
---     Only ADMIN role may UPDATE this table via the API.
--- ----------------------------------------------------------------
-CREATE TABLE PASSWORD_POLICY (
-  policy_id             BIGINT       PRIMARY KEY AUTO_INCREMENT,
-
-  -- Password complexity rules
-  min_password_length   INT          NOT NULL DEFAULT 8
-                          COMMENT 'Minimum number of characters required',
-  require_uppercase     BOOLEAN      NOT NULL DEFAULT TRUE
-                          COMMENT 'At least one uppercase letter (A-Z)',
-  require_number        BOOLEAN      NOT NULL DEFAULT TRUE
-                          COMMENT 'At least one numeric digit (0-9)',
-  require_special_char  BOOLEAN      NOT NULL DEFAULT TRUE
-                          COMMENT 'At least one special character (!@#$% etc.)',
-
-  -- Session & lockout settings
-  session_timeout_min   INT          NOT NULL DEFAULT 60
-                          COMMENT 'JWT / session expiry in minutes',
-  max_failed_attempts   INT          NOT NULL DEFAULT 5
-                          COMMENT 'Failed logins before account is locked',
-  lockout_duration_min  INT          NOT NULL DEFAULT 30
-                          COMMENT 'How long the account stays locked (minutes)',
-
-  -- Audit trail
-  last_updated_by       VARCHAR(80)  NOT NULL DEFAULT 'SYSTEM'
-                          COMMENT 'Username of the admin who last changed the policy',
-  updated_at            DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
-                          ON UPDATE CURRENT_TIMESTAMP
-);
-
--- Default row — enforced until admin explicitly changes it via the UI.
--- Only one row should ever exist (policy_id = 1).
-INSERT INTO PASSWORD_POLICY (
-  policy_id,
-  min_password_length,
-  require_uppercase,
-  require_number,
-  require_special_char,
-  session_timeout_min,
-  max_failed_attempts,
-  lockout_duration_min,
-  last_updated_by
-) VALUES (
-  1,       -- fixed primary key so there is always exactly one row
-  8,       -- min 8 characters (same as original default across the app)
-  TRUE,    -- uppercase required
-  TRUE,    -- number required
-  TRUE,    -- special character required
-  60,      -- 60-minute session timeout
-  5,       -- 5 failed attempts before lockout
-  30,      -- 30-minute lockout window
-  'SYSTEM' -- set by system seed; admin changes this via the UI
-);
+ 

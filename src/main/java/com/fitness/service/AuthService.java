@@ -91,7 +91,8 @@ public class AuthService implements UserDetailsService {
 				AuditLog.Action.LOGIN, null, "login_successful");
 
 		String token = jwtConfig.generateToken(loadUserByUsername(user.getUsername()));
-		return new JwtResponse(token, user.getRole().name(), user.getUserId(), user.getUsername(), user.getFullName());
+		Long branchId = user.getBranch() != null ? user.getBranch().getBranchId() : null;
+		return new JwtResponse(token, user.getRole().name(), user.getUserId(), user.getUsername(), user.getFullName(), branchId);
 	}
 
 	@Override
@@ -113,7 +114,7 @@ public class AuthService implements UserDetailsService {
 		PasswordResetToken resetToken = PasswordResetToken.builder()
 				.token(token)
 				.user(user)
-				.expiryDate(java.time.LocalDateTime.now().plusMinutes(5)) // AC08: 5 min expiry
+				.expiryDate(java.time.LocalDateTime.now().plusMinutes(20))
 				.build();
 
 		passwordResetTokenRepo.save(resetToken);

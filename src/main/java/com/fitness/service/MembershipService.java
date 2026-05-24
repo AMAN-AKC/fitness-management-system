@@ -23,6 +23,7 @@ public class MembershipService {
 	private final BranchRepository branchRepo;
 	private final ModelMapper mapper;
 	private final ProratedPriceService proratedPriceService;
+	private final InvoiceService invoiceService;
 	private final AuditLogService auditLogService;
 
 	public MembershipDTO createMembership(MembershipDTO dto) {
@@ -39,20 +40,29 @@ public class MembershipService {
 		membership.setMember(member);
 		membership.setPlan(plan);
 		membership.setBranch(branch);
-		membership.setStatus(Membership.Status.ACTIVE);
+		membership.setStatus(Membership.Status.PENDING);
 		membership.setStartDate(LocalDate.now());
 		membership.setEndDate(LocalDate.now().plusDays(plan.getDurationDays()));
 		membership.setDuration(plan.getDurationDays());
 		membership.setPrice(plan.getPrice());
 
-		member.setStatus(Member.Status.ACTIVE);
+		member.setStatus(Member.Status.PROSPECT);
 		memberRepo.save(member);
 
 		Membership saved = membershipRepo.save(membership);
 
+		com.fitness.dto.InvoiceDTO invoiceDto = new com.fitness.dto.InvoiceDTO();
+		invoiceDto.setMemberId(member.getMemberId());
+		invoiceDto.setMembershipId(saved.getMemId());
+		invoiceDto.setMrp(plan.getPrice());
+		invoiceDto.setFinalAmount(plan.getPrice());
+		invoiceDto.setPaidAmount(java.math.BigDecimal.ZERO);
+		invoiceDto.setStatus(com.fitness.entity.Invoice.Status.ISSUED);
+		invoiceService.createInvoice(invoiceDto);
+
 		auditLogService.logForCurrentUser("Membership", saved.getMemId(), AuditLog.Action.CREATE,
 				null,
-				"Plan purchased: " + plan.getPlanName() + " for member " + member.getMemName());
+				"Plan selected (PENDING payment): " + plan.getPlanName() + " for member " + member.getMemName());
 
 		return mapper.map(saved, MembershipDTO.class);
 	}
@@ -66,7 +76,10 @@ public class MembershipService {
 		}
 		List<Membership> activeList = membershipRepo.findByMemberMemberIdAndStatus(memberId, Membership.Status.ACTIVE);
 		if (activeList.isEmpty()) {
-			throw new ResourceNotFoundException("Active membership", "memberId", memberId);
+			activeList = membershipRepo.findByMemberMemberIdAndStatus(memberId, Membership.Status.PENDING);
+		}
+		if (activeList.isEmpty()) {
+			throw new ResourceNotFoundException("Active or Pending membership", "memberId", memberId);
 		}
 		Membership currentMembership = activeList.get(0);
 		Plan newPlan = planRepo.findById(newPlanId)

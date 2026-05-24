@@ -15,6 +15,8 @@ public interface ClassBookingRepository extends JpaRepository<ClassBooking, Long
 
 	List<ClassBooking> findByFitnessClassClassIdAndBookingStatus(Long classId, BookingStatus status);
 
+	Optional<ClassBooking> findByFitnessClassClassIdAndMemberMemberId(Long classId, Long memberId);
+
 	Optional<ClassBooking> findByFitnessClassClassIdAndMemberMemberIdAndBookingStatusNot(
 			Long classId, Long memberId, BookingStatus status);
 

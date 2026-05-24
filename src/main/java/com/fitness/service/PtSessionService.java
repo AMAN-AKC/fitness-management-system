@@ -34,9 +34,25 @@ public class PtSessionService {
 		if (!ptRepo.findOverlappingForTrainer(trainer.getTrainerId(), start, end).isEmpty())
 			throw new BusinessRuleException("Trainer already has a session at this time.");
 
+		LocalDateTime startOfDay = start.toLocalDate().atStartOfDay();
+		LocalDateTime endOfDay = startOfDay.plusDays(1);
+
+		List<PtSession> memberSessions = ptRepo.findByMemberMemberId(member.getMemberId());
+		boolean hasSameDaySession = memberSessions.stream()
+				.anyMatch(s -> s.getStatus() != PtSession.Status.CANCELLED &&
+						s.getStatus() != PtSession.Status.DECLINED &&
+						s.getScheduledAt() != null &&
+						!s.getScheduledAt().isBefore(startOfDay) &&
+						s.getScheduledAt().isBefore(endOfDay));
+
+		if (hasSameDaySession) {
+			throw new BusinessRuleException("You already have a PT session scheduled for this day. Only one session per day is allowed.");
+		}
+
 		PtSession session = mapper.map(dto, PtSession.class);
 		session.setMember(member);
 		session.setTrainer(trainer);
+		session.setScheduledAt(start);
 		session.setStatus(PtSession.Status.REQUESTED);
 		
 		PtSession saved = ptRepo.save(session);
@@ -51,7 +67,7 @@ public class PtSessionService {
 		} catch (Exception ignored) {
 		}
 
-		return mapper.map(saved, PtSessionDTO.class);
+		return convertToDto(saved);
 	}
 
 	public PtSessionDTO updateStatus(Long id, PtSession.Status status, String notes) {
@@ -91,7 +107,7 @@ public class PtSessionService {
 		} catch (Exception ignored) {
 		}
 
-		return mapper.map(saved, PtSessionDTO.class);
+		return convertToDto(saved);
 	}
 
 	public PtSessionDTO rescheduleSession(Long id, String newScheduledAt) {
@@ -127,7 +143,7 @@ public class PtSessionService {
 		} catch (Exception ignored) {
 		}
 
-		return mapper.map(saved, PtSessionDTO.class);
+		return convertToDto(saved);
 	}
 
 	public PtSessionDTO cancelSession(Long id) {
@@ -163,16 +179,36 @@ public class PtSessionService {
 		} catch (Exception ignored) {
 		}
 
-		return mapper.map(saved, PtSessionDTO.class);
+		return convertToDto(saved);
 	}
 
 	public List<PtSessionDTO> getSessionsByMember(Long memberId) {
-		return ptRepo.findByMemberMemberId(memberId).stream().map(s -> mapper.map(s, PtSessionDTO.class))
+		return ptRepo.findByMemberMemberId(memberId).stream().map(this::convertToDto)
 				.collect(Collectors.toList());
 	}
 
 	public List<PtSessionDTO> getSessionsByTrainer(Long trainerId) {
-		return ptRepo.findByTrainerTrainerId(trainerId).stream().map(s -> mapper.map(s, PtSessionDTO.class))
+		return ptRepo.findByTrainerTrainerId(trainerId).stream().map(this::convertToDto)
 				.collect(Collectors.toList());
+	}
+
+	private PtSessionDTO convertToDto(PtSession session) {
+		PtSessionDTO dto = mapper.map(session, PtSessionDTO.class);
+		if (session.getMember() != null) {
+			dto.setMemberId(session.getMember().getMemberId());
+			dto.setMemberName(session.getMember().getMemName());
+		}
+		if (session.getTrainer() != null) {
+			dto.setTrainerId(session.getTrainer().getTrainerId());
+			if (session.getTrainer().getUser() != null) {
+				dto.setTrainerName(session.getTrainer().getUser().getFullName() != null && !session.getTrainer().getUser().getFullName().trim().isEmpty()
+						? session.getTrainer().getUser().getFullName()
+						: session.getTrainer().getUser().getUsername());
+			}
+		}
+		if (session.getScheduledAt() != null) {
+			dto.setScheduledAt(session.getScheduledAt().toString());
+		}
+		return dto;
 	}
 }

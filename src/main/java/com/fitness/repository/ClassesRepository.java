@@ -12,6 +12,7 @@ import java.util.List;
 @Repository
 public interface ClassesRepository extends JpaRepository<Classes, Long> {
 	List<Classes> findByBranchBranchId(Long branchId);
+	long countByBranchBranchId(Long branchId);
 
 	List<Classes> findByTrainerTrainerId(Long trainerId);
 

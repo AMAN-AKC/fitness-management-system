@@ -54,4 +54,18 @@ public class SystemUserController {
 	public void deactivateUser(@PathVariable Long id) {
 		userService.deactivateUser(id);
 	}
+
+	@PostMapping("/{id}/lock")
+	@PreAuthorize("hasRole('ADMIN')")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void lockUser(@PathVariable Long id) {
+		userService.lockUser(id);
+	}
+
+	@PostMapping("/{id}/unlock")
+	@PreAuthorize("hasRole('ADMIN')")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void unlockUser(@PathVariable Long id) {
+		userService.unlockUser(id);
+	}
 }

@@ -44,8 +44,8 @@ public class ReceiptService {
 				.member(invoice.getMember())
 				.payment(payment)
 				.amount(payment.getAmountPaid())
-				.taxAmount(invoice.getTaxes() != null ? invoice.getTaxes().multiply(
-						payment.getAmountPaid().divide(invoice.getFinalAmount())) : java.math.BigDecimal.ZERO)
+				.taxAmount(invoice.getTaxes() != null && invoice.getFinalAmount().compareTo(java.math.BigDecimal.ZERO) > 0 ? 
+						invoice.getTaxes().multiply(payment.getAmountPaid()).divide(invoice.getFinalAmount(), 2, java.math.RoundingMode.HALF_UP) : java.math.BigDecimal.ZERO)
 				.totalAmount(payment.getAmountPaid())
 				.status(Receipt.Status.ISSUED)
 				.build();

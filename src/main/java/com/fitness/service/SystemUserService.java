@@ -17,19 +17,35 @@ import java.util.stream.Collectors;
 public class SystemUserService {
 
 	private final SystemUserRepository userRepo;
+	private final com.fitness.repository.BranchRepository branchRepo;
 	private final ModelMapper mapper;
 	private final PasswordEncoder passwordEncoder;
 	private final PasswordValidationService passwordValidator;
+	private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
 	public SystemUserDTO createUser(SystemUserDTO dto, String rawPassword) {
 		// Validate password complexity
 		passwordValidator.validatePassword(rawPassword);
+
+		if (dto.getFullName() == null || dto.getFullName().isBlank()) {
+			dto.setFullName(dto.getUsername());
+		}
+		if (dto.getEmail() != null && dto.getEmail().contains("@")) {
+			String autoUsername = dto.getEmail().substring(0, dto.getEmail().indexOf('@')).replaceAll("\\s+", "");
+			dto.setUsername(autoUsername);
+		}
 
 		if (userRepo.existsByUsername(dto.getUsername()))
 			throw new DuplicateResourceException("User", "username", dto.getUsername());
 		if (userRepo.existsByEmail(dto.getEmail()))
 			throw new DuplicateResourceException("User", "email", dto.getEmail());
 		SystemUser user = mapper.map(dto, SystemUser.class);
+
+		if (dto.getBranchName() != null && !dto.getBranchName().isBlank()) {
+			branchRepo.findByBranchNameIgnoreCase(dto.getBranchName())
+					.ifPresent(user::setBranch);
+		}
+
 		user.setPasswordHash(passwordEncoder.encode(rawPassword));
 		user.setActive(true);
 		user.setFailedAttempts(0);
@@ -38,7 +54,27 @@ public class SystemUserService {
 
 	public List<SystemUserDTO> getAllUsers() {
 		return userRepo.findAll().stream()
-				.map(u -> mapper.map(u, SystemUserDTO.class))
+				.map(u -> {
+					SystemUserDTO dto = mapper.map(u, SystemUserDTO.class);
+					if (u.getBranch() != null) {
+						dto.setBranchName(u.getBranch().getBranchName());
+					} else if (u.getRole() == com.fitness.enums.Role.MEMBER) {
+						try {
+							String bName = jdbcTemplate.queryForObject("SELECT b.branch_name FROM branch b JOIN member m ON b.branch_id = m.home_branch_id WHERE m.user_id = ?", String.class, u.getUserId());
+							dto.setBranchName(bName);
+						} catch (Exception e) {}
+					} else if (u.getRole() == com.fitness.enums.Role.TRAINER) {
+						try {
+							String bName = jdbcTemplate.queryForObject("SELECT b.branch_name FROM branch b JOIN trainer t ON b.branch_id = t.branch_id WHERE t.user_id = ?", String.class, u.getUserId());
+							dto.setBranchName(bName);
+						} catch (Exception e) {}
+					} else if (u.getRole() == com.fitness.enums.Role.ADMIN) {
+						dto.setBranchName("System HQ");
+					} else {
+						dto.setBranchName("Unassigned");
+					}
+					return dto;
+				})
 				.collect(Collectors.toList());
 	}
 
@@ -48,13 +84,50 @@ public class SystemUserService {
 
 	public SystemUserDTO updateUser(Long id, SystemUserDTO dto) {
 		SystemUser user = findById(id);
+
+		if (dto.getFullName() == null || dto.getFullName().isBlank()) {
+			dto.setFullName(dto.getUsername());
+		}
+		if (dto.getEmail() != null && dto.getEmail().contains("@")) {
+			String autoUsername = dto.getEmail().substring(0, dto.getEmail().indexOf('@')).replaceAll("\\s+", "");
+			dto.setUsername(autoUsername);
+		}
+
+		if (!user.getUsername().equals(dto.getUsername()) && userRepo.existsByUsername(dto.getUsername())) {
+			throw new DuplicateResourceException("User", "username", dto.getUsername());
+		}
+		if (!user.getEmail().equals(dto.getEmail()) && userRepo.existsByEmail(dto.getEmail())) {
+			throw new DuplicateResourceException("User", "email", dto.getEmail());
+		}
+
 		mapper.map(dto, user);
+
+		if (dto.getBranchName() != null && !dto.getBranchName().isBlank()) {
+			branchRepo.findByBranchNameIgnoreCase(dto.getBranchName())
+					.ifPresent(user::setBranch);
+		} else {
+			user.setBranch(null);
+		}
+
 		return mapper.map(userRepo.save(user), SystemUserDTO.class);
 	}
 
 	public void deactivateUser(Long id) {
 		SystemUser user = findById(id);
 		user.setActive(false);
+		userRepo.save(user);
+	}
+
+	public void lockUser(Long id) {
+		SystemUser user = findById(id);
+		user.setLockedUntil(java.time.LocalDateTime.now().plusYears(100)); // manual lock essentially forever
+		userRepo.save(user);
+	}
+
+	public void unlockUser(Long id) {
+		SystemUser user = findById(id);
+		user.setLockedUntil(null);
+		user.setFailedAttempts(0);
 		userRepo.save(user);
 	}
 
