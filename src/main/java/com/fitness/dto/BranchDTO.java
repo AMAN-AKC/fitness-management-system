@@ -28,4 +28,5 @@ public class BranchDTO {
 	private String timezone;
 
 	private Boolean isActive;
+	private Integer activeMembersCount;
 }

@@ -52,6 +52,8 @@ public class PaymentService {
 			invoice.setOutstanding(invoice.getFinalAmount().subtract(invoice.getPaidAmount()));
 			if (invoice.getOutstanding().compareTo(java.math.BigDecimal.ZERO) <= 0) {
 				invoice.setStatus(Invoice.Status.PAID);
+			} else {
+				invoice.setStatus(Invoice.Status.UNPAID);
 			}
 		} else {
 			invoice.setStatus(Invoice.Status.OVERDUE);

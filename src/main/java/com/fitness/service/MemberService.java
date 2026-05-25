@@ -44,6 +44,7 @@ public class MemberService {
 	private final PasswordEncoder passwordEncoder;
 	private final AuditLogService auditLogService;
 	private final PromoCodeRepository promoRepo;
+	private final EmailService emailService;
 
 	@Transactional
 	public MemberDTO createMember(MemberDTO dto) {
@@ -106,6 +107,18 @@ public class MemberService {
 		auditLogService.logForCurrentUser("Member", saved.getMemberId(),
 				AuditLog.Action.CREATE, null,
 				"{\"mem_name\":\"" + saved.getMemName() + "\",\"status\":\"PROSPECT\"}");
+
+		// Send registration welcome email
+		emailService.sendRegistrationWelcomeEmail(
+			saved.getEmail(),
+			saved.getMemName(),
+			memberUser.getUsername(),
+			dto.getPhone() // initial temp password
+		);
+		
+		// Send verification token email (assuming a 6 digit code for now)
+		String verificationToken = String.format("%06d", new java.util.Random().nextInt(999999));
+		emailService.sendVerificationEmail(saved.getEmail(), verificationToken);
 
 		return mapper.map(saved, MemberDTO.class);
 	}

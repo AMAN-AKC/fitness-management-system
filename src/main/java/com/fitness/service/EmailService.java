@@ -118,6 +118,29 @@ public class EmailService {
 		return sendTextEmail(email, subject, body);
 	}
 
+	public boolean sendRegistrationWelcomeEmail(String email, String name, String username, String tempPassword) {
+		String subject = "Welcome to Fitness Management System";
+		String body = "Dear " + name + ",\n\n"
+				+ "Your account has been created successfully.\n\n"
+				+ "Username: " + username + "\n"
+				+ "Temporary Password: " + tempPassword + "\n\n"
+				+ "Please log in and change your password immediately.\n\n"
+				+ "Best regards,\n"
+				+ "Fitness Management Team";
+		return sendTextEmail(email, subject, body);
+	}
+
+	public boolean sendVerificationEmail(String email, String verificationToken) {
+		String subject = "Account Verification Required";
+		String body = "Thank you for registering.\n\n"
+				+ "Please verify your email address using the following token:\n\n"
+				+ verificationToken + "\n\n"
+				+ "This code will expire in 24 hours.\n\n"
+				+ "Best regards,\n"
+				+ "Fitness Management Team";
+		return sendTextEmail(email, subject, body);
+	}
+
 	private boolean sendTextEmail(String toEmail, String subject, String body) {
 		// Even if email is disabled, we simulate success by logging to console
 		if (emailEnabled) {

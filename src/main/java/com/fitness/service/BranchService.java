@@ -5,6 +5,8 @@ import com.fitness.entity.Branch;
 import com.fitness.exception.DuplicateResourceException;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.BranchRepository;
+import com.fitness.repository.MemberRepository;
+import com.fitness.entity.Member;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -16,36 +18,48 @@ import java.util.stream.Collectors;
 public class BranchService {
 
 	private final BranchRepository branchRepo;
+	private final MemberRepository memberRepo;
 	private final ModelMapper mapper;
+
+	private BranchDTO mapToDTO(Branch branch) {
+		BranchDTO dto = mapper.map(branch, BranchDTO.class);
+		if (branch.getBranchId() != null) {
+			long activeCount = memberRepo.countByStatusAndHomeBranchBranchId(Member.Status.ACTIVE, branch.getBranchId());
+			dto.setActiveMembersCount((int) activeCount);
+		} else {
+			dto.setActiveMembersCount(0);
+		}
+		return dto;
+	}
 
 	public BranchDTO createBranch(BranchDTO dto) {
 		if (branchRepo.existsByBranchName(dto.getBranchName()))
 			throw new DuplicateResourceException("Branch", "name", dto.getBranchName());
 		Branch branch = mapper.map(dto, Branch.class);
 		branch.setIsActive(true);
-		return mapper.map(branchRepo.save(branch), BranchDTO.class);
+		return mapToDTO(branchRepo.save(branch));
 	}
 
 	public List<BranchDTO> getAllBranches() {
 		return branchRepo.findAll().stream()
-				.map(b -> mapper.map(b, BranchDTO.class))
+				.map(this::mapToDTO)
 				.collect(Collectors.toList());
 	}
 
 	public List<BranchDTO> getActiveBranches() {
 		return branchRepo.findByIsActiveTrue().stream()
-				.map(b -> mapper.map(b, BranchDTO.class))
+				.map(this::mapToDTO)
 				.collect(Collectors.toList());
 	}
 
 	public BranchDTO getBranchById(Long id) {
-		return mapper.map(findById(id), BranchDTO.class);
+		return mapToDTO(findById(id));
 	}
 
 	public BranchDTO updateBranch(Long id, BranchDTO dto) {
 		Branch branch = findById(id);
 		mapper.map(dto, branch);
-		return mapper.map(branchRepo.save(branch), BranchDTO.class);
+		return mapToDTO(branchRepo.save(branch));
 	}
 
 	public void deactivateBranch(Long id) {
