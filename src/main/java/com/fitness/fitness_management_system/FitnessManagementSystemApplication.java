@@ -8,6 +8,9 @@ import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.cache.CacheManager;
 
 @SpringBootApplication(scanBasePackages = "com.fitness")
 @EnableCaching
@@ -21,4 +24,8 @@ public class FitnessManagementSystemApplication {
 		SpringApplication.run(FitnessManagementSystemApplication.class, args);
 	}
 
+	@Bean
+	public CacheManager cacheManager() {
+		return new ConcurrentMapCacheManager("managerDashboard");
+	}
 }
