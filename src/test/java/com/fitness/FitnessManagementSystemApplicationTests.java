@@ -1,4 +1,4 @@
-package com.fitness.fitness_management_system;
+package com.fitness;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

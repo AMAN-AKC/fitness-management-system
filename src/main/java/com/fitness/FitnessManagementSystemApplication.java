@@ -1,10 +1,10 @@
-package com.fitness.fitness_management_system;
+package com.fitness;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.boot.persistence.autoconfigure.EntityScan;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import org.springframework.cache.annotation.EnableCaching;
@@ -14,8 +14,6 @@ import org.springframework.cache.CacheManager;
 
 @SpringBootApplication(scanBasePackages = "com.fitness")
 @EnableCaching
-@EnableJpaRepositories(basePackages = "com.fitness.repository")
-@EntityScan(basePackages = "com.fitness.entity")
 @EnableAspectJAutoProxy
 @EnableScheduling
 public class FitnessManagementSystemApplication {
