@@ -42,6 +42,9 @@ public class Plan {
 	@Column(length = 50)
 	private String prorationRule;
 
+	@Column(length = 255)
+	private String facilitiesIncluded;
+
 	@Column(precision = 5, scale = 2)
 	@Builder.Default
 	private BigDecimal taxPercent = BigDecimal.ZERO;

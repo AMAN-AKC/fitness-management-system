@@ -34,6 +34,7 @@ public class PlanDTO {
 
 	private Plan.EligibilityType eligibilityType;
 	private String prorationRule;
+	private String facilitiesIncluded;
 
 	@DecimalMin(value = "0.0", message = "Please provide a valid tax percent")
 	private BigDecimal taxPercent;

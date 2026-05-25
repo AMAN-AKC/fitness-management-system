@@ -26,6 +26,7 @@ public class ClassBookingService {
 	private final SystemUserRepository userRepo;
 	private final AuditLogService auditLogService;
 	private final NotificationService notificationService;
+	private final EmailService emailService;
 	private final ModelMapper mapper;
 
 	private static final int CANCEL_CUTOFF_HOURS = 2;
@@ -145,7 +146,7 @@ public class ClassBookingService {
 				null, "Booking created: class=" + cls.getClassName() + " member=" + member.getMemName()
 						+ " status=" + saved.getBookingStatus());
 
-		// AC06: Send booking confirmation notification
+		// AC06: Send booking confirmation notification and email
 		try {
 			Long userId = member.getUser().getUserId();
 			String statusMsg = saved.getBookingStatus() == ClassBooking.BookingStatus.CONFIRMED
@@ -155,6 +156,7 @@ public class ClassBookingService {
 					Notification.Channel.IN_APP,
 					"Booking: " + cls.getClassName(),
 					statusMsg + " Class: " + cls.getClassName() + " at " + cls.getClassTime());
+			emailService.sendBookingConfirmationEmail(member, cls, saved.getBookingStatus().name());
 		} catch (Exception ignored) {
 		}
 
@@ -182,7 +184,7 @@ public class ClassBookingService {
 		auditLogService.logForCurrentUser("ClassBooking", bookingId, AuditLog.Action.UPDATE,
 				"status=CONFIRMED", "status=CANCELLED" + (isLateCancel ? " (LATE_CANCEL)" : ""));
 
-		// Send cancellation notification
+		// Send cancellation notification and email
 		try {
 			Long userId = booking.getMember().getUser().getUserId();
 			notificationService.sendNotification(userId, Notification.NotifType.CANCELLATION,
@@ -190,6 +192,7 @@ public class ClassBookingService {
 					isLateCancel ? "Late Cancellation Infraction" : "Booking Cancelled",
 					isLateCancel ? "You cancelled '" + booking.getFitnessClass().getClassName() + "' less than 2 hours before the start. This counts as an infraction."
 								 : "Your booking for '" + booking.getFitnessClass().getClassName() + "' has been cancelled.");
+			emailService.sendBookingCancellationEmail(booking.getMember(), booking.getFitnessClass(), isLateCancel);
 		} catch (Exception ignored) {
 		}
 

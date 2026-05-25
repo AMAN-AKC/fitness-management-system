@@ -23,6 +23,11 @@ public class ProratedPriceService {
 			return BigDecimal.ZERO; // Membership expired
 		}
 
+		String rule = membership.getPlan().getProrationRule();
+		if ("NONE".equalsIgnoreCase(rule)) {
+			return BigDecimal.ZERO;
+		}
+
 		long totalDays = membership.getDuration();
 		long remainingDays = ChronoUnit.DAYS.between(today, endDate);
 

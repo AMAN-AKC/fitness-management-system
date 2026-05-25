@@ -1,5 +1,6 @@
 package com.fitness.service;
 
+import com.fitness.entity.Classes;
 import com.fitness.entity.Member;
 import com.fitness.entity.Receipt;
 import com.fitness.dto.ReceiptDTO;
@@ -118,13 +119,17 @@ public class EmailService {
 		return sendTextEmail(email, subject, body);
 	}
 
-	public boolean sendRegistrationWelcomeEmail(String email, String name, String username, String tempPassword) {
-		String subject = "Welcome to Fitness Management System";
+	public boolean sendRegistrationWelcomeEmail(String email, String name, String username, String tempPassword, String promoCode) {
+		String subject = "Welcome to Fitness Management System!";
 		String body = "Dear " + name + ",\n\n"
-				+ "Your account has been created successfully.\n\n"
+				+ "Welcome to the Fitness Management System! Your front-desk registration is complete.\n\n"
+				+ "To fully activate your membership and start booking classes, please log in and complete your plan payment.\n\n"
+				+ "As a special welcome gift, use promo code: " + (promoCode != null ? promoCode : "WELCOME10") + " at checkout to receive a discount on your first plan purchase!\n\n"
+				+ "Your temporary login details are:\n"
 				+ "Username: " + username + "\n"
 				+ "Temporary Password: " + tempPassword + "\n\n"
 				+ "Please log in and change your password immediately.\n\n"
+				+ "We can't wait to see you at the gym!\n\n"
 				+ "Best regards,\n"
 				+ "Fitness Management Team";
 		return sendTextEmail(email, subject, body);
@@ -139,6 +144,27 @@ public class EmailService {
 				+ "Best regards,\n"
 				+ "Fitness Management Team";
 		return sendTextEmail(email, subject, body);
+	}
+
+	public boolean sendBookingConfirmationEmail(Member member, Classes cls, String status) {
+		String subject = "Class Booking: " + cls.getClassName();
+		String body = "Dear " + member.getMemName() + ",\n\n"
+				+ "Your booking status for the class '" + cls.getClassName() + "' on " 
+				+ cls.getStartDate() + " at " + cls.getClassTime() + " is now: " + status + ".\n\n"
+				+ "Thank you,\n"
+				+ "Fitness Management Team";
+		return sendTextEmail(member.getEmail(), subject, body);
+	}
+
+	public boolean sendBookingCancellationEmail(Member member, Classes cls, boolean isLateCancel) {
+		String subject = "Class Cancellation: " + cls.getClassName();
+		String body = "Dear " + member.getMemName() + ",\n\n"
+				+ "Your booking for the class '" + cls.getClassName() + "' on " 
+				+ cls.getStartDate() + " at " + cls.getClassTime() + " has been cancelled.\n"
+				+ (isLateCancel ? "Note: This was a late cancellation and counts as an infraction.\n\n" : "\n")
+				+ "Thank you,\n"
+				+ "Fitness Management Team";
+		return sendTextEmail(member.getEmail(), subject, body);
 	}
 
 	private boolean sendTextEmail(String toEmail, String subject, String body) {

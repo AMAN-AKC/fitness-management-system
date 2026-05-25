@@ -108,12 +108,27 @@ public class MemberService {
 				AuditLog.Action.CREATE, null,
 				"{\"mem_name\":\"" + saved.getMemName() + "\",\"status\":\"PROSPECT\"}");
 
+		// Generate a dynamic welcome promo code
+		String newPromoCode = "WELCOME" + String.format("%04d", new java.util.Random().nextInt(10000));
+		com.fitness.entity.PromoCode welcomePromo = com.fitness.entity.PromoCode.builder()
+				.code(newPromoCode)
+				.discountType(com.fitness.entity.PromoCode.DiscountType.PERCENT)
+				.discountValue(new java.math.BigDecimal("15.00")) // 15% off
+				.expiryDate(java.time.LocalDate.now().plusDays(7)) // Expires in 7 days
+				.usageLimit(1)
+				.perMemberLimit(1)
+				.eligibility(com.fitness.entity.PromoCode.Eligibility.NEW)
+				.isActive(true)
+				.build();
+		promoRepo.save(welcomePromo);
+
 		// Send registration welcome email
 		emailService.sendRegistrationWelcomeEmail(
 			saved.getEmail(),
 			saved.getMemName(),
 			memberUser.getUsername(),
-			dto.getPhone() // initial temp password
+			dto.getPhone(), // initial temp password
+			newPromoCode
 		);
 		
 		// Send verification token email (assuming a 6 digit code for now)
