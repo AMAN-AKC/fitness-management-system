@@ -7,7 +7,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import org.springframework.cache.annotation.EnableCaching;
+
 @SpringBootApplication(scanBasePackages = "com.fitness")
+@EnableCaching
 @EnableJpaRepositories(basePackages = "com.fitness.repository")
 @EntityScan(basePackages = "com.fitness.entity")
 @EnableAspectJAutoProxy

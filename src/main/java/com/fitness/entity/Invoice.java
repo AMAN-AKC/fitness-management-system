@@ -75,6 +75,9 @@ public class Invoice {
 	@Builder.Default
 	private Status status = Status.DRAFT;
 
+	@Column
+	private java.time.LocalDate promiseToPayDate;
+
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 

@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +40,23 @@ public class ClassesController {
 	@GetMapping("/branch/{branchId}")
 	public ResponseEntity<List<ClassesDTO>> getClassesByBranch(@PathVariable Long branchId) {
 		return ResponseEntity.ok(classesService.getClassesByBranch(branchId));
+	}
+
+	@GetMapping("/calendar/{branchId}")
+	@Operation(summary = "Get calendar view for classes (filtered by date)")
+	public ResponseEntity<List<ClassesDTO>> getCalendarClasses(
+			@PathVariable Long branchId,
+			@RequestParam String start,
+			@RequestParam String end) {
+		return ResponseEntity.ok(classesService.getCalendarClasses(branchId, LocalDate.parse(start), LocalDate.parse(end)));
+	}
+
+	@GetMapping("/eligible/{branchId}")
+	@Operation(summary = "Get classes visible and eligible for a specific member")
+	public ResponseEntity<List<ClassesDTO>> getEligibleClasses(
+			@PathVariable Long branchId,
+			@RequestParam Long memberId) {
+		return ResponseEntity.ok(classesService.getEligibleClassesForMember(memberId, branchId));
 	}
 
 	@GetMapping("/trainer/{trainerId}")

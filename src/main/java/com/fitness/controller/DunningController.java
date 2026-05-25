@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -74,5 +75,48 @@ public class DunningController {
 		return ResponseEntity.ok(Map.of(
 				"status", "success",
 				"message", "Membership suspended due to dunning"));
+	}
+
+	@PostMapping("/follow-up/{invoiceId}")
+	@PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+	@Operation(summary = "Record a manual follow-up attempt (AC04)")
+	public ResponseEntity<Map<String, Object>> recordFollowUp(
+			@PathVariable Long invoiceId,
+			@RequestParam String notes) {
+		dunningService.recordFollowUp(invoiceId, notes);
+		return ResponseEntity.ok(Map.of(
+				"status", "success",
+				"message", "Follow-up recorded successfully"));
+	}
+
+	@PostMapping("/promise-to-pay/{invoiceId}")
+	@PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+	@Operation(summary = "Set a promise-to-pay date (AC05)")
+	public ResponseEntity<Map<String, Object>> setPromiseToPay(
+			@PathVariable Long invoiceId,
+			@RequestParam String promiseDate) {
+		dunningService.setPromiseToPay(invoiceId, LocalDate.parse(promiseDate));
+		return ResponseEntity.ok(Map.of(
+				"status", "success",
+				"message", "Promise to pay date recorded"));
+	}
+
+	@GetMapping(value = "/export-csv", produces = "text/csv")
+	@PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+	@Operation(summary = "Export dunning list as CSV (AC09)")
+	public ResponseEntity<byte[]> exportDunningListCsv() {
+		List<Membership> memberships = dunningService.getDunningMemberships();
+		StringBuilder csv = new StringBuilder("Membership ID,Member Name,Member Email,Member Phone,Plan,Status\n");
+		for (Membership m : memberships) {
+			csv.append(m.getMemId()).append(",")
+			   .append(m.getMember().getMemName()).append(",")
+			   .append(m.getMember().getEmail()).append(",")
+			   .append(m.getMember().getPhone()).append(",")
+			   .append(m.getPlan() != null ? m.getPlan().getPlanName() : "").append(",")
+			   .append(m.getStatus()).append("\n");
+		}
+		return ResponseEntity.ok()
+				.header("Content-Disposition", "attachment; filename=dunning_list.csv")
+				.body(csv.toString().getBytes());
 	}
 }

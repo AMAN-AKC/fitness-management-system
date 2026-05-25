@@ -10,7 +10,7 @@ public class ManagerDashboardDto {
     private long newJoinsThisMonth;
     private double newJoinsTrend; // Percentage vs last month
     private long churnThisMonth;
-    private long churnTrend;
+    private double churnTrend;
     private double monthlyRevenue;
     private long classesThisWeek;
     private double avgClassOccupancy;

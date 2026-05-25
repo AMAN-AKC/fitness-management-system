@@ -22,6 +22,9 @@ public class DunningService {
 	private final MemberRepository memberRepo;
 	private final AuditLogService auditLogService;
 
+	@org.springframework.beans.factory.annotation.Value("${billing.dunning.grace-period-days:5}")
+	private int gracePeriodDays;
+
 	@org.springframework.scheduling.annotation.Scheduled(cron = "${billing.dunning.cron:0 0 3 * * *}")
 	@org.springframework.transaction.annotation.Transactional
 	public void checkAndProcessDunningGracePeriods() {
@@ -33,7 +36,7 @@ public class DunningService {
 				LocalDate createdDate = invoice.getCreatedAt().toLocalDate();
 				long daysOverdue = java.time.temporal.ChronoUnit.DAYS.between(createdDate, now);
 
-				if (daysOverdue > 5) {
+				if (daysOverdue > gracePeriodDays) {
 					if (membership.getStatus() != Membership.Status.SUSPENDED) {
 						membership.setStatus(Membership.Status.SUSPENDED);
 						membershipRepo.save(membership);
@@ -45,7 +48,7 @@ public class DunningService {
 						}
 
 						auditLogService.logForCurrentUser("Membership", membership.getMemId(), AuditLog.Action.UPDATE,
-								null, "Membership and Member suspended - invoice " + invoice.getInvoiceNumber() + " overdue by " + daysOverdue + " days (> 5 days limit)");
+								null, "Membership and Member suspended - invoice " + invoice.getInvoiceNumber() + " overdue by " + daysOverdue + " days (> " + gracePeriodDays + " days limit)");
 					}
 				} else if (daysOverdue >= 1) {
 					if (membership.getStatus() != Membership.Status.DUNNING) {
@@ -163,5 +166,21 @@ public class DunningService {
 			auditLogService.logForCurrentUser("Membership", membershipId, AuditLog.Action.UPDATE,
 					null, "Status changed to SUSPENDED - " + reason);
 		}
+	}
+
+	public void recordFollowUp(Long invoiceId, String notes) {
+		Invoice invoice = invoiceRepo.findById(invoiceId)
+				.orElseThrow(() -> new ResourceNotFoundException("Invoice", "id", invoiceId));
+		auditLogService.logForCurrentUser("Invoice", invoiceId, AuditLog.Action.UPDATE,
+				null, "Manual Follow-up: " + notes);
+	}
+
+	public void setPromiseToPay(Long invoiceId, LocalDate promiseDate) {
+		Invoice invoice = invoiceRepo.findById(invoiceId)
+				.orElseThrow(() -> new ResourceNotFoundException("Invoice", "id", invoiceId));
+		invoice.setPromiseToPayDate(promiseDate);
+		invoiceRepo.save(invoice);
+		auditLogService.logForCurrentUser("Invoice", invoiceId, AuditLog.Action.UPDATE,
+				null, "Promise to pay recorded for: " + promiseDate);
 	}
 }

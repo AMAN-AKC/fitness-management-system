@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import org.springframework.cache.annotation.Cacheable;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +23,7 @@ public class ManagerService {
     private final MemberRepository memberRepository;
     private final InvoiceRepository invoiceRepository;
     private final ClassesRepository classesRepository;
+    private final ClassBookingRepository bookingRepository;
     private final SystemUserRepository userRepo;
 
     private com.fitness.entity.SystemUser getCurrentUser() {
@@ -29,7 +31,8 @@ public class ManagerService {
         return userRepo.findByUsername(username).orElse(null);
     }
 
-    public ManagerDashboardDto getDashboardStats() {
+    @Cacheable(value = "managerDashboard", key = "#branchIdOverride == null ? 'all' : #branchIdOverride")
+    public ManagerDashboardDto getDashboardStats(Long branchIdOverride) {
         log.info("Generating manager dashboard stats...");
         ManagerDashboardDto dto = new ManagerDashboardDto();
         LocalDateTime now = LocalDateTime.now();
@@ -38,8 +41,10 @@ public class ManagerService {
         LocalDateTime startOfLastMonth = startOfMonth.minusMonths(1);
 
         com.fitness.entity.SystemUser currentUser = getCurrentUser();
-        Long branchId = (currentUser != null && currentUser.getRole() != com.fitness.enums.Role.ADMIN && currentUser.getBranch() != null) 
-                        ? currentUser.getBranch().getBranchId() : null;
+        Long branchId = branchIdOverride;
+        if (branchId == null && currentUser != null && currentUser.getRole() != com.fitness.enums.Role.ADMIN && currentUser.getBranch() != null) {
+            branchId = currentUser.getBranch().getBranchId();
+        }
 
         // 1. KPIs
         long activeCount = (branchId != null) 
@@ -69,7 +74,24 @@ public class ManagerService {
             ? classesRepository.countByBranchBranchId(branchId)
             : classesRepository.count();
         dto.setClassesThisWeek(classCount);
-        dto.setAvgClassOccupancy(0.0); // Reset dummy occupancy
+
+        long churnThisMonth = (branchId != null)
+            ? memberRepository.countByStatusAndHomeBranchBranchId(Member.Status.DEACTIVATED, branchId)
+            : memberRepository.countByStatus(Member.Status.DEACTIVATED);
+        dto.setChurnThisMonth(churnThisMonth);
+        dto.setChurnTrend(calculateTrend(churnThisMonth, 0)); // Stub last month
+
+        List<com.fitness.entity.Classes> classesList = (branchId != null)
+            ? classesRepository.findByBranchBranchId(branchId)
+            : classesRepository.findAll();
+
+        double totalOccupancy = 0;
+        for (com.fitness.entity.Classes c : classesList) {
+            long bookings = bookingRepository.countByFitnessClassClassIdAndBookingStatus(c.getClassId(), com.fitness.entity.ClassBooking.BookingStatus.CONFIRMED);
+            int cap = c.getCapacity() > 0 ? c.getCapacity() : 1;
+            totalOccupancy += (double) bookings / cap;
+        }
+        dto.setAvgClassOccupancy(classesList.isEmpty() ? 0.0 : (totalOccupancy / classesList.size()) * 100);
 
         // 2. Revenue Analytics (Last 6 Months)
         List<ManagerDashboardDto.RevenuePoint> analytics = new ArrayList<>();
@@ -87,20 +109,21 @@ public class ManagerService {
             point.setNewJoins((branchId != null)
                 ? memberRepository.countByCreatedAtBetweenAndHomeBranchBranchId(start, end, branchId)
                 : memberRepository.countByCreatedAtBetween(start, end));
+            point.setChurn((branchId != null)
+                ? memberRepository.countByStatusAndHomeBranchBranchId(Member.Status.DEACTIVATED, branchId)
+                : memberRepository.countByStatus(Member.Status.DEACTIVATED));
             analytics.add(point);
         }
         dto.setRevenueAnalytics(analytics);
 
         // 3. Top Classes
-        List<com.fitness.entity.Classes> classesList = (branchId != null)
-            ? classesRepository.findByBranchBranchId(branchId)
-            : classesRepository.findAll();
-
         dto.setTopClasses(classesList.stream().limit(5).map(c -> {
             ManagerDashboardDto.ClassUtilizationDto util = new ManagerDashboardDto.ClassUtilizationDto();
             util.setClassId(c.getClassId().intValue());
             util.setName(c.getClassName());
-            util.setOccupancy(0.0); // Removed random data
+            long bookings = bookingRepository.countByFitnessClassClassIdAndBookingStatus(c.getClassId(), com.fitness.entity.ClassBooking.BookingStatus.CONFIRMED);
+            int cap = c.getCapacity() > 0 ? c.getCapacity() : 1;
+            util.setOccupancy((double) bookings / cap * 100);
             util.setFill("#2563EB");
             return util;
         }).collect(Collectors.toList()));
@@ -129,5 +152,11 @@ public class ManagerService {
     private double calculateTrend(long current, long previous) {
         if (previous == 0) return current > 0 ? 100.0 : 0.0;
         return ((double) (current - previous) / previous) * 100.0;
+    }
+
+    public String exportAnalyticsCsv() {
+        return "Month,Revenue,NewJoins,Churn\n" + getDashboardStats(null).getRevenueAnalytics().stream()
+            .map(r -> r.getMonth() + "," + r.getRevenue() + "," + r.getNewJoins() + "," + r.getChurn())
+            .collect(Collectors.joining("\n"));
     }
 }

@@ -31,6 +31,7 @@ public class ClassesService {
 	private final FacilityRepository facilityRepo;
 	private final BranchRepository branchRepo;
 	private final ClassBookingRepository bookingRepo;
+	private final MembershipRepository membershipRepo;
 	private final AuditLogService auditLogService;
 	private final NotificationService notificationService;
 	private final ModelMapper mapper;
@@ -85,6 +86,36 @@ public class ClassesService {
 
 	public List<ClassesDTO> getClassesByBranch(Long branchId) {
 		return classesRepo.findByBranchBranchId(branchId).stream().map(this::convertToDto)
+				.collect(Collectors.toList());
+	}
+
+	public List<ClassesDTO> getCalendarClasses(Long branchId, LocalDate startDate, LocalDate endDate) {
+		return classesRepo.findByBranchBranchId(branchId).stream()
+				.filter(c -> c.getEndDate() != null && c.getStartDate() != null)
+				.filter(c -> !c.getEndDate().isBefore(startDate) && !c.getStartDate().isAfter(endDate))
+				.map(this::convertToDto)
+				.collect(Collectors.toList());
+	}
+
+	public List<ClassesDTO> getEligibleClassesForMember(Long memberId, Long branchId) {
+		List<Classes> branchClasses = classesRepo.findByBranchBranchId(branchId);
+		List<Membership> activeMemberships = membershipRepo.findByMemberMemberIdAndStatus(memberId, Membership.Status.ACTIVE);
+		
+		if (activeMemberships.isEmpty()) {
+			return branchClasses.stream()
+					.filter(c -> c.getPlanEligibility() == null || c.getPlanEligibility().isBlank() || c.getPlanEligibility().toUpperCase().contains("ALL"))
+					.map(this::convertToDto)
+					.collect(Collectors.toList());
+		}
+		
+		String planType = activeMemberships.get(0).getPlan().getEligibilityType().name().toUpperCase();
+		return branchClasses.stream()
+				.filter(c -> {
+					if (c.getPlanEligibility() == null || c.getPlanEligibility().isBlank()) return true;
+					String elig = c.getPlanEligibility().toUpperCase();
+					return elig.contains("ALL") || elig.contains(planType);
+				})
+				.map(this::convertToDto)
 				.collect(Collectors.toList());
 	}
 
