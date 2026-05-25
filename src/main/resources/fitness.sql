@@ -2,20 +2,7 @@ DROP DATABASE IF EXISTS fitness_db;
 CREATE DATABASE fitness_db;
 USE fitness_db;
 
-create table SYSTEM_USER(
-    user_id bigint primary key auto_increment,
-    username varchar(80) not null unique,
-    full_name varchar(150),
-    email varchar(150) not null unique,
-    password_hash varchar(255) not null,
-    role varchar(50) not null,
-    active boolean default true,
-    failed_attempts int default 0,
-    locked_until datetime null,
-    last_login datetime null,
-    created_at datetime not null default current_timestamp,
-    updated_at datetime not null default current_timestamp on update current_timestamp
-);
+
 
 CREATE TABLE BRANCH (
   branch_id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -28,6 +15,26 @@ CREATE TABLE BRANCH (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE SYSTEM_USER (
+    user_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(80) NOT NULL UNIQUE,
+    full_name VARCHAR(150),
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    active BOOLEAN DEFAULT TRUE,
+    failed_attempts INT DEFAULT 0,
+    locked_until DATETIME NULL,
+    last_login DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP 
+        ON UPDATE CURRENT_TIMESTAMP,
+    branch_id BIGINT,
+    
+    CONSTRAINT fk_system_user_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branch(branch_id)
+);
 
 CREATE TABLE PLAN (
     plan_id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -77,19 +84,26 @@ CREATE TABLE ADD_ON(
 ); 
 
 
-CREATE TABLE PROMO_CODE(
-  promo_id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  code VARCHAR(50) NOT NULL UNIQUE,
-  discount_type VARCHAR(30) NOT NULL,
-  discount_value DECIMAL(10,2) NOT NULL,
-  expiry_date DATE NOT NULL,
-  usage_limit INT NOT NULL,
-  per_member_limit INT DEFAULT 1,
-  eligibility VARCHAR(30) DEFAULT 'ALL',
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+INSERT INTO PROMO_CODE
+(code, discount_type, discount_value, expiry_date, usage_limit, per_member_limit, eligibility, is_active)
+VALUES
+('SENIOR5', 'PERCENT', 5.00, '2026-12-31', 100, 1, 'SENIOR', TRUE),
+
+('WELCOME300', 'FLAT', 300.00, '2026-09-30', 150, 1, 'ALL', TRUE),
+
+('DIAMOND10', 'PERCENT', 10.00, '2026-12-31', 40, 1, 'ALL', TRUE),
+
+('FAMILY200', 'FLAT', 200.00, '2026-12-31', 200, 2, 'ALL', TRUE),
+
+('EARLYBIRD', 'PERCENT', 12.00, '2026-07-31', 300, 1, 'ALL', TRUE),
+
+('CORP-INFY', 'PERCENTAGE', 15.00, '2030-12-31', 1000, 1, 'CORPORATE', TRUE),
+
+('CORP-WIPRO', 'PERCENTAGE', 15.00, '2030-12-31', 1000, 1, 'CORPORATE', TRUE),
+
+('CORP-TCS', 'PERCENTAGE', 15.00, '2030-12-31', 1000, 1, 'CORPORATE', TRUE),
+
+('WELCOME7446', 'PERCENT', 15.00, '2026-06-01', 1, 1, 'NEW', TRUE);
 
 
 CREATE TABLE TRAINER(
@@ -478,28 +492,59 @@ VALUES
 -- 7. TRAINER  (IDs 4–7 — reference new SYSTEM_USER 16–19 and
 --              branches 2, 3, 4, 5)
 -- ----------------------------------------------------------------
-INSERT INTO TRAINER
-  (trainer_id, user_id, bio, certifications, specialties, rating, branch_id, is_active, created_at, updated_at)
+INSERT INTO trainer
+(trainer_id, user_id, bio, certifications, specialties, rating,
+ branch_id, is_active, created_at, updated_at,
+ accepting_pt_clients, availability)
 VALUES
-(1, 1, 'Certified Pilates instructor with 6 years of studio experience.',
- 'STOTT Pilates Certified, FMS Level 1',
- 'Pilates, Posture Correction, Core Strength',
- 4.75, 5, 1, '2026-01-15 09:00:00', '2026-01-15 09:00:00'),
 
-(2, 2, 'Aquatic fitness coach specialised in rehabilitation and lap swimming.',
- 'AEA Certified, Lifeguard Pro, NASM CPT',
- 'Aqua Fitness, Swimming, Rehab',
- 4.65, 1, 1, '2026-02-01 09:00:00', '2026-02-01 09:00:00'),
+(1, 1,
+'Certified Pilates instructor with 6 years of studio experience.',
+'STOTT Pilates Certified, FMS Level 1',
+'Pilates, Posture Correction, Core Strength',
+4.75,
+5,
+1,
+'2026-01-15 09:00:00',
+'2026-05-25 02:45:53',
+1,
+'WEDNESDAY-08:00 AM, FRIDAY-10:00 AM'),
 
-(3, 3, 'High-energy Zumba and Latin dance fitness instructor.',
- 'Zumba B1, ZIN Instructor, ACE Group Fitness',
- 'Zumba, Dance Fitness, Aerobics',
- 4.85, 2, 1, '2026-03-01 09:00:00', '2026-03-01 09:00:00'),
+(2, 2,
+'Aquatic fitness coach specialised in rehabilitation and lap swimming.',
+'AEA Certified, Lifeguard Pro, NASM CPT',
+'Aqua Fitness, Swimming, Rehab',
+4.65,
+5,
+1,
+'2026-02-01 09:00:00',
+'2026-05-25 04:32:28',
+1,
+NULL),
 
-(4, 4, 'Former amateur boxer with expertise in functional strength and combat.',
- 'WBC Trainer Level 2, NSCA CSCS',
- 'Boxing, Functional Strength, Agility',
- 4.60, 3, 1, '2026-04-01 09:00:00', '2026-04-01 09:00:00');
+(3, 3,
+'High-energy Zumba and Latin dance fitness instructor.',
+'Zumba B1, ZIN Instructor, ACE Group Fitness',
+'Zumba, Dance Fitness, Aerobics',
+4.85,
+2,
+1,
+'2026-03-01 09:00:00',
+'2026-03-01 09:00:00',
+0,
+NULL),
+
+(4, 4,
+'Former amateur boxer with expertise in functional strength and combat.',
+'WBC Trainer Level 2, NSCA CSCS',
+'Boxing, Functional Strength, Agility',
+4.60,
+3,
+1,
+'2026-04-01 09:00:00',
+'2026-04-01 09:00:00',
+0,
+NULL);
  
 -- ----------------------------------------------------------------
 -- 8. MEMBER  (IDs 9–13 — reference new SYSTEM_USER 21–25,
