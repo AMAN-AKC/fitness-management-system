@@ -116,7 +116,7 @@ public class PaymentService {
 
 	public BigDecimal getRevenueMTD() {
 		LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
-		BigDecimal revenue = paymentRepo.sumRevenueSince(startOfMonth);
+		BigDecimal revenue = paymentRepo.sumRevenueSince(startOfMonth, Payment.PaymentStatus.SUCCESS);
 		return revenue != null ? revenue : BigDecimal.ZERO;
 	}
 }

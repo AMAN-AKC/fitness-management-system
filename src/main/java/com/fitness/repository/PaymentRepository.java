@@ -16,6 +16,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 	List<Payment> findByInvoiceInvoiceId(Long invoiceId);
 	List<Payment> findByPaymentStatus(PaymentStatus status);
 
-	@Query("SELECT SUM(p.amountPaid) FROM Payment p WHERE p.paymentStatus = 'SUCCESS' AND p.paymentDate >= :start")
-	BigDecimal sumRevenueSince(@Param("start") LocalDateTime start);
+	@Query("SELECT SUM(p.amountPaid) FROM Payment p WHERE p.paymentStatus = :status AND p.paymentDate >= :start")
+	BigDecimal sumRevenueSince(@Param("start") LocalDateTime start, @Param("status") PaymentStatus status);
 }

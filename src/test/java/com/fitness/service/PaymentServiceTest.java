@@ -102,7 +102,7 @@ public class PaymentServiceTest {
 
     @Test
     void getRevenueMTD_Success() {
-        when(paymentRepo.sumRevenueSince(any())).thenReturn(BigDecimal.TEN);
+        when(paymentRepo.sumRevenueSince(any(), any(Payment.PaymentStatus.class))).thenReturn(BigDecimal.TEN);
 
         BigDecimal result = paymentService.getRevenueMTD();
 
