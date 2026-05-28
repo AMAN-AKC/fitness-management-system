@@ -104,6 +104,11 @@ public class AuditLogService {
 	 * Convenience method to log actions for the currently authenticated user.
 	 * If no authenticated user is found, attempts to use System user (id=1).
 	 */
+	public void logForSystem(String entityName, Long entityId, AuditLog.Action action,
+			String oldValue, String newValue) {
+		log(1L, entityName, entityId, action, oldValue, newValue);
+	}
+
 	public void logForCurrentUser(String entityName, Long entityId, AuditLog.Action action,
 			String oldValue, String newValue) {
 		String username = null;

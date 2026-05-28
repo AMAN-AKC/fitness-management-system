@@ -12,12 +12,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.JoinTable;
+import java.util.Set;
+import java.util.HashSet;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "system_user")
@@ -66,6 +71,16 @@ public class SystemUser {
 	@ManyToOne
 	@JoinColumn(name = "branch_id")
 	private Branch branch;
+
+	@ManyToMany
+	@JoinTable(
+		name = "system_user_branches",
+		joinColumns = @JoinColumn(name = "user_id"),
+		inverseJoinColumns = @JoinColumn(name = "branch_id")
+	)
+	@ToString.Exclude
+	@Builder.Default
+	private Set<Branch> assignedBranches = new HashSet<>();
 
 	public boolean getIsLocked() {
 		return lockedUntil != null && java.time.LocalDateTime.now().isBefore(lockedUntil);

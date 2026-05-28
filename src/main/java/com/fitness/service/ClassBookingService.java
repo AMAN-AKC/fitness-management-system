@@ -25,8 +25,8 @@ public class ClassBookingService {
 	private final MembershipRepository membershipRepo;
 	private final SystemUserRepository userRepo;
 	private final AuditLogService auditLogService;
-	private final NotificationService notificationService;
-	private final EmailService emailService;
+	private final HealthConsentService healthConsentService;
+	private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 	private final ModelMapper mapper;
 
 	private static final int CANCEL_CUTOFF_HOURS = 2;
@@ -44,13 +44,16 @@ public class ClassBookingService {
 		Member member = memberRepo.findById(dto.getMemberId())
 				.orElseThrow(() -> new ResourceNotFoundException("Member", "id", dto.getMemberId()));
 
+		// Health Consent check
+		if (!healthConsentService.hasActiveConsent(member.getMemberId())) {
+			throw new BusinessRuleException("You must complete your Health Consent and PAR-Q form before booking classes.");
+		}
+
 		// AC01: Only active members
 		if (member.getStatus() != Member.Status.ACTIVE)
 			throw new BusinessRuleException("Only active members can book classes.");
 		if (cls.getStatus() != Classes.Status.ACTIVE)
 			throw new BusinessRuleException("This class is not available for booking.");
-		if (!member.getHomeBranch().getBranchId().equals(cls.getBranch().getBranchId()))
-			throw new BusinessRuleException("You can only book classes at your home branch.");
 
 		// Late Cutoff Restriction: All class registration and waitlist movements lock 15 minutes before the class begins
 		LocalDateTime classDateTime = getNextOccurrence(cls);
@@ -66,15 +69,27 @@ public class ClassBookingService {
 		// Clean up any expired waitlist promotions before determining spots
 		checkAndEvictExpiredWaitlistPromotions(cls.getClassId());
 
+		// Plan & Multi-Branch Eligibility Check
+		List<Membership> activeMemberships = membershipRepo
+				.findByMemberMemberIdAndStatus(member.getMemberId(), Membership.Status.ACTIVE);
+		if (activeMemberships.isEmpty()) {
+			throw new BusinessRuleException("You must have an active membership to book classes.");
+		}
+		
+		Membership activeMembership = activeMemberships.get(0);
+		Plan activePlan = activeMembership.getPlan();
+		
+		// Multi-Branch Access Check
+		boolean isGlobalPlan = activePlan.getBranches().isEmpty();
+		boolean hasBranchAccess = isGlobalPlan || activePlan.getBranches().stream().anyMatch(b -> b.getBranchId().equals(cls.getBranch().getBranchId()));
+		if (!member.getHomeBranch().getBranchId().equals(cls.getBranch().getBranchId()) && !hasBranchAccess) {
+			throw new BusinessRuleException("Your membership plan does not allow booking classes at this branch.");
+		}
+
 		// AC01: Plan eligibility check
 		if (cls.getPlanEligibility() != null && !cls.getPlanEligibility().isBlank()) {
-			List<Membership> activeMemberships = membershipRepo
-					.findByMemberMemberIdAndStatus(member.getMemberId(), Membership.Status.ACTIVE);
-			if (activeMemberships.isEmpty()) {
-				throw new BusinessRuleException("You must have an active membership to book this class.");
-			}
 			String planElig = cls.getPlanEligibility().toUpperCase();
-			String memberPlanType = activeMemberships.get(0).getPlan().getEligibilityType().name();
+			String memberPlanType = activePlan.getEligibilityType().name();
 			if (!planElig.contains("ALL") && !planElig.contains(memberPlanType)) {
 				throw new BusinessRuleException(
 						"Your plan (" + memberPlanType + ") is not eligible for this class. Required: "
@@ -148,15 +163,27 @@ public class ClassBookingService {
 
 		// AC06: Send booking confirmation notification and email
 		try {
-			Long userId = member.getUser().getUserId();
+			java.util.Map<String, Object> vars = new java.util.HashMap<>();
+			vars.put("memberName", member.getMemName());
+			vars.put("className", cls.getClassName());
+			vars.put("classTime", cls.getClassTime().toString());
+			vars.put("status", saved.getBookingStatus().name());
+
 			String statusMsg = saved.getBookingStatus() == ClassBooking.BookingStatus.CONFIRMED
 					? "Your booking is confirmed!"
 					: "You've been added to the waitlist (position " + saved.getWaitlistPosition() + ")";
-			notificationService.sendNotification(userId, Notification.NotifType.BOOKING,
-					Notification.Channel.IN_APP,
+
+			NotificationEvent event = new NotificationEvent(
+					this,
+					member.getUser(),
+					Notification.NotifType.BOOKING,
+					"Booking Confirmation",
+					vars,
+					"/member/classes",
 					"Booking: " + cls.getClassName(),
-					statusMsg + " Class: " + cls.getClassName() + " at " + cls.getClassTime());
-			emailService.sendBookingConfirmationEmail(member, cls, saved.getBookingStatus().name());
+					statusMsg + " Class: " + cls.getClassName() + " at " + cls.getClassTime()
+			);
+			eventPublisher.publishEvent(event);
 		} catch (Exception ignored) {
 		}
 
@@ -186,24 +213,38 @@ public class ClassBookingService {
 
 		// Send cancellation notification and email
 		try {
-			Long userId = booking.getMember().getUser().getUserId();
-			notificationService.sendNotification(userId, Notification.NotifType.CANCELLATION,
-					Notification.Channel.IN_APP,
+			java.util.Map<String, Object> vars = new java.util.HashMap<>();
+			vars.put("memberName", booking.getMember().getMemName());
+			vars.put("className", booking.getFitnessClass().getClassName());
+
+			NotificationEvent event = new NotificationEvent(
+					this,
+					booking.getMember().getUser(),
+					Notification.NotifType.CANCELLATION,
+					"Class Cancellation",
+					vars,
+					"/member/classes",
 					isLateCancel ? "Late Cancellation Infraction" : "Booking Cancelled",
 					isLateCancel ? "You cancelled '" + booking.getFitnessClass().getClassName() + "' less than 2 hours before the start. This counts as an infraction."
-								 : "Your booking for '" + booking.getFitnessClass().getClassName() + "' has been cancelled.");
-			emailService.sendBookingCancellationEmail(booking.getMember(), booking.getFitnessClass(), isLateCancel);
+								 : "Your booking for '" + booking.getFitnessClass().getClassName() + "' has been cancelled."
+			);
+			eventPublisher.publishEvent(event);
 		} catch (Exception ignored) {
 		}
 
-		// Trigger active ban check if late cancellation infraction happened
 		if (isLateCancel && isBookingBanned(booking.getMember().getMemberId())) {
 			try {
-				Long userId = booking.getMember().getUser().getUserId();
-				notificationService.sendNotification(userId, Notification.NotifType.GENERAL,
-						Notification.Channel.IN_APP,
+				NotificationEvent event = new NotificationEvent(
+						this,
+						booking.getMember().getUser(),
+						Notification.NotifType.GENERAL,
+						"Booking Ban",
+						null,
+						"/member/dashboard",
 						"Booking Ban Active",
-						"You have been banned from booking classes for 7 days due to accumulating 3 infractions (late cancellations/no-shows) in 30 days.");
+						"You have been banned from booking classes for 7 days due to accumulating 3 infractions (late cancellations/no-shows) in 30 days."
+				);
+				eventPublisher.publishEvent(event);
 			} catch (Exception ignored) {
 			}
 		}
@@ -234,11 +275,17 @@ public class ClassBookingService {
 		ClassBooking saved = bookingRepo.save(booking);
 
 		try {
-			Long userId = booking.getMember().getUser().getUserId();
-			notificationService.sendNotification(userId, Notification.NotifType.BOOKING,
-					Notification.Channel.IN_APP,
+			NotificationEvent event = new NotificationEvent(
+					this,
+					booking.getMember().getUser(),
+					Notification.NotifType.BOOKING,
+					"Booking Confirmed",
+					null,
+					"/member/classes",
 					"Booking Confirmed!",
-					"Your waitlist promotion for '" + booking.getFitnessClass().getClassName() + "' is confirmed.");
+					"Your waitlist promotion for '" + booking.getFitnessClass().getClassName() + "' is confirmed."
+			);
+			eventPublisher.publishEvent(event);
 		} catch (Exception ignored) {
 		}
 
@@ -300,11 +347,17 @@ public class ClassBookingService {
 		// Check active ban warning/triggers
 		if (isBookingBanned(booking.getMember().getMemberId())) {
 			try {
-				Long userId = booking.getMember().getUser().getUserId();
-				notificationService.sendNotification(userId, Notification.NotifType.GENERAL,
-						Notification.Channel.IN_APP,
+				NotificationEvent event = new NotificationEvent(
+						this,
+						booking.getMember().getUser(),
+						Notification.NotifType.GENERAL,
+						"Booking Ban",
+						null,
+						"/member/dashboard",
 						"Booking Ban Active",
-						"You have been banned from booking classes for 7 days due to accumulating 3 infractions (late cancellations/no-shows) in 30 days.");
+						"You have been banned from booking classes for 7 days due to accumulating 3 infractions (late cancellations/no-shows) in 30 days."
+				);
+				eventPublisher.publishEvent(event);
 			} catch (Exception ignored) {
 			}
 		} else {
@@ -314,11 +367,17 @@ public class ClassBookingService {
 					.count();
 			if (noShowCount >= noShowPenaltyThreshold) {
 				try {
-					Long userId = booking.getMember().getUser().getUserId();
-					notificationService.sendNotification(userId, Notification.NotifType.GENERAL,
-							Notification.Channel.IN_APP,
+					NotificationEvent event = new NotificationEvent(
+							this,
+							booking.getMember().getUser(),
+							Notification.NotifType.GENERAL,
+							"No Show Warning",
+							null,
+							"/member/dashboard",
 							"No-Show Warning",
-							"You have " + noShowCount + " no-shows. Repeated no-shows may result in booking restrictions.");
+							"You have " + noShowCount + " no-shows. Repeated no-shows may result in booking restrictions."
+					);
+					eventPublisher.publishEvent(event);
 				} catch (Exception ignored) {
 				}
 			}
@@ -354,11 +413,17 @@ public class ClassBookingService {
 			bookingRepo.save(expired);
 
 			try {
-				Long promoUserId = expired.getMember().getUser().getUserId();
-				notificationService.sendNotification(promoUserId, Notification.NotifType.BOOKING,
-						Notification.Channel.IN_APP,
+				NotificationEvent event = new NotificationEvent(
+						this,
+						expired.getMember().getUser(),
+						Notification.NotifType.BOOKING,
+						"Waitlist Expired",
+						null,
+						"/member/classes",
 						"Waitlist Promotion Expired",
-						"You failed to accept the promotion for '" + expired.getFitnessClass().getClassName() + "' within 15 minutes.");
+						"You failed to accept the promotion for '" + expired.getFitnessClass().getClassName() + "' within 15 minutes."
+				);
+				eventPublisher.publishEvent(event);
 			} catch (Exception ignored) {
 			}
 
@@ -380,11 +445,17 @@ public class ClassBookingService {
 			bookingRepo.save(expired);
 
 			try {
-				Long promoUserId = expired.getMember().getUser().getUserId();
-				notificationService.sendNotification(promoUserId, Notification.NotifType.BOOKING,
-						Notification.Channel.IN_APP,
+				NotificationEvent event = new NotificationEvent(
+						this,
+						expired.getMember().getUser(),
+						Notification.NotifType.BOOKING,
+						"Waitlist Expired",
+						null,
+						"/member/classes",
 						"Waitlist Promotion Expired",
-						"You failed to accept the promotion for '" + expired.getFitnessClass().getClassName() + "' within 15 minutes.");
+						"You failed to accept the promotion for '" + expired.getFitnessClass().getClassName() + "' within 15 minutes."
+				);
+				eventPublisher.publishEvent(event);
 			} catch (Exception ignored) {
 			}
 
@@ -408,12 +479,18 @@ public class ClassBookingService {
 						bookingRepo.save(next);
 
 						try {
-							Long promoUserId = next.getMember().getUser().getUserId();
-							notificationService.sendNotification(promoUserId, Notification.NotifType.BOOKING,
-									Notification.Channel.IN_APP,
+							NotificationEvent event = new NotificationEvent(
+									this,
+									next.getMember().getUser(),
+									Notification.NotifType.BOOKING,
+									"Waitlist Promotion",
+									null,
+									"/member/classes",
 									"Waitlist Promotion!",
 									"You've been promoted from the waitlist for '"
-											+ next.getFitnessClass().getClassName() + "'. Your booking is now confirmed!");
+											+ next.getFitnessClass().getClassName() + "'. Your booking is now confirmed!"
+							);
+							eventPublisher.publishEvent(event);
 						} catch (Exception ignored) {
 						}
 					} else {
@@ -422,11 +499,17 @@ public class ClassBookingService {
 						bookingRepo.save(next);
 
 						try {
-							Long promoUserId = next.getMember().getUser().getUserId();
-							notificationService.sendNotification(promoUserId, Notification.NotifType.BOOKING,
-									Notification.Channel.IN_APP,
+							NotificationEvent event = new NotificationEvent(
+									this,
+									next.getMember().getUser(),
+									Notification.NotifType.BOOKING,
+									"Waitlist Spot Open",
+									null,
+									"/member/classes",
 									"Waitlist Spot Open - Action Required!",
-									"A spot opened up for '" + next.getFitnessClass().getClassName() + "'. You have 15 minutes to accept the booking!");
+									"A spot opened up for '" + next.getFitnessClass().getClassName() + "'. You have 15 minutes to accept the booking!"
+							);
+							eventPublisher.publishEvent(event);
 						} catch (Exception ignored) {
 						}
 					}

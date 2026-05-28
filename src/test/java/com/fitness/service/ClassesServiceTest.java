@@ -350,7 +350,7 @@ public class ClassesServiceTest {
             
         classesService.cancelClass(1L, "Trainer sick");
 
-        verify(notificationService).sendNotification(eq(10L), eq(Notification.NotifType.CANCELLATION), eq(Notification.Channel.IN_APP), anyString(), anyString());
+        verify(notificationService).sendNotification(eq(10L), eq(Notification.NotifType.CANCELLATION), eq(Notification.Channel.IN_APP), anyString(), anyString(), anyString());
     }
 
     @Test

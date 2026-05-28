@@ -101,6 +101,11 @@ public class MemberService {
 		member.setUser(userRepo.save(memberUser));
 		member.setCreatedBy(createdBy);
 		member.setStatus(Member.Status.PROSPECT);
+		
+		// Auto-generate myReferralCode
+		String phoneSuffix = dto.getPhone().length() > 4 ? dto.getPhone().substring(dto.getPhone().length() - 4) : dto.getPhone();
+		member.setMyReferralCode("REF-" + dto.getMemName().replaceAll("[^A-Za-z0-9]", "").toUpperCase() + "-" + phoneSuffix);
+		
 		Member saved = memberRepo.save(member);
 
 		// AC07: Audit log for member creation

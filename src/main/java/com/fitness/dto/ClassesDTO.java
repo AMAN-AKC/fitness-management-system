@@ -1,5 +1,6 @@
 package com.fitness.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fitness.entity.Classes;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -8,6 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ClassesDTO {
 	private Long classId;
 
@@ -16,12 +18,15 @@ public class ClassesDTO {
 
 	@NotNull(message = "Please provide a valid trainer")
 	private Long trainerId;
+	private String trainerName;
 
 	@NotNull(message = "Please provide a valid room")
 	private Long roomId;
+	private String roomName;
 
 	@NotNull(message = "Please provide a valid branch")
 	private Long branchId;
+	private String branchName;
 
 	@NotBlank(message = "Please provide a valid start date")
 	private String startDate;

@@ -31,4 +31,5 @@ public class PaymentDTO {
 	private String failureReason;
 	private Long refundBy;
 	private String refundReason;
+	private java.math.BigDecimal walletCreditApplied;
 }

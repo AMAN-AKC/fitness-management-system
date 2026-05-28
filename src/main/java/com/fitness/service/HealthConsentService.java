@@ -28,6 +28,7 @@ public class HealthConsentService {
 	private final MemberRepository memberRepo;
 	private final SystemUserRepository userRepo;
 	private final AuditLogService auditLogService;
+	private final MembershipRepository membershipRepo;
 
 	@Value("${consent.current-version:v1.0}")
 	private String currentVersion;
@@ -72,6 +73,18 @@ public class HealthConsentService {
 		HealthConsent saved = consentRepo.save(consent);
 		auditLogService.logForCurrentUser("HealthConsent", saved.getConsentId(), AuditLog.Action.CREATE,
 				null, "memberId=" + member.getMemberId() + ", formVersion=" + saved.getFormVersion());
+
+		// Check if we can activate a PROSPECT member now that they have consent
+		if (member.getStatus() == Member.Status.PROSPECT || member.getStatus() == Member.Status.SUSPENDED) {
+			List<Membership> memberships = membershipRepo.findByMemberMemberId(member.getMemberId());
+			boolean hasPaidMembership = memberships.stream().anyMatch(m -> m.getStartDate() != null);
+			if (hasPaidMembership) {
+				member.setStatus(Member.Status.ACTIVE);
+				memberRepo.save(member);
+				auditLogService.logForCurrentUser("Member", member.getMemberId(), AuditLog.Action.UPDATE, null, "Member activated after Health Consent submission.");
+			}
+		}
+
 		return toDto(saved, false);
 	}
 

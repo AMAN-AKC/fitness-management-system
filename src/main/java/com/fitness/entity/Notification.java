@@ -34,6 +34,9 @@ public class Notification {
 	@Column(name = "body", nullable = false, columnDefinition = "TEXT")
 	private String body;
 
+	@Column(name = "deep_link", length = 500)
+	private String deepLink;
+
 	@Column(name = "is_read", nullable = false)
 	@Builder.Default
 	private Boolean isRead = false;

@@ -55,6 +55,13 @@ public class Member {
 	@Column(length = 30)
 	private String corporateCode;
 
+	@Column(length = 30, unique = true)
+	private String myReferralCode;
+
+	@Column(nullable = false, precision = 10, scale = 2)
+	@Builder.Default
+	private java.math.BigDecimal walletBalance = java.math.BigDecimal.ZERO;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	@Builder.Default

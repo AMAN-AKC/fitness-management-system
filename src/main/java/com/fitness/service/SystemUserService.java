@@ -22,6 +22,7 @@ public class SystemUserService {
 	private final PasswordEncoder passwordEncoder;
 	private final PasswordValidationService passwordValidator;
 	private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+	private final com.fitness.repository.TrainerRepository trainerRepo;
 
 	public SystemUserDTO createUser(SystemUserDTO dto, String rawPassword) {
 		// Validate password complexity
@@ -49,7 +50,31 @@ public class SystemUserService {
 		user.setPasswordHash(passwordEncoder.encode(rawPassword));
 		user.setActive(true);
 		user.setFailedAttempts(0);
-		return mapper.map(userRepo.save(user), SystemUserDTO.class);
+		
+		SystemUser savedUser = userRepo.save(user);
+		
+		if (savedUser.getRole() == com.fitness.enums.Role.TRAINER) {
+			com.fitness.entity.Trainer trainer = com.fitness.entity.Trainer.builder()
+					.user(savedUser)
+					.branch(savedUser.getBranch())
+					.isActive(true)
+					.acceptingPtClients(true)
+					.rating(5.0)
+					.bio("New trainer ready to help you achieve your goals.")
+					.specialties("General Fitness")
+					.build();
+			trainerRepo.save(trainer);
+		}
+		
+		SystemUserDTO responseDto = mapper.map(savedUser, SystemUserDTO.class);
+		if (savedUser.getBranch() != null) {
+			responseDto.setBranchName(savedUser.getBranch().getBranchName());
+		} else if (savedUser.getRole() == com.fitness.enums.Role.ADMIN) {
+			responseDto.setBranchName("System HQ");
+		} else {
+			responseDto.setBranchName("Unassigned");
+		}
+		return responseDto;
 	}
 
 	public List<SystemUserDTO> getAllUsers() {
@@ -109,7 +134,31 @@ public class SystemUserService {
 			user.setBranch(null);
 		}
 
-		return mapper.map(userRepo.save(user), SystemUserDTO.class);
+		SystemUser savedUser = userRepo.save(user);
+		if (savedUser.getRole() == com.fitness.enums.Role.TRAINER) {
+			com.fitness.entity.Trainer trainer = trainerRepo.findByUserUserId(savedUser.getUserId()).orElseGet(() ->
+				com.fitness.entity.Trainer.builder()
+					.user(savedUser)
+					.isActive(true)
+					.acceptingPtClients(true)
+					.rating(5.0)
+					.bio("New trainer ready to help you achieve your goals.")
+					.specialties("General Fitness")
+					.build()
+			);
+			trainer.setBranch(savedUser.getBranch());
+			trainerRepo.save(trainer);
+		}
+
+		SystemUserDTO responseDto = mapper.map(savedUser, SystemUserDTO.class);
+		if (savedUser.getBranch() != null) {
+			responseDto.setBranchName(savedUser.getBranch().getBranchName());
+		} else if (savedUser.getRole() == com.fitness.enums.Role.ADMIN) {
+			responseDto.setBranchName("System HQ");
+		} else {
+			responseDto.setBranchName("Unassigned");
+		}
+		return responseDto;
 	}
 
 	public void deactivateUser(Long id) {

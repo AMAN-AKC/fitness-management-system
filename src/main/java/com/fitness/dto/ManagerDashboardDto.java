@@ -12,6 +12,7 @@ public class ManagerDashboardDto {
     private long churnThisMonth;
     private double churnTrend;
     private double monthlyRevenue;
+    private double mrr;
     private long classesThisWeek;
     private double avgClassOccupancy;
     

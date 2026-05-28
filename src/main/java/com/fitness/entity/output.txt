@@ -1,0 +1,2040 @@
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: AddOn.java  
+ echo. 
+ type "AddOn.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: AddOn.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "add_on")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class AddOn {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long addonId;
+
+	@Column(nullable = false, length = 100)
+	private String addonName;
+
+	@Column(nullable = false, precision = 10, scale = 2)
+	private BigDecimal price;
+
+	private Integer capacity;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private AddonType addonType;
+
+	@Column(precision = 5, scale = 2)
+	@Builder.Default
+	private BigDecimal taxPercent = BigDecimal.ZERO;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean isActive = true;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = updatedAt = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		updatedAt = LocalDateTime.now();
+	}
+
+	public enum AddonType {
+		SERVICE, FACILITY, OTHER
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: Attendance.java  
+ echo. 
+ type "Attendance.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: Attendance.java
+
+package com.fitness.entity;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "attendance")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Attendance {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long logId;
+
+	@ManyToOne
+	@JoinColumn(name = "member_id", nullable = false)
+	private Member member;
+
+	@ManyToOne
+	@JoinColumn(name = "branch_id", nullable = false)
+	private Branch branch;
+
+	@Column(nullable = false)
+	private LocalDateTime checkInTime;
+
+	private LocalDateTime checkOutTime;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean alertFlag = false;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private ScanMethod scanMethod;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@Builder.Default
+	private SyncStatus syncStatus = SyncStatus.SYNCED;
+
+	@ManyToOne
+	@JoinColumn(name = "class_id")
+	private Classes fitnessClass;
+
+	@ManyToOne
+	@JoinColumn(name = "override_by")
+	private SystemUser overrideBy;
+
+	@Column(columnDefinition = "TEXT")
+	private String overrideReason;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = LocalDateTime.now();
+	}
+
+	public enum ScanMethod {
+		QR, CARD, MANUAL
+	}
+
+	public enum SyncStatus {
+		SYNCED, PENDING
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: AuditLog.java  
+ echo. 
+ type "AuditLog.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: AuditLog.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "audit_log")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class AuditLog {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long auditId;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "performed_by", nullable = false)
+	private SystemUser performedBy;
+
+	@Column(name = "entity_name", nullable = false, length = 60)
+	private String entityName;
+
+	@Column(name = "entity_id", nullable = false)
+	private Long entityId;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "action", nullable = false)
+	private Action action;
+
+	@Column(name = "old_value", columnDefinition = "JSON")
+	private String oldValue;
+
+	@Column(name = "new_value", columnDefinition = "JSON")
+	private String newValue;
+
+	@Column(name = "created_at", nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@PrePersist
+	protected void onCreate() {
+		this.createdAt = LocalDateTime.now();
+	}
+
+	public enum Action {
+		CREATE, UPDATE, DELETE, LOGIN, OVERRIDE
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: Branch.java  
+ echo. 
+ type "Branch.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: Branch.java
+
+package com.fitness.entity;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "branch")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Branch {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long branchId;
+
+	@NotBlank
+	@Column(nullable = false, length = 120)
+	private String branchName;
+
+	@Column(nullable = false, columnDefinition = "TEXT")
+	private String address;
+
+	@NotBlank
+	@Column(nullable = false, length = 20)
+	private String contact;
+
+	@NotBlank
+	@Column(nullable = false, length = 100)
+	private String opHours;
+
+	@NotBlank
+	@Column(nullable = false, length = 60)
+	private String timezone;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean isActive = true;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = LocalDateTime.now();
+	}
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: ClassBooking.java  
+ echo. 
+ type "ClassBooking.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: ClassBooking.java
+
+package com.fitness.entity;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "class_booking", uniqueConstraints = { @UniqueConstraint(columnNames = { "class_id", "member_id" }) })
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ClassBooking {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long bookingId;
+
+	@ManyToOne
+	@JoinColumn(name = "class_id", nullable = false)
+	private Classes fitnessClass;
+
+	@ManyToOne
+	@JoinColumn(name = "member_id", nullable = false)
+	private Member member;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@Builder.Default
+	private BookingStatus bookingStatus = BookingStatus.CONFIRMED;
+
+	private Integer waitlistPosition;
+	private LocalDateTime cancelledAt;
+	private LocalDateTime waitlistExpiration;
+
+	@ManyToOne
+	@JoinColumn(name = "override_by")
+	private SystemUser overrideBy;
+
+	@Column(columnDefinition = "TEXT")
+	private String overrideReason;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = LocalDateTime.now();
+	}
+
+	public enum BookingStatus {
+		CONFIRMED, WAITLISTED, CANCELLED, NO_SHOW, PENDING_CONFIRMATION
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: Classes.java  
+ echo. 
+ type "Classes.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: Classes.java
+
+package com.fitness.entity;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "classes")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Classes {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long classId;
+
+	@Column(nullable = false, length = 120)
+	private String className;
+
+	@ManyToOne
+	@JoinColumn(name = "trainer_id", nullable = false)
+	private Trainer trainer;
+
+	@ManyToOne
+	@JoinColumn(name = "room_id", nullable = false)
+	private Facility room;
+
+	@ManyToOne
+	@JoinColumn(name = "branch_id", nullable = false)
+	private Branch branch;
+
+	@Column(nullable = false)
+	private LocalDate startDate;
+
+	@Column(nullable = false)
+	private LocalDate endDate;
+
+	@Column(nullable = false, length = 20)
+	private String weekdays;
+
+	@Column(nullable = false)
+	private LocalTime classTime;
+
+	@Column(nullable = false)
+	private Integer durationMins;
+
+	@Column(nullable = false)
+	private Integer capacity;
+
+	@Column(columnDefinition = "TEXT")
+	private String prerequisites;
+
+	@Column(length = 255)
+	private String planEligibility;
+
+	@Column(nullable = false)
+	@jakarta.persistence.Convert(converter = ClassStatusConverter.class)
+	@Builder.Default
+	private Status status = Status.ACTIVE;
+
+	@Column(columnDefinition = "TEXT")
+	private String cancelReason;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = updatedAt = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		updatedAt = LocalDateTime.now();
+	}
+
+	public enum Status {
+		ACTIVE, CANCELLED, COMPLETED
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: ClassStatusConverter.java  
+ echo. 
+ type "ClassStatusConverter.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: ClassStatusConverter.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
+
+@Converter(autoApply = true)
+public class ClassStatusConverter implements AttributeConverter<Classes.Status, String> {
+
+    @Override
+    public String convertToDatabaseColumn(Classes.Status status) {
+        return status == null ? null : status.name();
+    }
+
+    @Override
+    public Classes.Status convertToEntityAttribute(String dbData) {
+        if (dbData == null) {
+            return null;
+        }
+        try {
+            return Classes.Status.valueOf(dbData.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            // Fallback for unexpected values
+            return Classes.Status.ACTIVE;
+        }
+    }
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: Facility.java  
+ echo. 
+ type "Facility.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: Facility.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "facility")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Facility {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long facilityId;
+
+	@Column(nullable = false, length = 120)
+	private String facilityName;
+
+	@ManyToOne
+	@JoinColumn(name = "branch_id", nullable = false)
+	private Branch branch;
+
+	@Column(nullable = false)
+	private Integer capacity;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean isActive = true;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean underMaintenance = false;
+
+	@Column(columnDefinition = "TEXT")
+	private String maintenanceReason;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = updatedAt = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		updatedAt = LocalDateTime.now();
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: FeatureFlag.java  
+ echo. 
+ type "FeatureFlag.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: FeatureFlag.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "FEATURE_FLAG")
+@Data
+public class FeatureFlag {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long flagId;
+
+    @Column(nullable = false, unique = true)
+    private String flagName;
+
+    @Column(nullable = false)
+    private boolean isEnabled;
+
+    private String lastModifiedBy;
+
+    @Column(insertable = false, updatable = false)
+    private LocalDateTime updatedAt;
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: HealthConsent.java  
+ echo. 
+ type "HealthConsent.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: HealthConsent.java
+
+package com.fitness.entity;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "health_consent")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class HealthConsent {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long consentId;
+
+	@ManyToOne
+	@JoinColumn(name = "member_id", nullable = false)
+	private Member member;
+
+	@Column(nullable = false, length = 20)
+	private String formVersion;
+
+	@Column(columnDefinition = "TEXT")
+	private String parqResponses;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean medicalAcknowledged = false;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean liabilityAcknowledged = false;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean privacyAcknowledged = false;
+
+	@Column(nullable = false)
+	private LocalDateTime acknowledgedAt;
+
+	private LocalDateTime expiresAt;
+
+	@Column(nullable = false, length = 45)
+	private String ipAddress;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@Builder.Default
+	private Status status = Status.ACTIVE;
+
+	@Column(columnDefinition = "TEXT")
+	private String staffNotes;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = updatedAt = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		updatedAt = LocalDateTime.now();
+	}
+
+	public enum Status {
+		ACTIVE, EXPIRED, PENDING
+	}
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: Invoice.java  
+ echo. 
+ type "Invoice.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: Invoice.java
+
+package com.fitness.entity;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "invoice")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Invoice {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long invoiceId;
+
+	@Column(nullable = false, unique = true, length = 40)
+	private String invoiceNumber;
+
+	@ManyToOne
+	@JoinColumn(name = "member_id", nullable = false)
+	private Member member;
+
+	@ManyToOne
+	@JoinColumn(name = "membership_id")
+	private Membership membership;
+
+	@Column(length = 100)
+	private String planName;
+
+	@Column(nullable = false, precision = 10, scale = 2)
+	private BigDecimal mrp;
+
+	@Column(precision = 10, scale = 2)
+	@Builder.Default
+	private BigDecimal taxes = BigDecimal.ZERO;
+
+	@Column(precision = 10, scale = 2)
+	@Builder.Default
+	private BigDecimal discount = BigDecimal.ZERO;
+
+	@Column(nullable = false, precision = 10, scale = 2)
+	private BigDecimal finalAmount;
+
+	@Column(precision = 10, scale = 2)
+	@Builder.Default
+	private BigDecimal paidAmount = BigDecimal.ZERO;
+
+	@Column(precision = 10, scale = 2)
+	@Builder.Default
+	private BigDecimal outstanding = BigDecimal.ZERO;
+
+	@Column(length = 30)
+	private String promoCode;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@Builder.Default
+	private Status status = Status.DRAFT;
+
+	@Column
+	private java.time.LocalDate promiseToPayDate;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = LocalDateTime.now();
+	}
+
+	public enum Status {
+		DRAFT, ISSUED, PAID, OVERDUE, VOID, PENDING, UNPAID
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: LoginAttempt.java  
+ echo. 
+ type "LoginAttempt.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: LoginAttempt.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "login_attempt")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class LoginAttempt {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String ipAddress;
+
+    private int attempts;
+
+    private LocalDateTime lastAttempt;
+
+    private LocalDateTime lockedUntil;
+
+    public boolean isLocked() {
+        return lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now());
+    }
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: Member.java  
+ echo. 
+ type "Member.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: Member.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "member")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Member {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long memberId;
+
+	@OneToOne
+	@JoinColumn(name = "user_id", nullable = false, unique = true)
+	private SystemUser user;
+
+	@NotBlank
+	@Column(nullable = false, length = 120)
+	private String memName;
+
+	@Email
+	@NotBlank
+	@Column(nullable = false, unique = true, length = 150)
+	private String email;
+
+	@NotBlank
+	@Column(nullable = false, unique = true, length = 20)
+	private String phone;
+
+	@Column(nullable = false)
+	private LocalDate dob;
+
+	@Column(nullable = false, columnDefinition = "TEXT")
+	private String address;
+
+	@NotBlank
+	@Column(nullable = false, length = 120)
+	private String emgContact;
+
+	@NotBlank
+	@Column(nullable = false, length = 20)
+	private String emgPhone;
+
+	@Column(length = 30)
+	private String referralCode;
+
+	@Column(length = 30)
+	private String corporateCode;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@Builder.Default
+	private Status status = Status.PROSPECT;
+
+	@ManyToOne
+	@JoinColumn(name = "home_branch_id", nullable = false)
+	private Branch homeBranch;
+
+	@Column(length = 255)
+	private String photoPath;
+
+	@Column(columnDefinition = "TEXT")
+	private String notes;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Integer ptSessionCredits = 10;
+
+	@ManyToOne
+	@JoinColumn(name = "created_by", nullable = false)
+	private SystemUser createdBy;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = updatedAt = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		updatedAt = LocalDateTime.now();
+	}
+
+	public enum Status {
+		PROSPECT, ACTIVE, SUSPENDED, DEACTIVATED
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: Membership.java  
+ echo. 
+ type "Membership.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: Membership.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "membership")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Membership {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long memId;
+
+	@ManyToOne
+	@JoinColumn(name = "member_id", nullable = false)
+	private Member member;
+
+	@ManyToOne
+	@JoinColumn(name = "plan_id", nullable = false)
+	private Plan plan;
+
+	@Column(nullable = false)
+	private LocalDate startDate;
+
+	@Column(nullable = false)
+	private LocalDate endDate;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@Builder.Default
+	private Status status = Status.ACTIVE;
+
+	@Column(nullable = false)
+	private Integer duration;
+
+	@Column(nullable = false, precision = 10, scale = 2)
+	private BigDecimal price;
+
+	@Column(precision = 10, scale = 2)
+	@Builder.Default
+	private BigDecimal discountAmount = BigDecimal.ZERO;
+
+	@Column(length = 30)
+	private String promoCodeUsed;
+
+	@ManyToOne
+	@JoinColumn(name = "branch_id", nullable = false)
+	private Branch branch;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = updatedAt = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		updatedAt = LocalDateTime.now();
+	}
+
+	public enum Status {
+		ACTIVE, EXPIRED, PENDING, DUNNING, SUSPENDED
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: Notification.java  
+ echo. 
+ type "Notification.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: Notification.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "notification")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Notification {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long notifId;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id", nullable = false)
+	private SystemUser user;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "type", nullable = false)
+	private NotifType type;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "channel", nullable = false)
+	private Channel channel;
+
+	@Column(name = "title", nullable = false, length = 200)
+	private String title;
+
+	@Column(name = "body", nullable = false, columnDefinition = "TEXT")
+	private String body;
+
+	@Column(name = "is_read", nullable = false)
+	@Builder.Default
+	private Boolean isRead = false;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "delivery_status", nullable = false)
+	@Builder.Default
+	private DeliveryStatus deliveryStatus = DeliveryStatus.PENDING;
+
+	@Column(name = "created_at", nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@PrePersist
+	protected void onCreate() {
+		this.createdAt = LocalDateTime.now();
+	}
+
+	public enum NotifType {
+		BOOKING, CANCELLATION, RENEWAL, SCHEDULE_CHANGE, DUNNING, CHECK_IN, GENERAL
+	}
+
+	public enum Channel {
+		IN_APP, EMAIL
+	}
+
+	public enum DeliveryStatus {
+		SENT, FAILED, PENDING, DELIVERED
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: PasswordPolicy.java  
+ echo. 
+ type "PasswordPolicy.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PasswordPolicy.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "PASSWORD_POLICY")
+@Data
+public class PasswordPolicy {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long policyId;
+
+    @Column(nullable = false)
+    private Integer minPasswordLength = 8;
+
+    @Column(nullable = false)
+    private Boolean requireUppercase = true;
+
+    @Column(nullable = false)
+    private Boolean requireNumber = true;
+
+    @Column(nullable = false)
+    private Boolean requireSpecialChar = true;
+
+    @Column(nullable = false)
+    private Integer sessionTimeoutMin = 60;
+
+    @Column(nullable = false)
+    private Integer maxFailedAttempts = 5;
+
+    @Column(nullable = false)
+    private Integer lockoutDurationMin = 30;
+
+    @Column(nullable = false, length = 80)
+    private String lastUpdatedBy = "SYSTEM";
+
+    @Column(insertable = false, updatable = false)
+    private LocalDateTime updatedAt;
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: PasswordResetToken.java  
+ echo. 
+ type "PasswordResetToken.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PasswordResetToken.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "password_reset_token")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PasswordResetToken {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long tokenId;
+
+	@Column(nullable = false, unique = true, length = 100)
+	private String token;
+
+	@ManyToOne
+	@JoinColumn(name = "user_id", nullable = false)
+	private SystemUser user;
+
+	@Column(nullable = false)
+	private LocalDateTime expiryDate;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean used = false;
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: Payment.java  
+ echo. 
+ type "Payment.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: Payment.java
+
+package com.fitness.entity;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "payment")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Payment {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long paymentId;
+
+	@ManyToOne
+	@JoinColumn(name = "invoice_id", nullable = false)
+	private Invoice invoice;
+
+	@ManyToOne
+	@JoinColumn(name = "member_id", nullable = false)
+	private Member member;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private PaymentMethod paymentMethod;
+
+	@Column(nullable = false, precision = 10, scale = 2)
+	private BigDecimal amountPaid;
+
+	@Column(nullable = false)
+	private LocalDateTime paymentDate;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@Builder.Default
+	private PaymentStatus paymentStatus = PaymentStatus.SUCCESS;
+
+	@Column(length = 255)
+	private String failureReason;
+
+	@ManyToOne
+	@JoinColumn(name = "refund_by")
+	private SystemUser refundBy;
+
+	@Column(columnDefinition = "TEXT")
+	private String refundReason;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = LocalDateTime.now();
+	}
+
+	public enum PaymentMethod {
+		CASH, UPI, CARD
+	}
+
+	public enum PaymentStatus {
+		SUCCESS, FAILED, PENDING, REFUNDED
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: Plan.java  
+ echo. 
+ type "Plan.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: Plan.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
+@Entity
+@Table(name = "plan")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Plan {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long planId;
+
+	@Column(nullable = false, length = 120)
+	private String planName;
+
+	@Column(nullable = false)
+	private Integer durationDays;
+
+	@Column(nullable = false, precision = 10, scale = 2)
+	private BigDecimal price;
+
+	@Column(nullable = false)
+	private LocalTime accessStart;
+
+	@Column(nullable = false)
+	private LocalTime accessEnd;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@Builder.Default
+	private EligibilityType eligibilityType = EligibilityType.GENERAL;
+
+	@Column(length = 50)
+	private String prorationRule;
+
+	@Column(length = 255)
+	private String facilitiesIncluded;
+
+	@Column(precision = 5, scale = 2)
+	@Builder.Default
+	private BigDecimal taxPercent = BigDecimal.ZERO;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Integer version = 1;
+
+	@Column(nullable = false)
+	private LocalDate effectiveFrom;
+
+	@Column(length = 255)
+	private String branchVisibility;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean isActive = true;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = updatedAt = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		updatedAt = LocalDateTime.now();
+	}
+
+	public enum EligibilityType {
+		GENERAL, STUDENT, SENIOR, CORPORATE
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: PlanAddOn.java  
+ echo. 
+ type "PlanAddOn.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PlanAddOn.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "plan_addon")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PlanAddOn {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+
+	@ManyToOne
+	@JoinColumn(name = "plan_id", nullable = false)
+	private Plan plan;
+
+	@ManyToOne
+	@JoinColumn(name = "addon_id", nullable = false)
+	private AddOn addOn;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean isIncluded = false; // true if addon is included with plan
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = LocalDateTime.now();
+	}
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: PromoCode.java  
+ echo. 
+ type "PromoCode.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PromoCode.java
+
+package com.fitness.entity;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "promo_code")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PromoCode {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long promoId;
+
+	@Column(nullable = false, unique = true, length = 30)
+	private String code;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private DiscountType discountType;
+
+	@Column(nullable = false, precision = 10, scale = 2)
+	private BigDecimal discountValue;
+
+	@Column(nullable = false)
+	private LocalDate expiryDate;
+
+	@Column(nullable = false)
+	private Integer usageLimit;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Integer perMemberLimit = 1;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@Builder.Default
+	private Eligibility eligibility = Eligibility.ALL;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean isActive = true;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = updatedAt = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		updatedAt = LocalDateTime.now();
+	}
+
+	public enum DiscountType {
+		PERCENT, FLAT
+	}
+
+	public enum Eligibility {
+		ALL, NEW, RETURNING, CORPORATE, STUDENT
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: PromoCodeUsage.java  
+ echo. 
+ type "PromoCodeUsage.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PromoCodeUsage.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "promo_code_usage")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PromoCodeUsage {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+
+	@ManyToOne
+	@JoinColumn(name = "promo_id", nullable = false)
+	private PromoCode promoCode;
+
+	@ManyToOne
+	@JoinColumn(name = "member_id", nullable = false)
+	private Member member;
+
+	@ManyToOne
+	@JoinColumn(name = "invoice_id", nullable = true)
+	private Invoice invoice; // null if not yet used for an invoice
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime usedAt;
+
+	@PrePersist
+	protected void onCreate() {
+		usedAt = LocalDateTime.now();
+	}
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: PtSession.java  
+ echo. 
+ type "PtSession.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PtSession.java
+
+package com.fitness.entity;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "pt_session")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PtSession {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long sessionId;
+
+	@ManyToOne
+	@JoinColumn(name = "member_id", nullable = false)
+	private Member member;
+
+	@ManyToOne
+	@JoinColumn(name = "trainer_id", nullable = false)
+	private Trainer trainer;
+
+	@Column(nullable = false)
+	private LocalDateTime scheduledAt;
+
+	@Column(nullable = false)
+	private Integer durationMins;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@Builder.Default
+	private Status status = Status.REQUESTED;
+
+	@Column(columnDefinition = "TEXT")
+	private String trainerNotes;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = updatedAt = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		updatedAt = LocalDateTime.now();
+	}
+
+	public enum Status {
+		REQUESTED, ACCEPTED, DECLINED, COMPLETED, CANCELLED, APPROVED
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: Receipt.java  
+ echo. 
+ type "Receipt.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: Receipt.java
+
+package com.fitness.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "receipt")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Receipt {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long receiptId;
+
+	@Column(nullable = false, unique = true, length = 40)
+	private String receiptNumber;
+
+	@ManyToOne
+	@JoinColumn(name = "invoice_id", nullable = false)
+	private Invoice invoice;
+
+	@ManyToOne
+	@JoinColumn(name = "member_id", nullable = false)
+	private Member member;
+
+	@ManyToOne
+	@JoinColumn(name = "payment_id", nullable = false)
+	private Payment payment;
+
+	@Column(nullable = false, precision = 10, scale = 2)
+	private BigDecimal amount;
+
+	@Column(nullable = false, precision = 10, scale = 2)
+	private BigDecimal taxAmount;
+
+	@Column(nullable = false, precision = 10, scale = 2)
+	private BigDecimal totalAmount;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@Builder.Default
+	private Status status = Status.ISSUED;
+
+	@Column(columnDefinition = "TEXT")
+	private String notes;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = updatedAt = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		updatedAt = LocalDateTime.now();
+	}
+
+	public enum Status {
+		ISSUED, EMAILED, PRINTED
+	}
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: SystemUser.java  
+ echo. 
+ type "SystemUser.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: SystemUser.java
+
+package com.fitness.entity;
+
+import com.fitness.enums.Role;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "system_user")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class SystemUser {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long userId;
+	@NotBlank
+	@Column(nullable = false, unique = true, length = 80)
+	private String username;
+	@Column(name = "full_name", length = 150)
+	private String fullName;
+
+	@Email
+	@NotBlank
+	@Column(nullable = false, unique = true, length = 150)
+	private String email;
+
+	@NotBlank
+	@Column(nullable = false)
+	private String passwordHash;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private Role role;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private boolean active = true;
+
+	@Column(name = "locked_until")
+	private java.time.LocalDateTime lockedUntil;
+
+	@Column(name = "failed_attempts")
+	@Builder.Default
+	private int failedAttempts = 0;
+
+	@Column(name = "last_login")
+	private java.time.LocalDateTime lastLogin;
+
+	@ManyToOne
+	@JoinColumn(name = "branch_id")
+	private Branch branch;
+
+	public boolean getIsLocked() {
+		return lockedUntil != null && java.time.LocalDateTime.now().isBefore(lockedUntil);
+	}
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\entity>(
+echo FILE: Trainer.java  
+ echo. 
+ type "Trainer.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: Trainer.java
+
+package com.fitness.entity;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "trainer")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Trainer {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long trainerId;
+
+	@OneToOne
+	@JoinColumn(name = "user_id", nullable = false, unique = true)
+	private SystemUser user;
+
+	@ManyToOne
+	@JoinColumn(name = "branch_id", nullable = false)
+	private Branch branch;
+
+	@Column(columnDefinition = "TEXT")
+	private String bio;
+
+	@Column(length = 255)
+	private String certifications;
+
+	@Column(length = 255)
+	private String specialties;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Double rating = 0.0;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean isActive = true;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private Boolean acceptingPtClients = true;
+
+	@Column(columnDefinition = "TEXT")
+	private String availability;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = updatedAt = LocalDateTime.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		updatedAt = LocalDateTime.now();
+	}
+}
+********************
+

@@ -32,4 +32,6 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
 	@org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i WHERE i.status IN ?1 AND i.member.homeBranch.branchId = ?2")
 	List<Invoice> findByStatusInAndBranchId(List<Status> statuses, Long branchId);
+	
+	List<Invoice> findByMembershipMemId(Long membershipId);
 }

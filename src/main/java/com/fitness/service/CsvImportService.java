@@ -134,7 +134,7 @@ public class CsvImportService {
 			String address = getField(record, "address");
 			String emgContact = getField(record, "emgContact");
 			String emgPhone = getField(record, "emgPhone");
-			String homeBranchIdStr = getField(record, "homeBranchId");
+			String branchCode = getField(record, "branchCode");
 			String referralCode = getField(record, "referralCode");
 			String corporateCode = getField(record, "corporateCode");
 			String notes = getField(record, "notes");
@@ -217,26 +217,24 @@ public class CsvImportService {
 				return result;
 			}
 
-			// Validate branch
-			Long branchId;
-			try {
-				branchId = Long.parseLong(homeBranchIdStr);
-			} catch (NumberFormatException e) {
+			if (branchCode == null || branchCode.trim().isEmpty()) {
 				result.setStatus(BulkImportRowResult.STATUS_VALIDATION_ERROR);
-				result.setErrorMessage("homeBranchId must be a valid number");
+				result.setErrorMessage("branchCode is required");
 				result.setEmail(email);
 				result.setMemberName(memName);
 				return result;
 			}
 
-			Optional<Branch> branch = branchRepository.findById(branchId);
+			Optional<Branch> branch = branchRepository.findByBranchCode(branchCode);
 			if (branch.isEmpty()) {
 				result.setStatus(BulkImportRowResult.STATUS_VALIDATION_ERROR);
-				result.setErrorMessage("homeBranchId " + branchId + " not found");
+				result.setErrorMessage("branchCode " + branchCode + " not found");
 				result.setEmail(email);
 				result.setMemberName(memName);
 				return result;
 			}
+			
+			Long branchId = branch.get().getBranchId();
 
 			// Create MemberDTO
 			MemberDTO memberDTO = MemberDTO.builder()

@@ -47,7 +47,7 @@ public class NotificationServiceTest {
         NotificationDTO dto = new NotificationDTO();
         when(mapper.map(any(), eq(NotificationDTO.class))).thenReturn(dto);
 
-        NotificationDTO result = notificationService.sendNotification(1L, Notification.NotifType.GENERAL, Notification.Channel.IN_APP, "Title", "Body");
+        NotificationDTO result = notificationService.sendNotification(1L, Notification.NotifType.GENERAL, Notification.Channel.IN_APP, "Title", "Body", "");
 
         assertNotNull(result);
         verify(notifRepo).save(any(Notification.class));

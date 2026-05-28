@@ -27,6 +27,9 @@ public class Branch {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long branchId;
 
+	@Column(name = "branch_code", unique = true, length = 20)
+	private String branchCode;
+
 	@NotBlank
 	@Column(nullable = false, length = 120)
 	private String branchName;

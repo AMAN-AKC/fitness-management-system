@@ -49,11 +49,7 @@ public class ClassesService {
 		Branch branch = branchRepo.findById(dto.getBranchId())
 				.orElseThrow(() -> new ResourceNotFoundException("Branch", "id", dto.getBranchId()));
 
-		// AC07: Block scheduling in rooms under maintenance
-		if (Boolean.TRUE.equals(room.getUnderMaintenance())) {
-			throw new BusinessRuleException("Room '" + room.getFacilityName()
-					+ "' is under maintenance: " + (room.getMaintenanceReason() != null ? room.getMaintenanceReason() : ""));
-		}
+		ensureRoomAvailable(room);
 
 		// AC03: Conflict detection
 		LocalTime start = LocalTime.parse(dto.getClassTime());
@@ -137,6 +133,14 @@ public class ClassesService {
 				.orElseThrow(() -> new ResourceNotFoundException("Facility", "id", dto.getRoomId()));
 		Branch branch = branchRepo.findById(dto.getBranchId())
 				.orElseThrow(() -> new ResourceNotFoundException("Branch", "id", dto.getBranchId()));
+
+		ensureRoomAvailable(room);
+		LocalTime start = LocalTime.parse(dto.getClassTime());
+		LocalTime end = start.plusMinutes(dto.getDurationMins());
+		if (hasConflictsExcludingCurrent(classesRepo.findConflictingByRoom(room.getFacilityId(), start, end), id))
+			throw new BusinessRuleException("Room is already booked at this time slot.");
+		if (hasConflictsExcludingCurrent(classesRepo.findConflictingByTrainer(trainer.getTrainerId(), start, end), id))
+			throw new BusinessRuleException("Trainer is already assigned to another class at this time.");
 		
 		mapDtoToEntity(dto, cls);
 		cls.setTrainer(trainer);
@@ -290,7 +294,7 @@ public class ClassesService {
 			try {
 				Long userId = booking.getMember().getUser().getUserId();
 				notificationService.sendNotification(userId, type,
-						Notification.Channel.IN_APP, title, body);
+						Notification.Channel.IN_APP, title, body, "/member/classes");
 			} catch (Exception ignored) {
 				// Best-effort notification
 			}
@@ -308,8 +312,12 @@ public class ClassesService {
 				.classId(cls.getClassId())
 				.className(cls.getClassName())
 				.trainerId(cls.getTrainer() != null ? cls.getTrainer().getTrainerId() : null)
+				.trainerName(cls.getTrainer() != null && cls.getTrainer().getUser() != null
+						? cls.getTrainer().getUser().getFullName() : null)
 				.roomId(cls.getRoom() != null ? cls.getRoom().getFacilityId() : null)
+				.roomName(cls.getRoom() != null ? cls.getRoom().getFacilityName() : null)
 				.branchId(cls.getBranch() != null ? cls.getBranch().getBranchId() : null)
+				.branchName(cls.getBranch() != null ? cls.getBranch().getBranchName() : null)
 				.startDate(cls.getStartDate() != null ? cls.getStartDate().toString() : null)
 				.endDate(cls.getEndDate() != null ? cls.getEndDate().toString() : null)
 				.weekdays(cls.getWeekdays())
@@ -337,6 +345,18 @@ public class ClassesService {
 			cls.setStatus(dto.getStatus());
 		}
 		cls.setCancelReason(dto.getCancelReason());
+	}
+
+	private void ensureRoomAvailable(Facility room) {
+		if (Boolean.TRUE.equals(room.getUnderMaintenance())) {
+			throw new BusinessRuleException("Room '" + room.getFacilityName()
+					+ "' is under maintenance: "
+					+ (room.getMaintenanceReason() != null ? room.getMaintenanceReason() : ""));
+		}
+	}
+
+	private boolean hasConflictsExcludingCurrent(List<Classes> conflicts, Long currentClassId) {
+		return conflicts.stream().anyMatch(c -> !c.getClassId().equals(currentClassId));
 	}
 
 	private Classes findById(Long id) {

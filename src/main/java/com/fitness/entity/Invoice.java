@@ -56,6 +56,10 @@ public class Invoice {
 	@Builder.Default
 	private BigDecimal discount = BigDecimal.ZERO;
 
+	@Column(precision = 10, scale = 2)
+	@Builder.Default
+	private BigDecimal walletCreditApplied = BigDecimal.ZERO;
+
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal finalAmount;
 

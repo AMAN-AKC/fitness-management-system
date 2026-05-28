@@ -130,7 +130,7 @@ public class ClassBookingServiceTest {
 
         assertNotNull(result);
         verify(auditLogService).logForCurrentUser(anyString(), any(), any(), any(), anyString());
-        verify(notificationService).sendNotification(any(), any(), any(), anyString(), anyString());
+        verify(notificationService).sendNotification(any(), any(), any(), anyString(), anyString(), anyString());
     }
 
     @Test

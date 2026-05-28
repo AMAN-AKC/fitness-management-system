@@ -26,8 +26,8 @@ public class PromoCodeController {
 	}
 
 	@GetMapping("/validate/{code}")
-	public ResponseEntity<PromoCodeDTO> validateCode(@PathVariable String code) {
-		return ResponseEntity.ok(promoService.validateAndGet(code));
+	public ResponseEntity<PromoCodeDTO> validateCode(@PathVariable String code, @RequestParam(required = false) Long memberId) {
+		return ResponseEntity.ok(promoService.validateAndGet(code, memberId));
 	}
 
 	@GetMapping
@@ -41,5 +41,15 @@ public class PromoCodeController {
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void deactivatePromoCode(@PathVariable Long id) {
 		promoService.deactivatePromoCode(id);
+	}
+
+	@GetMapping("/export-usage")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<byte[]> exportPromoUsageCsv() {
+		byte[] csvBytes = promoService.exportPromoUsageCsv();
+		org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+		headers.set(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=promo_usage.csv");
+		headers.setContentType(org.springframework.http.MediaType.parseMediaType("text/csv"));
+		return ResponseEntity.ok().headers(headers).body(csvBytes);
 	}
 }

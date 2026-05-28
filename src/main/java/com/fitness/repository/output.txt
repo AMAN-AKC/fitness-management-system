@@ -1,0 +1,827 @@
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: AddOnRepository.java  
+ echo. 
+ type "AddOnRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: AddOnRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.AddOn;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface AddOnRepository extends JpaRepository<AddOn, Long> {
+	List<AddOn> findByIsActiveTrue();
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: AttendanceRepository.java  
+ echo. 
+ type "AttendanceRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: AttendanceRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.Attendance;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
+	List<Attendance> findByMemberMemberId(Long memberId);
+
+	List<Attendance> findByBranchBranchId(Long branchId);
+
+	List<Attendance> findByCheckInTimeBetween(LocalDateTime from, LocalDateTime to);
+
+	boolean existsByMemberMemberIdAndCheckInTimeBetween(
+			Long memberId, LocalDateTime from, LocalDateTime to);
+
+	List<Attendance> findBySyncStatus(Attendance.SyncStatus syncStatus);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: AuditLogRepository.java  
+ echo. 
+ type "AuditLogRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: AuditLogRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.AuditLog;
+import com.fitness.entity.AuditLog.Action;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
+	List<AuditLog> findByPerformedByUserIdOrderByCreatedAtDesc(Long userId);
+
+	List<AuditLog> findByEntityNameAndEntityId(String entityName, Long entityId);
+
+	List<AuditLog> findByAction(Action action);
+
+	List<AuditLog> findByCreatedAtBetween(LocalDateTime from, LocalDateTime to);
+
+	List<AuditLog> findAllByOrderByCreatedAtDesc();
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: BranchRepository.java  
+ echo. 
+ type "BranchRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: BranchRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.Branch;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface BranchRepository extends JpaRepository<Branch, Long> {
+	List<Branch> findByIsActiveTrue();
+
+	boolean existsByBranchName(String branchName);
+
+	java.util.Optional<Branch> findByBranchNameIgnoreCase(String branchName);
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: ClassBookingRepository.java  
+ echo. 
+ type "ClassBookingRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: ClassBookingRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.ClassBooking;
+import com.fitness.entity.ClassBooking.BookingStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface ClassBookingRepository extends JpaRepository<ClassBooking, Long> {
+	List<ClassBooking> findByMemberMemberId(Long memberId);
+
+	List<ClassBooking> findByFitnessClassClassId(Long classId);
+
+	List<ClassBooking> findByFitnessClassClassIdAndBookingStatus(Long classId, BookingStatus status);
+
+	Optional<ClassBooking> findByFitnessClassClassIdAndMemberMemberId(Long classId, Long memberId);
+
+	Optional<ClassBooking> findByFitnessClassClassIdAndMemberMemberIdAndBookingStatusNot(
+			Long classId, Long memberId, BookingStatus status);
+
+	long countByFitnessClassClassIdAndBookingStatus(Long classId, BookingStatus status);
+
+	Optional<ClassBooking> findFirstByFitnessClassClassIdAndBookingStatusOrderByWaitlistPositionAsc(
+			Long classId, BookingStatus status);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: ClassesRepository.java  
+ echo. 
+ type "ClassesRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: ClassesRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.Classes;
+import com.fitness.entity.Classes.Status;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import java.time.LocalTime;
+import java.util.List;
+
+@Repository
+public interface ClassesRepository extends JpaRepository<Classes, Long> {
+	List<Classes> findByBranchBranchId(Long branchId);
+	long countByBranchBranchId(Long branchId);
+
+	List<Classes> findByTrainerTrainerId(Long trainerId);
+
+	List<Classes> findByStatus(Status status);
+
+	@Query(value = "SELECT c.* FROM classes c WHERE c.room_id = :roomId " +
+			"AND c.status = 'ACTIVE' " +
+			"AND c.class_time < :endTime " +
+			"AND ADDTIME(c.class_time, SEC_TO_TIME(c.duration_mins * 60)) > :startTime", nativeQuery = true)
+	List<Classes> findConflictingByRoom(@Param("roomId") Long roomId,
+			@Param("startTime") LocalTime startTime,
+			@Param("endTime") LocalTime endTime);
+
+	@Query(value = "SELECT c.* FROM classes c WHERE c.trainer_id = :trainerId " +
+			"AND c.status = 'ACTIVE' " +
+			"AND c.class_time < :endTime " +
+			"AND ADDTIME(c.class_time, SEC_TO_TIME(c.duration_mins * 60)) > :startTime", nativeQuery = true)
+	List<Classes> findConflictingByTrainer(@Param("trainerId") Long trainerId,
+			@Param("startTime") LocalTime startTime,
+			@Param("endTime") LocalTime endTime);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: FacilityRepository.java  
+ echo. 
+ type "FacilityRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: FacilityRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.Facility;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface FacilityRepository extends JpaRepository<Facility, Long> {
+	List<Facility> findByBranchBranchId(Long branchId);
+
+	List<Facility> findByIsActiveTrue();
+
+	List<Facility> findByBranchBranchIdAndIsActiveTrue(Long branchId);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: FeatureFlagRepository.java  
+ echo. 
+ type "FeatureFlagRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: FeatureFlagRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.FeatureFlag;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface FeatureFlagRepository extends JpaRepository<FeatureFlag, Long> {
+    FeatureFlag findByFlagName(String flagName);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: HealthConsentRepository.java  
+ echo. 
+ type "HealthConsentRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: HealthConsentRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.HealthConsent;
+import com.fitness.entity.HealthConsent.Status;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface HealthConsentRepository extends JpaRepository<HealthConsent, Long> {
+	List<HealthConsent> findByMemberMemberId(Long memberId);
+
+	Optional<HealthConsent> findByMemberMemberIdAndStatus(Long memberId, Status status);
+
+	boolean existsByMemberMemberIdAndStatus(Long memberId, Status status);
+
+	List<HealthConsent> findByMemberMemberIdOrderByAcknowledgedAtDesc(Long memberId);
+
+	Optional<HealthConsent> findTopByMemberMemberIdOrderByAcknowledgedAtDesc(Long memberId);
+
+	List<HealthConsent> findByAcknowledgedAtBefore(LocalDateTime acknowledgedAt);
+
+	@Query("select c.formVersion, c.status, count(c), sum(case when c.parqResponses like '%true%' then 1 else 0 end) from HealthConsent c group by c.formVersion, c.status")
+	List<Object[]> summarizeAnonymizedStats();
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: InvoiceRepository.java  
+ echo. 
+ type "InvoiceRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: InvoiceRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.Invoice;
+import com.fitness.entity.Invoice.Status;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
+	Optional<Invoice> findByInvoiceNumber(String invoiceNumber);
+
+	List<Invoice> findByMemberMemberId(Long memberId);
+
+	List<Invoice> findByStatus(Status status);
+
+	boolean existsByInvoiceNumber(String invoiceNumber);
+
+	boolean existsByMembershipMemIdAndStatusIn(Long membershipId, List<Status> statuses);
+
+	@org.springframework.data.jpa.repository.Query("SELECT SUM(i.finalAmount) FROM Invoice i WHERE i.status = 'PAID'")
+	java.math.BigDecimal sumTotalRevenue();
+
+	@org.springframework.data.jpa.repository.Query("SELECT SUM(i.finalAmount) FROM Invoice i WHERE i.status = 'PAID' AND i.createdAt BETWEEN ?1 AND ?2")
+	java.math.BigDecimal sumRevenueByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+
+	@org.springframework.data.jpa.repository.Query("SELECT SUM(i.finalAmount) FROM Invoice i WHERE i.status = 'PAID' AND i.createdAt BETWEEN ?1 AND ?2 AND i.member.homeBranch.branchId = ?3")
+	java.math.BigDecimal sumRevenueByCreatedAtBetweenAndBranchId(java.time.LocalDateTime start, java.time.LocalDateTime end, Long branchId);
+
+	List<Invoice> findByStatusIn(List<Status> statuses);
+
+	@org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i WHERE i.status IN ?1 AND i.member.homeBranch.branchId = ?2")
+	List<Invoice> findByStatusInAndBranchId(List<Status> statuses, Long branchId);
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: LoginAttemptRepository.java  
+ echo. 
+ type "LoginAttemptRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: LoginAttemptRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.LoginAttempt;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
+
+public interface LoginAttemptRepository extends JpaRepository<LoginAttempt, Long> {
+    Optional<LoginAttempt> findByIpAddress(String ipAddress);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: MemberRepository.java  
+ echo. 
+ type "MemberRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: MemberRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.Member;
+import com.fitness.entity.Member.Status;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface MemberRepository extends JpaRepository<Member, Long> {
+	Optional<Member> findByEmail(String email);
+
+	Optional<Member> findByPhone(String phone);
+
+	Optional<Member> findByUserUserId(Long userId);
+
+	boolean existsByEmail(String email);
+
+	boolean existsByPhone(String phone);
+
+	List<Member> findByStatus(Status status);
+
+	long countByStatus(Status status);
+	long countByStatusAndHomeBranchBranchId(Status status, Long branchId);
+
+	long countByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+	long countByCreatedAtBetweenAndHomeBranchBranchId(java.time.LocalDateTime start, java.time.LocalDateTime end, Long branchId);
+
+	List<Member> findByHomeBranchBranchId(Long branchId);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: MembershipRepository.java  
+ echo. 
+ type "MembershipRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: MembershipRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.Membership;
+import com.fitness.entity.Membership.Status;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface MembershipRepository extends JpaRepository<Membership, Long> {
+	List<Membership> findByMemberMemberId(Long memberId);
+
+	List<Membership> findByMemberMemberIdAndStatus(Long memberId, Status status);
+
+	List<Membership> findByStatus(Status status);
+
+	List<Membership> findByEndDateBeforeAndStatus(LocalDate date, Status status);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: NotificationRepository.java  
+ echo. 
+ type "NotificationRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: NotificationRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.Notification;
+import com.fitness.entity.Notification.DeliveryStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
+	List<Notification> findByUserUserIdOrderByCreatedAtDesc(Long userId);
+
+	List<Notification> findByUserUserIdAndIsReadFalse(Long userId);
+
+	List<Notification> findByDeliveryStatus(DeliveryStatus status);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: PasswordPolicyRepository.java  
+ echo. 
+ type "PasswordPolicyRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PasswordPolicyRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.PasswordPolicy;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface PasswordPolicyRepository extends JpaRepository<PasswordPolicy, Long> {
+    // Single row always has policyId = 1; no custom queries needed
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: PasswordResetTokenRepository.java  
+ echo. 
+ type "PasswordResetTokenRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PasswordResetTokenRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.PasswordResetToken;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+@Repository
+public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long> {
+	Optional<PasswordResetToken> findByToken(String token);
+	void deleteByExpiryDateBefore(LocalDateTime date);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: PaymentRepository.java  
+ echo. 
+ type "PaymentRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PaymentRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.Payment;
+import com.fitness.entity.Payment.PaymentStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface PaymentRepository extends JpaRepository<Payment, Long> {
+	List<Payment> findByMemberMemberId(Long memberId);
+	List<Payment> findByInvoiceInvoiceId(Long invoiceId);
+	List<Payment> findByPaymentStatus(PaymentStatus status);
+
+	@Query("SELECT SUM(p.amountPaid) FROM Payment p WHERE p.paymentStatus = :status AND p.paymentDate >= :start")
+	BigDecimal sumRevenueSince(@Param("start") LocalDateTime start, @Param("status") PaymentStatus status);
+}
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: PlanAddOnRepository.java  
+ echo. 
+ type "PlanAddOnRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PlanAddOnRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.PlanAddOn;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface PlanAddOnRepository extends JpaRepository<PlanAddOn, Long> {
+	List<PlanAddOn> findByPlanPlanId(Long planId);
+
+	List<PlanAddOn> findByAddOnAddonId(Long addonId);
+
+	boolean existsByPlanPlanIdAndAddOnAddonId(Long planId, Long addonId);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: PlanRepository.java  
+ echo. 
+ type "PlanRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PlanRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.Plan;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface PlanRepository extends JpaRepository<Plan, Long> {
+	List<Plan> findByIsActiveTrue();
+
+	boolean existsByPlanName(String planName);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: PromoCodeRepository.java  
+ echo. 
+ type "PromoCodeRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PromoCodeRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.PromoCode;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface PromoCodeRepository extends JpaRepository<PromoCode, Long> {
+	Optional<PromoCode> findByCode(String code);
+
+	List<PromoCode> findByIsActiveTrue();
+
+	boolean existsByCode(String code);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: PromoCodeUsageRepository.java  
+ echo. 
+ type "PromoCodeUsageRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PromoCodeUsageRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.PromoCodeUsage;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface PromoCodeUsageRepository extends JpaRepository<PromoCodeUsage, Long> {
+	List<PromoCodeUsage> findByPromoCodePromoId(Long promoId);
+
+	List<PromoCodeUsage> findByMemberMemberId(Long memberId);
+
+	long countByPromoCodePromoIdAndMemberMemberId(Long promoId, Long memberId);
+
+	long countByPromoCodePromoId(Long promoId);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: PtSessionRepository.java  
+ echo. 
+ type "PtSessionRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: PtSessionRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.PtSession;
+import com.fitness.entity.PtSession.Status;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface PtSessionRepository extends JpaRepository<PtSession, Long> {
+	List<PtSession> findByMemberMemberId(Long memberId);
+
+	List<PtSession> findByTrainerTrainerId(Long trainerId);
+
+	List<PtSession> findByStatus(Status status);
+
+	@Query("SELECT s FROM PtSession s WHERE s.trainer.trainerId = :trainerId " +
+			"AND s.status NOT IN ('CANCELLED', 'DECLINED') " +
+			"AND s.scheduledAt < :endTime " +
+			"AND (s.scheduledAt + s.durationMins MINUTE) > :startTime")
+	List<PtSession> findOverlappingForTrainer(@Param("trainerId") Long trainerId,
+			@Param("startTime") LocalDateTime startTime,
+			@Param("endTime") LocalDateTime endTime);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: ReceiptRepository.java  
+ echo. 
+ type "ReceiptRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: ReceiptRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.Receipt;
+import com.fitness.entity.Receipt.Status;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface ReceiptRepository extends JpaRepository<Receipt, Long> {
+	Optional<Receipt> findByReceiptNumber(String receiptNumber);
+
+	List<Receipt> findByMemberMemberId(Long memberId);
+
+	List<Receipt> findByStatus(Status status);
+
+	List<Receipt> findByInvoiceInvoiceId(Long invoiceId);
+
+	boolean existsByReceiptNumber(String receiptNumber);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: SystemUserRepository.java  
+ echo. 
+ type "SystemUserRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: SystemUserRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.SystemUser;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.Optional;
+
+@Repository
+public interface SystemUserRepository extends JpaRepository<SystemUser, Long> {
+	Optional<SystemUser> findByUsername(String username);
+
+	Optional<SystemUser> findByEmail(String email);
+
+	boolean existsByUsername(String username);
+
+	boolean existsByEmail(String email);
+}
+
+********************
+
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo FILE: TrainerRepository.java  
+ echo. 
+ type "TrainerRepository.java"  
+ echo. 
+ echo ********************  
+ echo.
+) 
+FILE: TrainerRepository.java
+
+package com.fitness.repository;
+
+import com.fitness.entity.Trainer;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface TrainerRepository extends JpaRepository<Trainer, Long> {
+	Optional<Trainer> findByUserUserId(Long userId);
+
+	List<Trainer> findByBranchBranchId(Long branchId);
+
+	List<Trainer> findByIsActiveTrue();
+}
+********************
+

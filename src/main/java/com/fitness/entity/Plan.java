@@ -6,6 +6,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Table(name = "plan")
@@ -33,6 +35,15 @@ public class Plan {
 
 	@Column(nullable = false)
 	private LocalTime accessEnd;
+
+	@ManyToMany
+	@JoinTable(
+		name = "plan_branches",
+		joinColumns = @JoinColumn(name = "plan_id"),
+		inverseJoinColumns = @JoinColumn(name = "branch_id")
+	)
+	@Builder.Default
+	private Set<Branch> branches = new HashSet<>();
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)

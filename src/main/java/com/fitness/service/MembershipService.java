@@ -24,6 +24,7 @@ public class MembershipService {
 	private final ModelMapper mapper;
 	private final ProratedPriceService proratedPriceService;
 	private final InvoiceService invoiceService;
+	private final InvoiceRepository invoiceRepo;
 	private final AuditLogService auditLogService;
 
 	public MembershipDTO createMembership(MembershipDTO dto) {
@@ -105,6 +106,51 @@ public class MembershipService {
 				"Plan upgraded to " + newPlan.getPlanName() + " with upgrade cost ₹" + upgradeCost);
 
 		return mapper.map(currentMembership, MembershipDTO.class);
+	}
+	
+	@org.springframework.transaction.annotation.Transactional
+	public MembershipDTO changePlanForPending(Long membershipId, Long newPlanId) {
+		Membership membership = findById(membershipId);
+		if (membership.getStatus() != Membership.Status.PENDING) {
+			throw new BusinessRuleException("Only pending memberships can be changed directly. Use upgrade for active memberships.");
+		}
+		
+		Plan newPlan = planRepo.findById(newPlanId)
+				.orElseThrow(() -> new ResourceNotFoundException("Plan", "id", newPlanId));
+		if (!newPlan.getIsActive()) {
+			throw new BusinessRuleException("Selected plan is not active.");
+		}
+		
+		// Update membership details
+		membership.setPlan(newPlan);
+		membership.setDuration(newPlan.getDurationDays());
+		membership.setEndDate(membership.getStartDate().plusDays(newPlan.getDurationDays()));
+		membership.setPrice(newPlan.getPrice());
+		Membership saved = membershipRepo.save(membership);
+		
+		// Void old pending invoices
+		List<Invoice> existingInvoices = invoiceRepo.findByMembershipMemId(membershipId);
+		for (Invoice inv : existingInvoices) {
+			if (inv.getStatus() == Invoice.Status.ISSUED || inv.getStatus() == Invoice.Status.PENDING) {
+				inv.setStatus(Invoice.Status.VOID);
+				invoiceRepo.save(inv);
+			}
+		}
+		
+		// Issue new invoice
+		com.fitness.dto.InvoiceDTO invoiceDto = new com.fitness.dto.InvoiceDTO();
+		invoiceDto.setMemberId(membership.getMember().getMemberId());
+		invoiceDto.setMembershipId(saved.getMemId());
+		invoiceDto.setMrp(newPlan.getPrice());
+		invoiceDto.setFinalAmount(newPlan.getPrice());
+		invoiceDto.setPaidAmount(java.math.BigDecimal.ZERO);
+		invoiceDto.setStatus(com.fitness.entity.Invoice.Status.ISSUED);
+		invoiceService.createInvoice(invoiceDto);
+		
+		auditLogService.logForCurrentUser("Membership", saved.getMemId(), AuditLog.Action.UPDATE,
+				null, "Pending Plan changed to " + newPlan.getPlanName());
+				
+		return mapper.map(saved, MembershipDTO.class);
 	}
 
 	public List<MembershipDTO> getMembershipsByMember(Long memberId) {

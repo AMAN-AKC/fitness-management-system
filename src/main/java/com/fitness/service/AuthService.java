@@ -35,15 +35,8 @@ public class AuthService implements UserDetailsService {
 	private final PasswordResetTokenRepository passwordResetTokenRepo;
 	private final EmailService emailService;
 	private final LoginAttemptService loginAttemptService;
-
-	@Value("${auth.max-failed-attempts:5}")
-	private int maxFailedAttempts;
-
-	@Value("${auth.lockout-duration-minutes:15}")
-	private int lockoutDurationMinutes;
-
-	@Value("${auth.password-regex:^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$}")
-	private String passwordRegex;
+	private final PasswordPolicyService passwordPolicyService;
+	private final PasswordValidationService passwordValidationService;
 
 	public JwtResponse login(LoginRequest req, String ipAddress) {
 		// 1. Check IP-level lockout first (AC05)
@@ -150,6 +143,11 @@ public class AuthService implements UserDetailsService {
 	public void updateFailedAttempts(SystemUser user) {
 		int attempts = user.getFailedAttempts() + 1;
 		user.setFailedAttempts(attempts);
+
+		var policy = passwordPolicyService.getPolicy();
+		int maxFailedAttempts = policy.getMaxFailedAttempts();
+		int lockoutDurationMinutes = policy.getLockoutDurationMin();
+
 		if (attempts >= maxFailedAttempts) {
 			user.setLockedUntil(java.time.LocalDateTime.now().plusMinutes(lockoutDurationMinutes));
 			user.setFailedAttempts(0);
@@ -172,10 +170,6 @@ public class AuthService implements UserDetailsService {
 	}
 
 	private void validatePasswordComplexity(String password) {
-		if (password == null || !password.matches(passwordRegex)) {
-			throw new BusinessRuleException("Password must be at least 8 characters long, " +
-					"contain at least one uppercase letter, one lowercase letter, " +
-					"one number, and one special character.");
-		}
+		passwordValidationService.validatePassword(password);
 	}
 }

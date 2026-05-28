@@ -11,6 +11,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
+import java.util.Map;
+import com.fitness.entity.EmailTemplate;
+import com.fitness.repository.EmailTemplateRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +26,9 @@ public class EmailService {
 	private String fromEmail;
 
 	private final ObjectProvider<JavaMailSender> mailSenderProvider;
+	private final EmailTemplateRepository templateRepo;
+
+
 
 	/**
 	 * Send receipt email to member
@@ -189,6 +195,27 @@ public class EmailService {
 		System.out.println("[EMAIL SERVICE] Email prepared for " + toEmail + " | Subject: " + subject);
 		System.out.println(body);
 		return true;
+	}
+
+	public boolean sendDynamicEmail(String toAddress, String templateName, Map<String, Object> variables, String fallbackSubject, String fallbackBody) {
+		String subject = fallbackSubject;
+		String body = fallbackBody;
+
+		EmailTemplate template = templateRepo.findByTemplateName(templateName).orElse(null);
+		if (template != null) {
+			subject = template.getSubject();
+			body = template.getBodyHtml();
+		}
+
+		if (variables != null) {
+			for (Map.Entry<String, Object> entry : variables.entrySet()) {
+				String key = "\\{\\{" + entry.getKey() + "\\}\\}";
+				if (subject != null) subject = subject.replaceAll(key, entry.getValue() != null ? entry.getValue().toString() : "");
+				if (body != null) body = body.replaceAll(key, entry.getValue() != null ? entry.getValue().toString() : "");
+			}
+		}
+
+		return sendTextEmail(toAddress, subject, body);
 	}
 
 }

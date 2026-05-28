@@ -45,6 +45,14 @@ public class MembershipController {
 		return ResponseEntity.ok(membershipService.upgradeMembership(memberId, newPlanId, discountAmount));
 	}
 
+	@PostMapping("/{id}/change-pending")
+	@PreAuthorize("hasAnyRole('MEMBER','FRONT_DESK','ADMIN')")
+	public ResponseEntity<MembershipDTO> changePlanForPending(
+			@PathVariable Long id,
+			@RequestParam Long newPlanId) {
+		return ResponseEntity.ok(membershipService.changePlanForPending(id, newPlanId));
+	}
+
 	@PatchMapping("/{id}/suspend")
 	@PreAuthorize("hasAnyRole('FRONT_DESK','MANAGER','ADMIN')")
 	public ResponseEntity<MembershipDTO> suspendMembership(

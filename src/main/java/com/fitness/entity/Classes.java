@@ -54,7 +54,7 @@ public class Classes {
 	@Column(nullable = false)
 	private LocalDate endDate;
 
-	@Column(nullable = false, length = 20)
+	@Column(nullable = false, length = 100)
 	private String weekdays;
 
 	@Column(nullable = false)

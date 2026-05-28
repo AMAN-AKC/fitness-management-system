@@ -63,7 +63,7 @@ public class PtSessionService {
 			notificationService.sendNotification(userId, Notification.NotifType.BOOKING,
 					Notification.Channel.IN_APP,
 					"New PT Session Request",
-					"Member " + member.getMemName() + " requested a session on " + saved.getScheduledAt());
+					"Member " + member.getMemName() + " requested a session on " + saved.getScheduledAt(), "/pt-sessions");
 		} catch (Exception ignored) {
 		}
 
@@ -103,7 +103,7 @@ public class PtSessionService {
 					Notification.Channel.IN_APP,
 					"PT Session Status Update",
 					"Your PT session request with trainer " + session.getTrainer().getUser().getFullName()
-							+ " has been " + status.name().toLowerCase() + ".");
+							+ " has been " + status.name().toLowerCase() + ".", "/pt-sessions");
 		} catch (Exception ignored) {
 		}
 
@@ -139,7 +139,7 @@ public class PtSessionService {
 			notificationService.sendNotification(userId, Notification.NotifType.BOOKING,
 					Notification.Channel.IN_APP,
 					"PT Session Rescheduled",
-					"Member " + session.getMember().getMemName() + " rescheduled the session to " + start);
+					"Member " + session.getMember().getMemName() + " rescheduled the session to " + start, "/pt-sessions");
 		} catch (Exception ignored) {
 		}
 
@@ -175,7 +175,7 @@ public class PtSessionService {
 			notificationService.sendNotification(trainerUserId, Notification.NotifType.CANCELLATION,
 					Notification.Channel.IN_APP,
 					"PT Session Cancelled",
-					"The PT session with " + session.getMember().getMemName() + " on " + session.getScheduledAt() + " has been cancelled.");
+					"The PT session with " + session.getMember().getMemName() + " on " + session.getScheduledAt() + " has been cancelled.", "/pt-sessions");
 		} catch (Exception ignored) {
 		}
 

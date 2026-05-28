@@ -12,4 +12,6 @@ public interface BranchRepository extends JpaRepository<Branch, Long> {
 	boolean existsByBranchName(String branchName);
 
 	java.util.Optional<Branch> findByBranchNameIgnoreCase(String branchName);
+	
+	java.util.Optional<Branch> findByBranchCode(String branchCode);
 }

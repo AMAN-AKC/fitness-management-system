@@ -2,6 +2,8 @@ package com.fitness.controller;
 
 import com.fitness.dto.NotificationDTO;
 import com.fitness.service.NotificationService;
+import com.fitness.service.PreferenceManager;
+import com.fitness.entity.NotificationPreference;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import java.util.List;
 public class NotificationController {
 
 	private final NotificationService notifService;
+	private final PreferenceManager preferenceManager;
 
 	@GetMapping("/user/{userId}")
 	@PreAuthorize("hasAnyRole('MEMBER','FRONT_DESK','TRAINER','MANAGER','ADMIN')")
@@ -32,5 +35,11 @@ public class NotificationController {
 	@GetMapping("/user/{userId}/unread-count")
 	public ResponseEntity<Long> countUnread(@PathVariable Long userId) {
 		return ResponseEntity.ok(notifService.countUnread(userId));
+	}
+
+	@GetMapping("/user/{userId}/preferences")
+	@PreAuthorize("hasAnyRole('MEMBER','FRONT_DESK','TRAINER','MANAGER','ADMIN')")
+	public ResponseEntity<NotificationPreference> getPreferences(@PathVariable Long userId) {
+		return ResponseEntity.ok(preferenceManager.getPreferences(userId));
 	}
 }

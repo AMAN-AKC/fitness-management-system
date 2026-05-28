@@ -7,23 +7,15 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.annotation.Bean;
-import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
-import org.springframework.cache.CacheManager;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication(scanBasePackages = "com.fitness")
-@EnableCaching
 @EnableAspectJAutoProxy
 @EnableScheduling
+@EnableAsync
 public class FitnessManagementSystemApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(FitnessManagementSystemApplication.class, args);
-	}
-
-	@Bean
-	public CacheManager cacheManager() {
-		return new ConcurrentMapCacheManager("managerDashboard");
 	}
 }

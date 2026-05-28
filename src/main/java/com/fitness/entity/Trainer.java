@@ -35,7 +35,7 @@ public class Trainer {
 	private SystemUser user;
 
 	@ManyToOne
-	@JoinColumn(name = "branch_id", nullable = false)
+	@JoinColumn(name = "branch_id", nullable = true)
 	private Branch branch;
 
 	@Column(columnDefinition = "TEXT")

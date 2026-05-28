@@ -57,6 +57,10 @@ public class AttendanceService {
 			throw new BusinessRuleException("Cross-branch check-ins are not permitted.");
 		}
 
+		if (!healthConsentService.hasActiveConsent(member.getMemberId())) {
+			throw new BusinessRuleException("You must complete your Health Consent and PAR-Q form before checking in.");
+		}
+
 		// AC02: Verify active membership — block expired/suspended
 		List<Membership> activeMemberships = membershipRepo
 				.findByMemberMemberIdAndStatus(member.getMemberId(), Membership.Status.ACTIVE);

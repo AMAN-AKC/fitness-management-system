@@ -21,6 +21,7 @@ public class InvoiceDTO {
 	private BigDecimal mrp;
 	private BigDecimal taxes;
 	private BigDecimal discount;
+	private BigDecimal walletCreditApplied;
 	private BigDecimal finalAmount;
 	private BigDecimal paidAmount;
 	private BigDecimal outstanding;

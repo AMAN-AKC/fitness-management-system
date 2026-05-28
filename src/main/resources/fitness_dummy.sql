@@ -14,11 +14,13 @@ create table SYSTEM_USER(
     locked_until datetime null,
     last_login datetime null,
     created_at datetime not null default current_timestamp,
-    updated_at datetime not null default current_timestamp on update current_timestamp
+  updated_at datetime not null default current_timestamp on update current_timestamp,
+  branch_id bigint null
 );
 
 CREATE TABLE BRANCH (
   branch_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  branch_code VARCHAR(20),
   branch_name VARCHAR(120) NOT NULL,
   address TEXT NOT NULL,
   contact VARCHAR(20) NOT NULL,
@@ -27,6 +29,11 @@ CREATE TABLE BRANCH (
   is_active BOOLEAN DEFAULT TRUE,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE SYSTEM_USER
+  ADD CONSTRAINT fk_system_user_branch
+  FOREIGN KEY (branch_id)
+  REFERENCES BRANCH(branch_id);
 
 
 CREATE TABLE PLAN (
@@ -120,6 +127,8 @@ create table MEMBER (
     emg_phone varchar(20) not null,
     referral_code varchar(30),
     corporate_code varchar(30),
+  my_referral_code varchar(30),
+  wallet_balance decimal(10,2) not null default 0.00,
     status varchar(50) not null,
     home_branch_id bigint not null,
     photo_path varchar(255),
@@ -298,6 +307,7 @@ CREATE TABLE NOTIFICATION (
   channel VARCHAR(30) NOT NULL,
   title VARCHAR(200) NOT NULL,
   body TEXT NOT NULL,
+  deep_link VARCHAR(500),
   is_read BOOLEAN DEFAULT FALSE,
   delivery_status VARCHAR(30) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
