@@ -85,7 +85,7 @@ public class CsvImportService {
 				}
 			}
 
-			report.setTotalRows(rowNumber - 2); // Exclude header and adjust for 0-based
+			report.setTotalRows(rowNumber - 1); // Exclude header and adjust for 0-based
 			report.calculateOverallStatus();
 			report.generateSummary();
 

@@ -61,10 +61,13 @@ public class ClassBookingServiceTest {
     private SystemUserRepository userRepo;
 
     @Mock
+    private HealthConsentService healthConsentService;
+
+    @Mock
     private AuditLogService auditLogService;
 
     @Mock
-    private NotificationService notificationService;
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @Mock
     private EmailService emailService;
@@ -84,6 +87,8 @@ public class ClassBookingServiceTest {
 
         when(classesRepo.findById(1L)).thenReturn(Optional.of(cls));
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
 
         assertThrows(BusinessRuleException.class, () -> classBookingService.bookClass(dto));
     }
@@ -117,6 +122,13 @@ public class ClassBookingServiceTest {
 
         when(classesRepo.findById(1L)).thenReturn(Optional.of(cls));
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
+        Membership membership = new Membership();
+        membership.setStatus(Membership.Status.ACTIVE);
+        Plan plan = new Plan();
+        plan.setBranches(Collections.singleton(branch));
+        membership.setPlan(plan);
+        when(membershipRepo.findByMemberMemberIdAndStatus(1L, Membership.Status.ACTIVE)).thenReturn(Arrays.asList(membership));
         when(bookingRepo.countByFitnessClassClassIdAndBookingStatus(eq(1L), any())).thenReturn(5L);
         when(bookingRepo.findByFitnessClassClassIdAndMemberMemberId(1L, 1L)).thenReturn(Optional.empty());
         
@@ -130,7 +142,7 @@ public class ClassBookingServiceTest {
 
         assertNotNull(result);
         verify(auditLogService).logForCurrentUser(anyString(), any(), any(), any(), anyString());
-        verify(notificationService).sendNotification(any(), any(), any(), anyString(), anyString(), anyString());
+        verify(eventPublisher).publishEvent(any());
     }
 
     @Test
@@ -144,6 +156,7 @@ public class ClassBookingServiceTest {
         member.setStatus(Member.Status.ACTIVE);
         when(classesRepo.findById(1L)).thenReturn(Optional.of(cls));
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         assertThrows(BusinessRuleException.class, () -> classBookingService.bookClass(dto));
     }
 
@@ -162,6 +175,7 @@ public class ClassBookingServiceTest {
         member.setHomeBranch(b2);
         when(classesRepo.findById(1L)).thenReturn(Optional.of(cls));
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         assertThrows(BusinessRuleException.class, () -> classBookingService.bookClass(dto));
     }
 
@@ -194,6 +208,13 @@ public class ClassBookingServiceTest {
 
         when(classesRepo.findById(1L)).thenReturn(Optional.of(cls));
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
+        Membership membership = new Membership();
+        membership.setStatus(Membership.Status.ACTIVE);
+        Plan plan = new Plan();
+        plan.setBranches(Collections.singleton(branch));
+        membership.setPlan(plan);
+        when(membershipRepo.findByMemberMemberIdAndStatus(1L, Membership.Status.ACTIVE)).thenReturn(Arrays.asList(membership));
         lenient().when(bookingRepo.countByFitnessClassClassIdAndBookingStatus(1L, ClassBooking.BookingStatus.CONFIRMED)).thenReturn(5L);
         lenient().when(bookingRepo.countByFitnessClassClassIdAndBookingStatus(1L, ClassBooking.BookingStatus.PENDING_CONFIRMATION)).thenReturn(0L);
         lenient().when(bookingRepo.countByFitnessClassClassIdAndBookingStatus(1L, ClassBooking.BookingStatus.WAITLISTED)).thenReturn(2L);
@@ -305,6 +326,7 @@ public class ClassBookingServiceTest {
         when(userRepo.findById(2L)).thenReturn(Optional.of(overrideUser));
         when(classesRepo.findById(1L)).thenReturn(Optional.of(cls));
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(bookingRepo.findByFitnessClassClassIdAndMemberMemberId(1L, 1L)).thenReturn(Optional.empty());
         
         ClassBooking saved = new ClassBooking();
@@ -349,6 +371,7 @@ public class ClassBookingServiceTest {
 
         when(classesRepo.findById(1L)).thenReturn(Optional.of(cls));
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(membershipRepo.findByMemberMemberIdAndStatus(1L, Membership.Status.ACTIVE))
                 .thenReturn(Arrays.asList(membership));
 

@@ -79,6 +79,7 @@ public class AttendanceServiceTest {
         member.setHomeBranch(branch);
 
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(branchRepo.findById(1L)).thenReturn(Optional.of(branch));
         when(membershipRepo.findByMemberMemberIdAndStatus(1L, Membership.Status.ACTIVE)).thenReturn(List.of());
 
@@ -103,6 +104,7 @@ public class AttendanceServiceTest {
         Membership membership = new Membership();
         
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(branchRepo.findById(1L)).thenReturn(Optional.of(branch));
         when(membershipRepo.findByMemberMemberIdAndStatus(1L, Membership.Status.ACTIVE)).thenReturn(List.of(membership));
         when(attendanceRepo.existsByMemberMemberIdAndCheckInTimeBetween(eq(1L), any(), any())).thenReturn(false);
@@ -131,6 +133,7 @@ public class AttendanceServiceTest {
         com.fitness.entity.Classes cls = new com.fitness.entity.Classes();
 
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(branchRepo.findById(1L)).thenReturn(Optional.of(branch));
         when(classesRepo.findById(1L)).thenReturn(Optional.of(cls));
 
@@ -160,6 +163,7 @@ public class AttendanceServiceTest {
         member.setHomeBranch(memberBranch);
 
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(branchRepo.findById(2L)).thenReturn(Optional.of(checkInBranch));
 
         assertThrows(BusinessRuleException.class, () -> attendanceService.checkIn(dto));
@@ -181,6 +185,7 @@ public class AttendanceServiceTest {
         Membership membership = new Membership();
         
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(branchRepo.findById(1L)).thenReturn(Optional.of(branch));
         when(membershipRepo.findByMemberMemberIdAndStatus(1L, Membership.Status.ACTIVE)).thenReturn(List.of(membership));
         when(attendanceRepo.existsByMemberMemberIdAndCheckInTimeBetween(eq(1L), any(), any())).thenReturn(true);
@@ -205,6 +210,7 @@ public class AttendanceServiceTest {
         Membership membership = new Membership();
         
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(branchRepo.findById(1L)).thenReturn(Optional.of(branch));
         when(membershipRepo.findByMemberMemberIdAndStatus(1L, Membership.Status.ACTIVE)).thenReturn(List.of(membership));
         when(attendanceRepo.existsByMemberMemberIdAndCheckInTimeBetween(eq(1L), any(), any())).thenReturn(false);
@@ -230,6 +236,7 @@ public class AttendanceServiceTest {
         Membership membership = new Membership();
         
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(branchRepo.findById(1L)).thenReturn(Optional.of(branch));
         when(membershipRepo.findByMemberMemberIdAndStatus(1L, Membership.Status.ACTIVE)).thenReturn(List.of(membership));
         when(attendanceRepo.existsByMemberMemberIdAndCheckInTimeBetween(eq(1L), any(), any())).thenReturn(false);
@@ -263,6 +270,7 @@ public class AttendanceServiceTest {
         cls.setClassName("Yoga");
 
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(branchRepo.findById(1L)).thenReturn(Optional.of(branch));
         when(membershipRepo.findByMemberMemberIdAndStatus(1L, Membership.Status.ACTIVE)).thenReturn(List.of(membership));
         when(attendanceRepo.existsByMemberMemberIdAndCheckInTimeBetween(eq(1L), any(), any())).thenReturn(false);
@@ -304,6 +312,7 @@ public class AttendanceServiceTest {
         invoice.setOutstanding(new java.math.BigDecimal("100.00"));
 
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(branchRepo.findById(1L)).thenReturn(Optional.of(branch));
         when(membershipRepo.findByMemberMemberIdAndStatus(1L, Membership.Status.ACTIVE)).thenReturn(List.of(membership));
         when(attendanceRepo.existsByMemberMemberIdAndCheckInTimeBetween(eq(1L), any(), any())).thenReturn(false);
@@ -341,6 +350,7 @@ public class AttendanceServiceTest {
         cls.setClassTime(java.time.LocalTime.now()); // Right now, should hit window
 
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(branchRepo.findById(1L)).thenReturn(Optional.of(branch));
         when(membershipRepo.findByMemberMemberIdAndStatus(1L, Membership.Status.ACTIVE)).thenReturn(List.of(membership));
         when(attendanceRepo.existsByMemberMemberIdAndCheckInTimeBetween(eq(1L), any(), any())).thenReturn(false);
@@ -385,6 +395,7 @@ public class AttendanceServiceTest {
         com.fitness.entity.Classes cls = new com.fitness.entity.Classes();
 
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(branchRepo.findById(1L)).thenReturn(Optional.of(branch));
         when(userRepo.findById(2L)).thenReturn(Optional.of(user));
         when(classesRepo.findById(10L)).thenReturn(Optional.of(cls));
@@ -412,6 +423,7 @@ public class AttendanceServiceTest {
         com.fitness.entity.Classes cls = new com.fitness.entity.Classes();
 
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(branchRepo.findById(2L)).thenReturn(Optional.of(branch2));
         when(classesRepo.findById(1L)).thenReturn(Optional.of(cls));
 
@@ -431,6 +443,7 @@ public class AttendanceServiceTest {
         member.setMemberId(1L);
 
         when(memberRepo.findById(1L)).thenReturn(Optional.of(member));
+        lenient().when(healthConsentService.hasActiveConsent(1L)).thenReturn(true);
         when(branchRepo.findById(1L)).thenReturn(Optional.of(branch));
         
         Attendance attendance = new Attendance();

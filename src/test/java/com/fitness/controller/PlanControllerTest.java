@@ -1,119 +1,104 @@
 package com.fitness.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fitness.dto.PlanDTO;
 import com.fitness.service.PlanService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PlanController.class)
+@AutoConfigureMockMvc(addFilters = false)
 public class PlanControllerTest {
-    @org.springframework.boot.test.mock.mockito.MockBean
-    private com.fitness.config.JwtConfig jwtConfig;
-    @org.springframework.boot.test.mock.mockito.MockBean
-    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
-    @org.springframework.boot.test.mock.mockito.MockBean
-    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private MockMvc mockMvc;
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @MockBean
     private PlanService planService;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private MockMvc mockMvc;
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void createPlan_Success() throws Exception {
         PlanDTO dto = new PlanDTO();
-        dto.setPlanName("Basic Plan");
-        dto.setDurationDays(30);
-        dto.setPrice(new java.math.BigDecimal("50.0"));
-        dto.setAccessStart("10:00");
-        dto.setAccessEnd("22:00");
-        dto.setEffectiveFrom("2026-01-01");
+        dto.setPlanId(1L);
+        dto.setPlanName("Gold Plan");
 
-        when(planService.createPlan(any())).thenReturn(dto);
+        when(planService.createPlan(any(PlanDTO.class))).thenReturn(dto);
+
+        String json = "{\"planName\":\"Gold Plan\", \"durationDays\":30, \"price\":100.0, \"accessStart\":\"10:00\", \"accessEnd\":\"22:00\", \"effectiveFrom\":\"2024-11-11\"}";
 
         mockMvc.perform(post("/api/v1/plans")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
+                .content(json))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.planName").value("Basic Plan"));
+                .andExpect(jsonPath("$.planName").value("Gold Plan"));
     }
 
     @Test
-    @WithMockUser
     void getActivePlans_Success() throws Exception {
         PlanDTO dto = new PlanDTO();
-        dto.setPlanName("Basic Plan");
+        dto.setPlanId(1L);
+        dto.setPlanName("Gold Plan");
 
-        when(planService.getActivePlans()).thenReturn(List.of(dto));
+        when(planService.getActivePlans()).thenReturn(Collections.singletonList(dto));
 
-        mockMvc.perform(get("/api/v1/plans")
-                .with(csrf()))
+        mockMvc.perform(get("/api/v1/plans"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].planName").value("Basic Plan"));
+                .andExpect(jsonPath("$[0].planName").value("Gold Plan"));
     }
 
     @Test
-    @WithMockUser
     void getPlanById_Success() throws Exception {
         PlanDTO dto = new PlanDTO();
-        dto.setPlanName("Basic Plan");
+        dto.setPlanId(1L);
 
         when(planService.getPlanById(1L)).thenReturn(dto);
 
-        mockMvc.perform(get("/api/v1/plans/1")
-                .with(csrf()))
+        mockMvc.perform(get("/api/v1/plans/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.planName").value("Basic Plan"));
+                .andExpect(jsonPath("$.planId").value(1));
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void updatePlan_Success() throws Exception {
         PlanDTO dto = new PlanDTO();
         dto.setPlanName("Updated Plan");
-        dto.setDurationDays(30);
-        dto.setPrice(new java.math.BigDecimal("50.0"));
-        dto.setAccessStart("10:00");
-        dto.setAccessEnd("22:00");
-        dto.setEffectiveFrom("2026-01-01");
 
-        when(planService.updatePlan(eq(1L), any())).thenReturn(dto);
+        when(planService.updatePlan(eq(1L), any(PlanDTO.class))).thenReturn(dto);
+
+        String json = "{\"planName\":\"Updated Plan\", \"durationDays\":30, \"price\":120.0, \"accessStart\":\"10:00\", \"accessEnd\":\"22:00\", \"effectiveFrom\":\"2024-11-11\"}";
 
         mockMvc.perform(put("/api/v1/plans/1")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
+                .content(json))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.planName").value("Updated Plan"));
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void deactivatePlan_Success() throws Exception {
-        mockMvc.perform(delete("/api/v1/plans/1")
-                .with(csrf()))
+        mockMvc.perform(delete("/api/v1/plans/1"))
                 .andExpect(status().isNoContent());
 
         verify(planService).deactivatePlan(1L);

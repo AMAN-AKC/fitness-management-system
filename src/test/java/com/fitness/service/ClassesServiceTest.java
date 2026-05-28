@@ -304,6 +304,8 @@ public class ClassesServiceTest {
         dto.setRoomId(2L);
         dto.setBranchId(2L);
         dto.setClassName("Updated Name");
+        dto.setClassTime("10:00");
+        dto.setDurationMins(60);
         
         Classes cls = new Classes(); cls.setClassId(1L); cls.setClassName("Old");
         Trainer t = new Trainer(); t.setTrainerId(1L); cls.setTrainer(t);

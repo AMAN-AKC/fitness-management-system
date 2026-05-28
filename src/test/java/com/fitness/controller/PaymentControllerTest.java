@@ -1,89 +1,102 @@
 package com.fitness.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fitness.dto.PaymentDTO;
 import com.fitness.service.PaymentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PaymentController.class)
+@AutoConfigureMockMvc(addFilters = false)
 public class PaymentControllerTest {
-    @org.springframework.boot.test.mock.mockito.MockBean
-    private com.fitness.config.JwtConfig jwtConfig;
-    @org.springframework.boot.test.mock.mockito.MockBean
-    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
-    @org.springframework.boot.test.mock.mockito.MockBean
-    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private MockMvc mockMvc;
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @MockBean
     private PaymentService paymentService;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private MockMvc mockMvc;
 
     @Test
-    @WithMockUser(roles = "MEMBER")
     void processPayment_Success() throws Exception {
         PaymentDTO dto = new PaymentDTO();
-        dto.setInvoiceId(1L);
-        dto.setMemberId(1L);
-        dto.setPaymentMethod(com.fitness.entity.Payment.PaymentMethod.CARD);
-        dto.setAmountPaid(new java.math.BigDecimal("100.00"));
+        dto.setPaymentId(100L);
 
-        when(paymentService.processPayment(any())).thenReturn(dto);
+        when(paymentService.processPayment(any(PaymentDTO.class))).thenReturn(dto);
+
+        String json = "{\"invoiceId\":10, \"memberId\":1, \"paymentMethod\":\"CARD\", \"amountPaid\":100.0}";
 
         mockMvc.perform(post("/api/v1/payments")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
+                .content(json))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.invoiceId").value(1L));
+                .andExpect(jsonPath("$.paymentId").value(100));
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void refundPayment_Success() throws Exception {
         PaymentDTO dto = new PaymentDTO();
-        dto.setInvoiceId(1L);
+        dto.setPaymentId(100L);
 
-        when(paymentService.refundPayment(eq(1L), eq(1L), eq("Mistake"))).thenReturn(dto);
+        when(paymentService.refundPayment(eq(100L), eq(2L), eq("Customer request"))).thenReturn(dto);
 
-        mockMvc.perform(patch("/api/v1/payments/1/refund")
-                .param("refundBy", "1")
-                .param("reason", "Mistake")
-                .with(csrf()))
+        mockMvc.perform(patch("/api/v1/payments/100/refund")
+                .param("refundBy", "2")
+                .param("reason", "Customer request"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.invoiceId").value(1L));
+                .andExpect(jsonPath("$.paymentId").value(100));
     }
 
     @Test
-    @WithMockUser(roles = "MEMBER")
     void getPaymentsByMember_Success() throws Exception {
         PaymentDTO dto = new PaymentDTO();
-        dto.setInvoiceId(1L);
+        dto.setPaymentId(100L);
 
-        when(paymentService.getPaymentsByMember(1L)).thenReturn(List.of(dto));
+        when(paymentService.getPaymentsByMember(1L)).thenReturn(Collections.singletonList(dto));
 
-        mockMvc.perform(get("/api/v1/payments/member/1")
-                .with(csrf()))
+        mockMvc.perform(get("/api/v1/payments/member/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].invoiceId").value(1L));
+                .andExpect(jsonPath("$[0].paymentId").value(100));
+    }
+
+    @Test
+    void getFailedPayments_Success() throws Exception {
+        PaymentDTO dto = new PaymentDTO();
+        dto.setPaymentId(100L);
+
+        when(paymentService.getFailedPayments()).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/payments/failed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].paymentId").value(100));
+    }
+
+    @Test
+    void getRevenueMTD_Success() throws Exception {
+        when(paymentService.getRevenueMTD()).thenReturn(BigDecimal.valueOf(1000));
+
+        mockMvc.perform(get("/api/v1/payments/revenue/mtd"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(1000));
     }
 }

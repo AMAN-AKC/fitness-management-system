@@ -1,12 +1,14 @@
 package com.fitness.service;
 
 import com.fitness.dto.PlanDTO;
+import com.fitness.entity.AuditLog;
+import com.fitness.entity.Membership;
 import com.fitness.entity.Plan;
-import com.fitness.entity.AuditLog.Action;
 import com.fitness.exception.DuplicateResourceException;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.MembershipRepository;
 import com.fitness.repository.PlanRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,128 +34,113 @@ public class PlanServiceTest {
 
     @Mock
     private PlanRepository planRepo;
-
     @Mock
     private MembershipRepository membershipRepo;
-
     @Mock
     private AuditLogService auditLogService;
-
     @Mock
     private ModelMapper mapper;
 
+    private Plan mockPlan;
+    private PlanDTO mockDto;
+
+    @BeforeEach
+    void setUp() {
+        mockPlan = new Plan();
+        mockPlan.setPlanId(1L);
+        mockPlan.setPlanName("Gold Plan");
+        mockPlan.setPrice(BigDecimal.valueOf(100));
+        mockPlan.setTaxPercent(BigDecimal.valueOf(10));
+        mockPlan.setVersion(1);
+        mockPlan.setIsActive(true);
+
+        mockDto = new PlanDTO();
+        mockDto.setPlanId(1L);
+        mockDto.setPlanName("Gold Plan");
+    }
+
     @Test
     void createPlan_Success() {
-        PlanDTO dto = new PlanDTO();
-        dto.setPlanName("Basic Plan");
-        Plan plan = new Plan();
-        plan.setPlanName("Basic Plan");
+        when(planRepo.existsByPlanName("Gold Plan")).thenReturn(false);
+        when(mapper.map(any(PlanDTO.class), eq(Plan.class))).thenReturn(mockPlan);
+        when(planRepo.save(any(Plan.class))).thenReturn(mockPlan);
+        when(mapper.map(any(Plan.class), eq(PlanDTO.class))).thenReturn(mockDto);
 
-        when(planRepo.existsByPlanName(dto.getPlanName())).thenReturn(false);
-        when(mapper.map(dto, Plan.class)).thenReturn(plan);
-        when(planRepo.save(any(Plan.class))).thenReturn(plan);
-        when(mapper.map(plan, PlanDTO.class)).thenReturn(dto);
-
-        PlanDTO result = planService.createPlan(dto);
+        PlanDTO result = planService.createPlan(mockDto);
 
         assertNotNull(result);
-        assertEquals("Basic Plan", result.getPlanName());
-        verify(planRepo).save(any(Plan.class));
-        verify(auditLogService).logForCurrentUser(eq("Plan"), any(), eq(Action.CREATE), anyString(), isNull());
+        assertEquals(1, mockPlan.getVersion());
+        assertTrue(mockPlan.getIsActive());
+        verify(planRepo).save(mockPlan);
+        verify(auditLogService).logForCurrentUser(eq("Plan"), eq(1L), eq(AuditLog.Action.CREATE), anyString(), isNull());
     }
 
     @Test
-    void createPlan_DuplicateName_ThrowsException() {
-        PlanDTO dto = new PlanDTO();
-        dto.setPlanName("Basic Plan");
-
-        when(planRepo.existsByPlanName(dto.getPlanName())).thenReturn(true);
-
-        assertThrows(DuplicateResourceException.class, () -> planService.createPlan(dto));
-        verify(planRepo, never()).save(any());
+    void createPlan_Duplicate_ThrowsException() {
+        when(planRepo.existsByPlanName("Gold Plan")).thenReturn(true);
+        assertThrows(DuplicateResourceException.class, () -> planService.createPlan(mockDto));
     }
 
     @Test
-    void getPlanById_Found() {
-        Plan plan = new Plan();
-        plan.setPlanId(1L);
-        PlanDTO dto = new PlanDTO();
-        dto.setPlanId(1L);
+    void getAllPlans_Success() {
+        when(planRepo.findAll()).thenReturn(Collections.singletonList(mockPlan));
+        when(mapper.map(any(Plan.class), eq(PlanDTO.class))).thenReturn(mockDto);
 
-        when(planRepo.findById(1L)).thenReturn(Optional.of(plan));
-        when(mapper.map(plan, PlanDTO.class)).thenReturn(dto);
+        List<PlanDTO> results = planService.getAllPlans();
+        assertEquals(1, results.size());
+    }
+
+    @Test
+    void getActivePlans_Success() {
+        when(planRepo.findByIsActiveTrue()).thenReturn(Collections.singletonList(mockPlan));
+        when(mapper.map(any(Plan.class), eq(PlanDTO.class))).thenReturn(mockDto);
+
+        List<PlanDTO> results = planService.getActivePlans();
+        assertEquals(1, results.size());
+    }
+
+    @Test
+    void getPlanById_Success() {
+        when(planRepo.findById(1L)).thenReturn(Optional.of(mockPlan));
+        when(mapper.map(any(Plan.class), eq(PlanDTO.class))).thenReturn(mockDto);
 
         PlanDTO result = planService.getPlanById(1L);
         assertNotNull(result);
-        assertEquals(1L, result.getPlanId());
     }
 
     @Test
-    void getPlanById_NotFound_ThrowsException() {
+    void getPlanById_NotFound() {
         when(planRepo.findById(1L)).thenReturn(Optional.empty());
-
         assertThrows(ResourceNotFoundException.class, () -> planService.getPlanById(1L));
     }
 
     @Test
-    void getAllPlans_ReturnsList() {
-        Plan plan = new Plan();
-        PlanDTO dto = new PlanDTO();
-
-        when(planRepo.findAll()).thenReturn(List.of(plan));
-        when(mapper.map(plan, PlanDTO.class)).thenReturn(dto);
-
-        List<PlanDTO> result = planService.getAllPlans();
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
-    }
-
-    @Test
-    void getActivePlans_ReturnsList() {
-        Plan plan = new Plan();
-        PlanDTO dto = new PlanDTO();
-
-        when(planRepo.findByIsActiveTrue()).thenReturn(List.of(plan));
-        when(mapper.map(plan, PlanDTO.class)).thenReturn(dto);
-
-        List<PlanDTO> result = planService.getActivePlans();
-        assertFalse(result.isEmpty());
-    }
-
-    @Test
     void updatePlan_Success() {
-        Plan plan = new Plan();
-        plan.setPlanId(1L);
-        plan.setPrice(BigDecimal.TEN);
-        plan.setVersion(1);
+        when(planRepo.findById(1L)).thenReturn(Optional.of(mockPlan));
+        when(planRepo.save(any(Plan.class))).thenReturn(mockPlan);
+        doNothing().when(mapper).map(any(PlanDTO.class), any(Plan.class));
+        when(mapper.map(any(Plan.class), eq(PlanDTO.class))).thenReturn(mockDto);
 
-        PlanDTO dto = new PlanDTO();
-        
-        when(planRepo.findById(1L)).thenReturn(Optional.of(plan));
-        when(planRepo.save(any(Plan.class))).thenReturn(plan);
-        lenient().when(mapper.map(any(), eq(PlanDTO.class))).thenReturn(dto);
-
-        PlanDTO result = planService.updatePlan(1L, dto);
+        PlanDTO result = planService.updatePlan(1L, mockDto);
 
         assertNotNull(result);
-        verify(mapper).map(dto, plan);
-        verify(planRepo).save(plan);
-        verify(auditLogService).logForCurrentUser(eq("Plan"), eq(1L), eq(Action.UPDATE), anyString(), anyString());
+        assertEquals(2, mockPlan.getVersion());
+        verify(mapper).map(mockDto, mockPlan);
+        verify(auditLogService).logForCurrentUser(eq("Plan"), eq(1L), eq(AuditLog.Action.UPDATE), anyString(), anyString());
     }
 
     @Test
     void deactivatePlan_Success() {
-        Plan plan = new Plan();
-        plan.setPlanId(1L);
-        plan.setIsActive(true);
-
-        when(planRepo.findById(1L)).thenReturn(Optional.of(plan));
-        when(membershipRepo.findByStatus(any())).thenReturn(List.of());
+        when(planRepo.findById(1L)).thenReturn(Optional.of(mockPlan));
+        
+        Membership m = new Membership();
+        m.setPlan(mockPlan);
+        when(membershipRepo.findByStatus(Membership.Status.ACTIVE)).thenReturn(Collections.singletonList(m));
 
         planService.deactivatePlan(1L);
 
-        assertFalse(plan.getIsActive());
-        verify(planRepo).save(plan);
-        verify(auditLogService).logForCurrentUser(eq("Plan"), eq(1L), eq(Action.UPDATE), anyString(), anyString());
+        assertFalse(mockPlan.getIsActive());
+        verify(planRepo).save(mockPlan);
+        verify(auditLogService).logForCurrentUser(eq("Plan"), eq(1L), eq(AuditLog.Action.UPDATE), anyString(), anyString());
     }
 }

@@ -27,8 +27,11 @@ public class ManagerService {
     private final SystemUserRepository userRepo;
 
     private com.fitness.entity.SystemUser getCurrentUser() {
-        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepo.findByUsername(username).orElse(null);
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return null;
+        }
+        return userRepo.findByUsername(auth.getName()).orElse(null);
     }
 
     @Cacheable(value = "managerDashboard", key = "#branchIdOverride == null ? 'all' : #branchIdOverride")
