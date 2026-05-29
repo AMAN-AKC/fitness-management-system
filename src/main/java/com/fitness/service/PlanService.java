@@ -5,6 +5,7 @@ import com.fitness.entity.Plan;
 import com.fitness.entity.AuditLog.Action;
 import com.fitness.exception.BusinessRuleException;
 import com.fitness.exception.DuplicateResourceException;
+import com.fitness.exception.BusinessRuleException;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.MembershipRepository;
 import com.fitness.repository.PlanRepository;
@@ -32,8 +33,8 @@ public class PlanService {
 		plan.setIsActive(true);
 		plan.setVersion(1);
 		Plan saved = planRepo.save(plan);
-		auditLogService.logForCurrentUser("Plan", saved.getPlanId(), Action.CREATE, 
-			"Plan created: " + saved.getPlanName(), null);
+		auditLogService.logForCurrentUser("Plan", saved.getPlanId(), Action.CREATE,
+				"Plan created: " + saved.getPlanName(), null);
 		return mapper.map(saved, PlanDTO.class);
 	}
 
@@ -52,30 +53,28 @@ public class PlanService {
 
 	public PlanDTO updatePlan(Long id, PlanDTO dto) {
 		Plan plan = findById(id);
-		String oldValues = String.format("price=%s, taxPercent=%s, version=%d", 
-			plan.getPrice(), plan.getTaxPercent(), plan.getVersion());
+		String oldValues = String.format("price=%s, taxPercent=%s, version=%d",
+				plan.getPrice(), plan.getTaxPercent(), plan.getVersion());
 		mapper.map(dto, plan);
 		plan.setVersion(plan.getVersion() + 1);
 		Plan updated = planRepo.save(plan);
-		String newValues = String.format("price=%s, taxPercent=%s, version=%d", 
-			updated.getPrice(), updated.getTaxPercent(), updated.getVersion());
+		String newValues = String.format("price=%s, taxPercent=%s, version=%d",
+				updated.getPrice(), updated.getTaxPercent(), updated.getVersion());
 		auditLogService.logForCurrentUser("Plan", id, Action.UPDATE, oldValues, newValues);
 		return mapper.map(updated, PlanDTO.class);
 	}
 
-	public void deactivatePlan(Long id) {
+	public void deletePlan(Long id) {
 		Plan plan = findById(id);
 		boolean inUse = !membershipRepo.findByStatus(com.fitness.entity.Membership.Status.ACTIVE).stream()
 				.filter(m -> m.getPlan().getPlanId().equals(id))
 				.toList().isEmpty();
-		// AC09: allow deactivation even if in use, but prevent physical deletion (not implemented here)
-		// We just log a warning if in use
+		// AC09: allow deactivation even if in use, but prevent physical deletion
 		if (inUse) {
-			log.info("Deactivating plan {} which has active memberships", id);
+			throw new BusinessRuleException("Cannot delete plan as it is in use. Please deactivate it instead.");
 		}
-		plan.setIsActive(false);
-		planRepo.save(plan);
-		auditLogService.logForCurrentUser("Plan", id, Action.UPDATE, "isActive=true", "isActive=false");
+		planRepo.delete(plan);
+		auditLogService.logForCurrentUser("Plan", id, Action.DELETE, "isActive=true", "DELETED");
 	}
 
 	private Plan findById(Long id) {

@@ -1,0 +1,152 @@
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\aspect>(
+echo ###FILE### FeatureFlagAspectTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\aspect\FeatureFlagAspectTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### FeatureFlagAspectTest.java
+package com.fitness.aspect;
+
+import com.fitness.annotation.FeatureRequired;
+import com.fitness.service.SystemConfigService;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.server.ResponseStatusException;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+public class FeatureFlagAspectTest {
+
+    @InjectMocks
+    private FeatureFlagAspect featureFlagAspect;
+
+    @Mock
+    private SystemConfigService configService;
+
+    @Mock
+    private ProceedingJoinPoint joinPoint;
+
+    @Mock
+    private FeatureRequired featureRequired;
+
+    @Test
+    void checkFeatureFlag_FeatureEnabled_Proceeds() throws Throwable {
+        when(featureRequired.value()).thenReturn("NEW_UI");
+        when(configService.isFeatureEnabled("NEW_UI")).thenReturn(true);
+        when(joinPoint.proceed()).thenReturn("Success");
+
+        Object result = featureFlagAspect.checkFeatureFlag(joinPoint, featureRequired);
+
+        assertEquals("Success", result);
+        verify(joinPoint).proceed();
+    }
+
+    @Test
+    void checkFeatureFlag_FeatureDisabled_ThrowsException() throws Throwable {
+        when(featureRequired.value()).thenReturn("NEW_UI");
+        when(configService.isFeatureEnabled("NEW_UI")).thenReturn(false);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> {
+            featureFlagAspect.checkFeatureFlag(joinPoint, featureRequired);
+        });
+
+        assertEquals(403, ex.getStatusCode().value());
+        assertTrue(ex.getReason().contains("disabled"));
+        verify(joinPoint, never()).proceed();
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\aspect>(
+echo ###FILE### LoggingAspectTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\aspect\LoggingAspectTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### LoggingAspectTest.java
+package com.fitness.aspect;
+
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.Signature;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+public class LoggingAspectTest {
+
+    @InjectMocks
+    private LoggingAspect loggingAspect;
+
+    @Mock
+    private JoinPoint joinPoint;
+
+    @Mock
+    private ProceedingJoinPoint proceedingJoinPoint;
+
+    @Mock
+    private Signature signature;
+
+    @BeforeEach
+    void setUp() {
+    }
+
+    @Test
+    void logBefore_Success() {
+        when(joinPoint.getTarget()).thenReturn(new Object());
+        when(joinPoint.getSignature()).thenReturn(signature);
+        when(signature.getName()).thenReturn("testMethod");
+        when(joinPoint.getArgs()).thenReturn(new Object[]{"arg1"});
+
+        assertDoesNotThrow(() -> loggingAspect.logBefore(joinPoint));
+    }
+
+    @Test
+    void logAfterReturning_Success() {
+        when(joinPoint.getTarget()).thenReturn(new Object());
+        when(joinPoint.getSignature()).thenReturn(signature);
+        when(signature.getName()).thenReturn("testMethod");
+
+        assertDoesNotThrow(() -> loggingAspect.logAfterReturning(joinPoint, "result"));
+    }
+
+    @Test
+    void logAfterThrowing_Success() {
+        when(joinPoint.getTarget()).thenReturn(new Object());
+        when(joinPoint.getSignature()).thenReturn(signature);
+        when(signature.getName()).thenReturn("testMethod");
+
+        assertDoesNotThrow(() -> loggingAspect.logAfterThrowing(joinPoint, new RuntimeException("Error")));
+    }
+
+    @Test
+    void logExecutionTime_Success() throws Throwable {
+        when(proceedingJoinPoint.getTarget()).thenReturn(new Object());
+        when(proceedingJoinPoint.getSignature()).thenReturn(signature);
+        when(signature.getName()).thenReturn("testMethod");
+        when(proceedingJoinPoint.proceed()).thenReturn("Success");
+
+        Object result = loggingAspect.logExecutionTime(proceedingJoinPoint);
+
+        assertEquals("Success", result);
+        verify(proceedingJoinPoint).proceed();
+    }
+}
+
+###END###

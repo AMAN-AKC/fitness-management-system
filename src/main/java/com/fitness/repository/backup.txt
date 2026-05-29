@@ -1,14 +1,11 @@
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: AddOnRepository.java  
+echo ###FILE### AddOnRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\AddOnRepository.java"  
  echo. 
- type "AddOnRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: AddOnRepository.java
-
+###FILE### AddOnRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.AddOn;
@@ -21,19 +18,15 @@ public interface AddOnRepository extends JpaRepository<AddOn, Long> {
 	List<AddOn> findByIsActiveTrue();
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: AttendanceRepository.java  
+echo ###FILE### AttendanceRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\AttendanceRepository.java"  
  echo. 
- type "AttendanceRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: AttendanceRepository.java
-
+###FILE### AttendanceRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.Attendance;
@@ -56,19 +49,15 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 	List<Attendance> findBySyncStatus(Attendance.SyncStatus syncStatus);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: AuditLogRepository.java  
+echo ###FILE### AuditLogRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\AuditLogRepository.java"  
  echo. 
- type "AuditLogRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: AuditLogRepository.java
-
+###FILE### AuditLogRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.AuditLog;
@@ -90,19 +79,37 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
 	List<AuditLog> findAllByOrderByCreatedAtDesc();
 }
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: BranchRepository.java  
+echo ###FILE### BranchInventoryRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\BranchInventoryRepository.java"  
  echo. 
- type "BranchRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: BranchRepository.java
+###FILE### BranchInventoryRepository.java
+package com.fitness.repository;
 
+import com.fitness.entity.BranchInventory;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface BranchInventoryRepository extends JpaRepository<BranchInventory, Long> {
+	List<BranchInventory> findByBranch_BranchId(Long branchId);
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo ###FILE### BranchRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\BranchRepository.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### BranchRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.Branch;
@@ -117,20 +124,18 @@ public interface BranchRepository extends JpaRepository<Branch, Long> {
 	boolean existsByBranchName(String branchName);
 
 	java.util.Optional<Branch> findByBranchNameIgnoreCase(String branchName);
+	
+	java.util.Optional<Branch> findByBranchCode(String branchCode);
 }
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: ClassBookingRepository.java  
+echo ###FILE### ClassBookingRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\ClassBookingRepository.java"  
  echo. 
- type "ClassBookingRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: ClassBookingRepository.java
-
+###FILE### ClassBookingRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.ClassBooking;
@@ -159,19 +164,15 @@ public interface ClassBookingRepository extends JpaRepository<ClassBooking, Long
 			Long classId, BookingStatus status);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: ClassesRepository.java  
+echo ###FILE### ClassesRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\ClassesRepository.java"  
  echo. 
- type "ClassesRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: ClassesRepository.java
-
+###FILE### ClassesRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.Classes;
@@ -209,19 +210,59 @@ public interface ClassesRepository extends JpaRepository<Classes, Long> {
 			@Param("endTime") LocalTime endTime);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: FacilityRepository.java  
+echo ###FILE### ConfigAuditLogRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\ConfigAuditLogRepository.java"  
  echo. 
- type "FacilityRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: FacilityRepository.java
+###FILE### ConfigAuditLogRepository.java
+package com.fitness.repository;
 
+import com.fitness.entity.ConfigAuditLog;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface ConfigAuditLogRepository extends JpaRepository<ConfigAuditLog, Long> {
+	List<ConfigAuditLog> findTop50ByOrderByTimestampDesc();
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo ###FILE### EmailTemplateRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\EmailTemplateRepository.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### EmailTemplateRepository.java
+package com.fitness.repository;
+
+import com.fitness.entity.EmailTemplate;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface EmailTemplateRepository extends JpaRepository<EmailTemplate, Long> {
+	Optional<EmailTemplate> findByTemplateName(String templateName);
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo ###FILE### FacilityRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\FacilityRepository.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### FacilityRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.Facility;
@@ -238,43 +279,37 @@ public interface FacilityRepository extends JpaRepository<Facility, Long> {
 	List<Facility> findByBranchBranchIdAndIsActiveTrue(Long branchId);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: FeatureFlagRepository.java  
+echo ###FILE### FeatureFlagRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\FeatureFlagRepository.java"  
  echo. 
- type "FeatureFlagRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: FeatureFlagRepository.java
-
+###FILE### FeatureFlagRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.FeatureFlag;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface FeatureFlagRepository extends JpaRepository<FeatureFlag, Long> {
-    FeatureFlag findByFlagName(String flagName);
+    Optional<FeatureFlag> findByFlagName(String flagName);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: HealthConsentRepository.java  
+echo ###FILE### HealthConsentRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\HealthConsentRepository.java"  
  echo. 
- type "HealthConsentRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: HealthConsentRepository.java
-
+###FILE### HealthConsentRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.HealthConsent;
@@ -304,19 +339,15 @@ public interface HealthConsentRepository extends JpaRepository<HealthConsent, Lo
 	List<Object[]> summarizeAnonymizedStats();
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: InvoiceRepository.java  
+echo ###FILE### InvoiceRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\InvoiceRepository.java"  
  echo. 
- type "InvoiceRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: InvoiceRepository.java
-
+###FILE### InvoiceRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.Invoice;
@@ -351,20 +382,18 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
 	@org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i WHERE i.status IN ?1 AND i.member.homeBranch.branchId = ?2")
 	List<Invoice> findByStatusInAndBranchId(List<Status> statuses, Long branchId);
+	
+	List<Invoice> findByMembershipMemId(Long membershipId);
 }
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: LoginAttemptRepository.java  
+echo ###FILE### LoginAttemptRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\LoginAttemptRepository.java"  
  echo. 
- type "LoginAttemptRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: LoginAttemptRepository.java
-
+###FILE### LoginAttemptRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.LoginAttempt;
@@ -375,19 +404,15 @@ public interface LoginAttemptRepository extends JpaRepository<LoginAttempt, Long
     Optional<LoginAttempt> findByIpAddress(String ipAddress);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: MemberRepository.java  
+echo ###FILE### MemberRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\MemberRepository.java"  
  echo. 
- type "MemberRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: MemberRepository.java
-
+###FILE### MemberRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.Member;
@@ -408,6 +433,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 	boolean existsByEmail(String email);
 
 	boolean existsByPhone(String phone);
+	Optional<Member> findByMyReferralCode(String myReferralCode);
 
 	List<Member> findByStatus(Status status);
 
@@ -420,19 +446,15 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 	List<Member> findByHomeBranchBranchId(Long branchId);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: MembershipRepository.java  
+echo ###FILE### MembershipRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\MembershipRepository.java"  
  echo. 
- type "MembershipRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: MembershipRepository.java
-
+###FILE### MembershipRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.Membership;
@@ -451,22 +473,93 @@ public interface MembershipRepository extends JpaRepository<Membership, Long> {
 
 	List<Membership> findByStatus(Status status);
 
+	List<Membership> findByEndDateAndStatus(LocalDate date, Status status);
+
 	List<Membership> findByEndDateBeforeAndStatus(LocalDate date, Status status);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: NotificationRepository.java  
+echo ###FILE### MemberTransferLogRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\MemberTransferLogRepository.java"  
  echo. 
- type "NotificationRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: NotificationRepository.java
+###FILE### MemberTransferLogRepository.java
+package com.fitness.repository;
 
+import com.fitness.entity.MemberTransferLog;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface MemberTransferLogRepository extends JpaRepository<MemberTransferLog, Long> {
+	List<MemberTransferLog> findByMember_MemberIdOrderByTransferDateDesc(Long memberId);
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo ###FILE### NotificationDeliveryLogRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\NotificationDeliveryLogRepository.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### NotificationDeliveryLogRepository.java
+package com.fitness.repository;
+
+import com.fitness.entity.NotificationDeliveryLog;
+import com.fitness.entity.Notification;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface NotificationDeliveryLogRepository extends JpaRepository<NotificationDeliveryLog, Long> {
+	
+	@Query("SELECT COUNT(l) FROM NotificationDeliveryLog l WHERE l.notification.user.userId = ?1 AND l.notification.type = ?2 AND l.sentAt > ?3 AND l.status = 'SENT'")
+	long countSentNotificationsWithinTime(Long userId, Notification.NotifType type, LocalDateTime since);
+	
+	List<NotificationDeliveryLog> findByStatus(Notification.DeliveryStatus status);
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo ###FILE### NotificationPreferenceRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\NotificationPreferenceRepository.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### NotificationPreferenceRepository.java
+package com.fitness.repository;
+
+import com.fitness.entity.NotificationPreference;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface NotificationPreferenceRepository extends JpaRepository<NotificationPreference, Long> {
+	Optional<NotificationPreference> findByUserUserId(Long userId);
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo ###FILE### NotificationRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\NotificationRepository.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### NotificationRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.Notification;
@@ -484,19 +577,15 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 	List<Notification> findByDeliveryStatus(DeliveryStatus status);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: PasswordPolicyRepository.java  
+echo ###FILE### PasswordPolicyRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\PasswordPolicyRepository.java"  
  echo. 
- type "PasswordPolicyRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: PasswordPolicyRepository.java
-
+###FILE### PasswordPolicyRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.PasswordPolicy;
@@ -508,19 +597,15 @@ public interface PasswordPolicyRepository extends JpaRepository<PasswordPolicy, 
     // Single row always has policyId = 1; no custom queries needed
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: PasswordResetTokenRepository.java  
+echo ###FILE### PasswordResetTokenRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\PasswordResetTokenRepository.java"  
  echo. 
- type "PasswordResetTokenRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: PasswordResetTokenRepository.java
-
+###FILE### PasswordResetTokenRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.PasswordResetToken;
@@ -536,19 +621,15 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
 	void deleteByExpiryDateBefore(LocalDateTime date);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: PaymentRepository.java  
+echo ###FILE### PaymentRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\PaymentRepository.java"  
  echo. 
- type "PaymentRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: PaymentRepository.java
-
+###FILE### PaymentRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.Payment;
@@ -570,19 +651,15 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 	@Query("SELECT SUM(p.amountPaid) FROM Payment p WHERE p.paymentStatus = :status AND p.paymentDate >= :start")
 	BigDecimal sumRevenueSince(@Param("start") LocalDateTime start, @Param("status") PaymentStatus status);
 }
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: PlanAddOnRepository.java  
+echo ###FILE### PlanAddOnRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\PlanAddOnRepository.java"  
  echo. 
- type "PlanAddOnRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: PlanAddOnRepository.java
-
+###FILE### PlanAddOnRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.PlanAddOn;
@@ -599,19 +676,15 @@ public interface PlanAddOnRepository extends JpaRepository<PlanAddOn, Long> {
 	boolean existsByPlanPlanIdAndAddOnAddonId(Long planId, Long addonId);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: PlanRepository.java  
+echo ###FILE### PlanRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\PlanRepository.java"  
  echo. 
- type "PlanRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: PlanRepository.java
-
+###FILE### PlanRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.Plan;
@@ -626,19 +699,15 @@ public interface PlanRepository extends JpaRepository<Plan, Long> {
 	boolean existsByPlanName(String planName);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: PromoCodeRepository.java  
+echo ###FILE### PromoCodeRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\PromoCodeRepository.java"  
  echo. 
- type "PromoCodeRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: PromoCodeRepository.java
-
+###FILE### PromoCodeRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.PromoCode;
@@ -656,19 +725,15 @@ public interface PromoCodeRepository extends JpaRepository<PromoCode, Long> {
 	boolean existsByCode(String code);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: PromoCodeUsageRepository.java  
+echo ###FILE### PromoCodeUsageRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\PromoCodeUsageRepository.java"  
  echo. 
- type "PromoCodeUsageRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: PromoCodeUsageRepository.java
-
+###FILE### PromoCodeUsageRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.PromoCodeUsage;
@@ -687,19 +752,15 @@ public interface PromoCodeUsageRepository extends JpaRepository<PromoCodeUsage, 
 	long countByPromoCodePromoId(Long promoId);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: PtSessionRepository.java  
+echo ###FILE### PtSessionRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\PtSessionRepository.java"  
  echo. 
- type "PtSessionRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: PtSessionRepository.java
-
+###FILE### PtSessionRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.PtSession;
@@ -728,19 +789,15 @@ public interface PtSessionRepository extends JpaRepository<PtSession, Long> {
 			@Param("endTime") LocalDateTime endTime);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: ReceiptRepository.java  
+echo ###FILE### ReceiptRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\ReceiptRepository.java"  
  echo. 
- type "ReceiptRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: ReceiptRepository.java
-
+###FILE### ReceiptRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.Receipt;
@@ -763,19 +820,37 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Long> {
 	boolean existsByReceiptNumber(String receiptNumber);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: SystemUserRepository.java  
+echo ###FILE### SystemConfigRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\SystemConfigRepository.java"  
  echo. 
- type "SystemUserRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: SystemUserRepository.java
+###FILE### SystemConfigRepository.java
+package com.fitness.repository;
 
+import com.fitness.entity.SystemConfig;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface SystemConfigRepository extends JpaRepository<SystemConfig, String> {
+	Optional<SystemConfig> findByConfigKey(String configKey);
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
+echo ###FILE### SystemUserRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\SystemUserRepository.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### SystemUserRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.SystemUser;
@@ -794,19 +869,15 @@ public interface SystemUserRepository extends JpaRepository<SystemUser, Long> {
 	boolean existsByEmail(String email);
 }
 
-********************
-
+###END###
 
 C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository>(
-echo FILE: TrainerRepository.java  
+echo ###FILE### TrainerRepository.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\repository\TrainerRepository.java"  
  echo. 
- type "TrainerRepository.java"  
- echo. 
- echo ********************  
- echo.
+ echo ###END### 
 ) 
-FILE: TrainerRepository.java
-
+###FILE### TrainerRepository.java
 package com.fitness.repository;
 
 import com.fitness.entity.Trainer;
@@ -823,5 +894,4 @@ public interface TrainerRepository extends JpaRepository<Trainer, Long> {
 
 	List<Trainer> findByIsActiveTrue();
 }
-********************
-
+###END###

@@ -1,0 +1,3297 @@
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### AddOnControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\AddOnControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### AddOnControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.AddOnDTO;
+import com.fitness.service.AddOnService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigDecimal;
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(AddOnController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class AddOnControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private AddOnService addOnService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void createAddOn_Success() throws Exception {
+        AddOnDTO dto = new AddOnDTO();
+        dto.setAddonId(1L);
+        dto.setAddonName("Locker");
+        dto.setPrice(BigDecimal.valueOf(10));
+
+        when(addOnService.createAddOn(any(AddOnDTO.class))).thenReturn(dto);
+
+        String json = "{\"addonName\":\"Locker\", \"price\":10.0, \"addonType\":\"FACILITY\"}";
+
+        mockMvc.perform(post("/api/v1/addons")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.addonName").value("Locker"));
+    }
+
+    @Test
+    void getAllAddOns_Success() throws Exception {
+        AddOnDTO dto = new AddOnDTO();
+        dto.setAddonId(1L);
+        dto.setAddonName("Locker");
+
+        when(addOnService.getAllAddOns()).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/addons"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].addonName").value("Locker"));
+    }
+
+    @Test
+    void getAddOnById_Success() throws Exception {
+        AddOnDTO dto = new AddOnDTO();
+        dto.setAddonId(1L);
+
+        when(addOnService.getAddOnById(1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/addons/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.addonId").value(1));
+    }
+
+    @Test
+    void updateAddOn_Success() throws Exception {
+        AddOnDTO dto = new AddOnDTO();
+        dto.setAddonName("Updated Locker");
+
+        when(addOnService.updateAddOn(eq(1L), any(AddOnDTO.class))).thenReturn(dto);
+
+        String json = "{\"addonName\":\"Updated Locker\", \"price\":15.0, \"addonType\":\"FACILITY\"}";
+
+        mockMvc.perform(put("/api/v1/addons/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.addonName").value("Updated Locker"));
+    }
+
+    @Test
+    void deactivateAddOn_Success() throws Exception {
+        mockMvc.perform(delete("/api/v1/addons/1"))
+                .andExpect(status().isNoContent());
+
+        verify(addOnService).deactivateAddOn(1L);
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### AttendanceControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\AttendanceControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### AttendanceControllerTest.java
+package com.fitness.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fitness.dto.AttendanceDTO;
+import com.fitness.service.AttendanceService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(AttendanceController.class)
+public class AttendanceControllerTest {
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private AttendanceService attendanceService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    @WithMockUser(roles = "FRONT_DESK")
+    void checkIn_Success() throws Exception {
+        AttendanceDTO dto = new AttendanceDTO();
+        dto.setMemberId(1L);
+        dto.setBranchId(1L);
+        dto.setScanMethod(com.fitness.entity.Attendance.ScanMethod.QR);
+
+        when(attendanceService.checkIn(any())).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/attendance/checkin")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.memberId").value(1L));
+    }
+
+    @Test
+    @WithMockUser(roles = "FRONT_DESK")
+    void getAttendanceByMember_Success() throws Exception {
+        AttendanceDTO dto = new AttendanceDTO();
+        dto.setMemberId(1L);
+
+        when(attendanceService.getAttendanceByMember(1L)).thenReturn(List.of(dto));
+
+        mockMvc.perform(get("/api/v1/attendance/member/1")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].memberId").value(1L));
+    }
+
+    @Test
+    @WithMockUser(roles = "TRAINER")
+    void markClassAttendance_Success() throws Exception {
+        AttendanceDTO dto = new AttendanceDTO();
+        dto.setMemberId(1L);
+
+        when(attendanceService.markClassAttendance(eq(1L), eq(1L), eq(1L))).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/attendance/class/1/mark")
+                .param("memberId", "1")
+                .param("classId", "1")
+                .param("branchId", "1")
+                .with(csrf()))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.memberId").value(1L));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### AuditLogControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\AuditLogControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### AuditLogControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.AuditLogDTO;
+import com.fitness.service.AuditLogService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collections;
+
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(AuditLogController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class AuditLogControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private AuditLogService auditLogService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void getAllLogs_Success() throws Exception {
+        AuditLogDTO dto = new AuditLogDTO();
+        dto.setAuditId(100L);
+
+        when(auditLogService.getAllLogs()).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/audit-logs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].auditId").value(100));
+    }
+
+    @Test
+    void getLogsByUser_Success() throws Exception {
+        AuditLogDTO dto = new AuditLogDTO();
+        dto.setAuditId(100L);
+
+        when(auditLogService.getLogsByUser(1L)).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/audit-logs/user/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].auditId").value(100));
+    }
+
+    @Test
+    void getLogsByEntity_Success() throws Exception {
+        AuditLogDTO dto = new AuditLogDTO();
+        dto.setAuditId(100L);
+
+        when(auditLogService.getLogsByEntity("Member", 1L)).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/audit-logs/entity")
+                .param("entityName", "Member")
+                .param("entityId", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].auditId").value(100));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### AuthControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\AuthControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### AuthControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.JwtResponse;
+import com.fitness.dto.LoginRequest;
+import com.fitness.service.AuthService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(
+    controllers = AuthController.class,
+    excludeAutoConfiguration = { org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration.class }
+)
+@AutoConfigureMockMvc(addFilters = false)
+public class AuthControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private AuthService authService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void login_Success() throws Exception {
+        JwtResponse response = new JwtResponse("fake-jwt-token", "ADMIN", 1L, "testuser", "Test User", null);
+        
+        when(authService.login(any(LoginRequest.class), any(String.class))).thenReturn(response);
+
+        String json = "{\"username\":\"testuser\", \"password\":\"password\"}";
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json)
+                .header("X-Forwarded-For", "192.168.1.1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("fake-jwt-token"))
+                .andExpect(jsonPath("$.username").value("testuser"));
+    }
+
+    @Test
+    void forgotPassword_Success() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/forgot-password").param("email", "test@example.com"))
+                .andExpect(status().isOk());
+        
+        verify(authService).requestPasswordReset("test@example.com");
+    }
+
+    @Test
+    void resetPassword_Success() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/reset-password")
+                .param("token", "123456")
+                .param("newPassword", "NewPass1!"))
+                .andExpect(status().isOk());
+        
+        verify(authService).resetPassword("123456", "NewPass1!");
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### BranchControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\BranchControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### BranchControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.BranchDTO;
+import com.fitness.service.BranchService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(BranchController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class BranchControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private BranchService branchService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void createBranch_Success() throws Exception {
+        BranchDTO dto = new BranchDTO();
+        dto.setBranchId(1L);
+        dto.setBranchName("Downtown Branch");
+
+        when(branchService.createBranch(any(BranchDTO.class))).thenReturn(dto);
+
+        String json = "{\"branchName\":\"Downtown Branch\", \"address\":\"123 Main St\", \"contact\":\"555-1234\", \"opHours\":\"9-5\", \"timezone\":\"EST\"}";
+
+        mockMvc.perform(post("/api/v1/branches")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.branchName").value("Downtown Branch"));
+    }
+
+    @Test
+    void getActiveBranches_Success() throws Exception {
+        BranchDTO dto = new BranchDTO();
+        dto.setBranchId(1L);
+        dto.setBranchName("Downtown Branch");
+
+        when(branchService.getActiveBranches()).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/branches"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].branchName").value("Downtown Branch"));
+    }
+
+    @Test
+    void getBranchById_Success() throws Exception {
+        BranchDTO dto = new BranchDTO();
+        dto.setBranchId(1L);
+        when(branchService.getBranchById(1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/branches/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.branchId").value(1));
+    }
+
+    @Test
+    void updateBranch_Success() throws Exception {
+        BranchDTO dto = new BranchDTO();
+        dto.setBranchName("Updated Branch");
+        when(branchService.updateBranch(eq(1L), any(BranchDTO.class))).thenReturn(dto);
+
+        String json = "{\"branchName\":\"Updated Branch\", \"address\":\"123 Main St\", \"contact\":\"555-1234\", \"opHours\":\"9-5\", \"timezone\":\"EST\"}";
+
+        mockMvc.perform(put("/api/v1/branches/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.branchName").value("Updated Branch"));
+    }
+
+    @Test
+    void deactivateBranch_Success() throws Exception {
+        mockMvc.perform(delete("/api/v1/branches/1"))
+                .andExpect(status().isNoContent());
+
+        verify(branchService).deactivateBranch(1L);
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### ClassBookingControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\ClassBookingControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### ClassBookingControllerTest.java
+package com.fitness.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fitness.dto.ClassBookingDTO;
+import com.fitness.service.ClassBookingService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(ClassBookingController.class)
+public class ClassBookingControllerTest {
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private ClassBookingService classBookingService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    @WithMockUser(roles = "MEMBER")
+    void bookClass_Success() throws Exception {
+        ClassBookingDTO dto = new ClassBookingDTO();
+        dto.setClassId(1L);
+        dto.setMemberId(1L);
+
+        when(classBookingService.bookClass(any())).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/bookings")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.classId").value(1L));
+    }
+
+    @Test
+    @WithMockUser(roles = "MEMBER")
+    void getBookingsByMember_Success() throws Exception {
+        ClassBookingDTO dto = new ClassBookingDTO();
+        dto.setClassId(1L);
+
+        when(classBookingService.getBookingsByMember(1L)).thenReturn(List.of(dto));
+
+        mockMvc.perform(get("/api/v1/bookings/member/1")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].classId").value(1L));
+    }
+
+    @Test
+    @WithMockUser(roles = "MEMBER")
+    void cancelBooking_Success() throws Exception {
+        mockMvc.perform(patch("/api/v1/bookings/1/cancel")
+                .with(csrf()))
+                .andExpect(status().isNoContent());
+
+        verify(classBookingService).cancelBooking(1L);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void overrideBooking_Success() throws Exception {
+        ClassBookingDTO dto = new ClassBookingDTO();
+        dto.setClassId(1L);
+        dto.setMemberId(1L);
+
+        when(classBookingService.overrideBooking(any(), eq(1L), eq("Emergency"))).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/bookings/override")
+                .param("overrideByUserId", "1")
+                .param("reason", "Emergency")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.classId").value(1L));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### ClassesControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\ClassesControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### ClassesControllerTest.java
+package com.fitness.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fitness.dto.ClassesDTO;
+import com.fitness.service.ClassesService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(ClassesController.class)
+public class ClassesControllerTest {
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private ClassesService classesService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createClass_Success() throws Exception {
+        ClassesDTO dto = new ClassesDTO();
+        dto.setClassName("Yoga");
+        dto.setTrainerId(1L);
+        dto.setRoomId(1L);
+        dto.setBranchId(1L);
+        dto.setStartDate("2026-06-01");
+        dto.setEndDate("2026-06-30");
+        dto.setWeekdays("Mon,Wed");
+        dto.setClassTime("10:00");
+        dto.setDurationMins(60);
+        dto.setCapacity(20);
+
+        when(classesService.createClass(any())).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/classes")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.className").value("Yoga"));
+    }
+
+    @Test
+    @WithMockUser
+    void getAllClasses_Success() throws Exception {
+        ClassesDTO dto = new ClassesDTO();
+        dto.setClassName("Yoga");
+
+        when(classesService.getAllClasses()).thenReturn(List.of(dto));
+
+        mockMvc.perform(get("/api/v1/classes")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].className").value("Yoga"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void cancelClass_Success() throws Exception {
+        mockMvc.perform(patch("/api/v1/classes/1/cancel")
+                .param("reason", "Trainer unavailable")
+                .with(csrf()))
+                .andExpect(status().isNoContent());
+
+        verify(classesService).cancelClass(1L, "Trainer unavailable");
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### DataImportControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\DataImportControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### DataImportControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.BulkImportReport;
+import com.fitness.dto.BulkImportRowResult;
+import com.fitness.service.CsvImportService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.ArrayList;
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(DataImportController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class DataImportControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private CsvImportService csvImportService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void importMembersFromCsv_Success() throws Exception {
+        BulkImportReport report = BulkImportReport.builder()
+                .fileName("members.csv")
+                .overallStatus("SUCCESS")
+                .successCount(1)
+                .totalRows(1)
+                .rowResults(new ArrayList<>())
+                .build();
+
+        when(csvImportService.importMembers(any())).thenReturn(report);
+
+        MockMultipartFile file = new MockMultipartFile("file", "members.csv", "text/csv", "content".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/import/members/csv")
+                .file(file)
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.overallStatus").value("SUCCESS"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void downloadImportTemplate_Success() throws Exception {
+        mockMvc.perform(get("/api/v1/import/members/template")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"member_import_template.csv\""))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("memName,email,phone")));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void getImportRules_Success() throws Exception {
+        mockMvc.perform(get("/api/v1/import/members/rules")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.maxFileSize").value("5MB"));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### DunningControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\DunningControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### DunningControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.entity.Invoice;
+import com.fitness.entity.Member;
+import com.fitness.entity.Membership;
+import com.fitness.entity.Plan;
+import com.fitness.service.DunningService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDate;
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(DunningController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class DunningControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private DunningService dunningService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void getOverdueInvoices_Success() throws Exception {
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceId(10L);
+        when(dunningService.getOverdueInvoices()).thenReturn(Collections.singletonList(invoice));
+
+        mockMvc.perform(get("/api/v1/dunning/overdue-invoices"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"))
+                .andExpect(jsonPath("$.count").value(1));
+    }
+
+    @Test
+    void getInvoicesOverdueByDays_Success() throws Exception {
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceId(10L);
+        when(dunningService.getInvoicesOverdueByDays(5)).thenReturn(Collections.singletonList(invoice));
+
+        mockMvc.perform(get("/api/v1/dunning/overdue-by-days").param("days", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"))
+                .andExpect(jsonPath("$.count").value(1));
+    }
+
+    @Test
+    void getDunningMemberships_Success() throws Exception {
+        Membership membership = new Membership();
+        membership.setMemId(20L);
+        when(dunningService.getDunningMemberships()).thenReturn(Collections.singletonList(membership));
+
+        mockMvc.perform(get("/api/v1/dunning/dunning-memberships"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"))
+                .andExpect(jsonPath("$.count").value(1));
+    }
+
+    @Test
+    void resolveDunning_Success() throws Exception {
+        mockMvc.perform(post("/api/v1/dunning/resolve/20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"));
+        
+        verify(dunningService).resolveDunning(20L);
+    }
+
+    @Test
+    void suspendDunningMembership_Success() throws Exception {
+        mockMvc.perform(post("/api/v1/dunning/suspend/20").param("reason", "Extended non-payment"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"));
+        
+        verify(dunningService).suspendDunningMembership(20L, "Extended non-payment");
+    }
+
+    @Test
+    void recordFollowUp_Success() throws Exception {
+        mockMvc.perform(post("/api/v1/dunning/follow-up/10").param("notes", "Called member"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"));
+        
+        verify(dunningService).recordFollowUp(10L, "Called member");
+    }
+
+    @Test
+    void setPromiseToPay_Success() throws Exception {
+        mockMvc.perform(post("/api/v1/dunning/promise-to-pay/10").param("promiseDate", "2024-12-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"));
+        
+        verify(dunningService).setPromiseToPay(10L, LocalDate.parse("2024-12-01"));
+    }
+
+    @Test
+    void exportDunningListCsv_Success() throws Exception {
+        Member member = new Member();
+        member.setMemName("Jane Doe");
+        member.setEmail("jane@example.com");
+        member.setPhone("1234567890");
+
+        Plan plan = new Plan();
+        plan.setPlanName("Gold Plan");
+
+        Membership membership = new Membership();
+        membership.setMemId(20L);
+        membership.setMember(member);
+        membership.setPlan(plan);
+        membership.setStatus(Membership.Status.DUNNING);
+
+        when(dunningService.getDunningMemberships()).thenReturn(Collections.singletonList(membership));
+
+        mockMvc.perform(get("/api/v1/dunning/export-csv").accept("text/csv"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=dunning_list.csv"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Jane Doe")));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### FacilityControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\FacilityControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### FacilityControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.FacilityDTO;
+import com.fitness.service.FacilityService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(FacilityController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class FacilityControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private FacilityService facilityService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void createFacility_Success() throws Exception {
+        FacilityDTO dto = new FacilityDTO();
+        dto.setFacilityId(1L);
+        dto.setFacilityName("Yoga Studio");
+
+        when(facilityService.createFacility(any(FacilityDTO.class))).thenReturn(dto);
+
+        String json = "{\"facilityName\":\"Yoga Studio\", \"branchId\":10, \"capacity\":25}";
+
+        mockMvc.perform(post("/api/v1/facilities")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.facilityName").value("Yoga Studio"));
+    }
+
+    @Test
+    void getAllFacilities_Success() throws Exception {
+        FacilityDTO dto = new FacilityDTO();
+        dto.setFacilityId(1L);
+        dto.setFacilityName("Yoga Studio");
+
+        when(facilityService.getAllFacilities()).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/facilities"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].facilityName").value("Yoga Studio"));
+    }
+
+    @Test
+    void getFacilitiesByBranch_Success() throws Exception {
+        FacilityDTO dto = new FacilityDTO();
+        dto.setFacilityId(1L);
+
+        when(facilityService.getFacilitiesByBranch(10L)).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/facilities/branch/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].facilityId").value(1));
+    }
+
+    @Test
+    void getFacilityById_Success() throws Exception {
+        FacilityDTO dto = new FacilityDTO();
+        dto.setFacilityId(1L);
+
+        when(facilityService.getFacilityById(1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/facilities/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.facilityId").value(1));
+    }
+
+    @Test
+    void updateFacility_Success() throws Exception {
+        FacilityDTO dto = new FacilityDTO();
+        dto.setFacilityName("Updated Studio");
+
+        when(facilityService.updateFacility(eq(1L), any(FacilityDTO.class))).thenReturn(dto);
+
+        String json = "{\"facilityName\":\"Updated Studio\", \"branchId\":10, \"capacity\":30}";
+
+        mockMvc.perform(put("/api/v1/facilities/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.facilityName").value("Updated Studio"));
+    }
+
+    @Test
+    void deactivateFacility_Success() throws Exception {
+        mockMvc.perform(delete("/api/v1/facilities/1"))
+                .andExpect(status().isNoContent());
+
+        verify(facilityService).deactivateFacility(1L);
+    }
+
+    @Test
+    void toggleMaintenance_Success() throws Exception {
+        FacilityDTO dto = new FacilityDTO();
+        dto.setUnderMaintenance(true);
+        dto.setMaintenanceReason("Cleaning");
+
+        when(facilityService.toggleMaintenance(eq(1L), eq(true), eq("Cleaning"))).thenReturn(dto);
+
+        mockMvc.perform(patch("/api/v1/facilities/1/maintenance")
+                .param("underMaintenance", "true")
+                .param("reason", "Cleaning"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.underMaintenance").value(true));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### FeatureFlagControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\FeatureFlagControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### FeatureFlagControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.entity.FeatureFlag;
+import com.fitness.service.FeatureFlagService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(FeatureFlagController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class FeatureFlagControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private FeatureFlagService featureFlagService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void getAllFlags_Success() throws Exception {
+        FeatureFlag flag = new FeatureFlag();
+        flag.setFlagId(1L);
+        flag.setFlagName("NEW_UI");
+        flag.setEnabled(true);
+
+        when(featureFlagService.getAllFlags()).thenReturn(Collections.singletonList(flag));
+
+        mockMvc.perform(get("/api/v1/admin/feature-flags"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].flagId").value(1));
+    }
+
+    @Test
+    void updateFlag_Success() throws Exception {
+        FeatureFlag flag = new FeatureFlag();
+        flag.setFlagId(10L);
+
+        when(featureFlagService.updateFlag(eq(10L), anyBoolean(), anyString())).thenReturn(flag);
+
+        mockMvc.perform(put("/api/v1/admin/feature-flags/10")
+                .param("enabled", "true")
+                .param("modifiedBy", "admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.flagId").value(10));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### HealthConsentControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\HealthConsentControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### HealthConsentControllerTest.java
+package com.fitness.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fitness.dto.HealthConsentDTO;
+import com.fitness.dto.MemberDTO;
+import com.fitness.entity.Member;
+import com.fitness.service.HealthConsentService;
+import com.fitness.service.MemberService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Arrays;
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(HealthConsentController.class)
+@AutoConfigureMockMvc(addFilters = false) // Disable security filters for simple controller logic tests
+public class HealthConsentControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private HealthConsentService consentService;
+    @MockBean
+    private MemberService memberService;
+
+    @Autowired
+    private MockMvc mockMvc;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    void submitConsent_Success() throws Exception {
+        HealthConsentDTO dto = HealthConsentDTO.builder()
+                .memberId(1L)
+                .medicalAcknowledged(true)
+                .liabilityAcknowledged(true)
+                .privacyAcknowledged(true)
+                .parqResponses("responses")
+                .formVersion("v1.0")
+                .build();
+                
+        HealthConsentDTO responseDto = HealthConsentDTO.builder().consentId(100L).build();
+        
+        when(consentService.submitConsent(any(), anyString())).thenReturn(responseDto);
+        
+        mockMvc.perform(post("/api/v1/consents")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.consentId").value(100L));
+    }
+
+    @Test
+    void getConsentsByMember_Success() throws Exception {
+        HealthConsentDTO responseDto = HealthConsentDTO.builder().consentId(100L).build();
+        when(consentService.getConsentsByMember(1L)).thenReturn(Arrays.asList(responseDto));
+        
+        mockMvc.perform(get("/api/v1/consents/member/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].consentId").value(100L));
+    }
+
+    @Test
+    void hasActiveConsent_Success() throws Exception {
+        when(consentService.hasActiveConsent(1L)).thenReturn(true);
+        
+        mockMvc.perform(get("/api/v1/consents/member/1/active"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
+    }
+
+    @Test
+    void getConsentStatus_Success() throws Exception {
+        when(consentService.getConsentStatus(1L)).thenReturn(Map.of("active", true, "memberId", 1L));
+        
+        mockMvc.perform(get("/api/v1/consents/member/1/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.active").value(true));
+    }
+
+    @Test
+    void getCurrentMember_Success() throws Exception {
+        Member mockMember = new Member();
+        mockMember.setMemberId(10L);
+        when(consentService.getCurrentMember()).thenReturn(mockMember);
+        
+        MemberDTO dto = new MemberDTO();
+        dto.setMemberId(10L);
+        when(memberService.getMemberById(10L)).thenReturn(dto);
+        
+        mockMvc.perform(get("/api/v1/consents/me/member"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.memberId").value(10L));
+    }
+
+    @Test
+    void addAdministrativeNote_Success() throws Exception {
+        HealthConsentDTO responseDto = HealthConsentDTO.builder().consentId(100L).staffNotes("Noted").build();
+        when(consentService.addAdministrativeNote(100L, "Noted")).thenReturn(responseDto);
+        
+        mockMvc.perform(patch("/api/v1/consents/100/notes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"note\":\"Noted\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.staffNotes").value("Noted"));
+    }
+
+    @Test
+    void downloadConsentHistory_Success() throws Exception {
+        byte[] pdfBytes = "pdf-content".getBytes();
+        when(consentService.downloadConsentHistoryPdf(1L)).thenReturn(pdfBytes);
+        
+        mockMvc.perform(get("/api/v1/consents/member/1/download"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"consent-history.pdf\""))
+                .andExpect(content().bytes(pdfBytes));
+    }
+
+    @Test
+    void anonymizedStats_Success() throws Exception {
+        when(consentService.exportAnonymizedHealthStats()).thenReturn(Arrays.asList(Map.of("stat", "data")));
+        
+        mockMvc.perform(get("/api/v1/consents/stats/anonymized"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].stat").value("data"));
+    }
+
+    @Test
+    void getPolicy_Success() throws Exception {
+        when(consentService.getRetentionPolicy()).thenReturn(Map.of("policy", "val"));
+        
+        mockMvc.perform(get("/api/v1/consents/policy"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.policy").value("val"));
+    }
+
+    @Test
+    void purgeByRetentionPolicy_Success() throws Exception {
+        when(consentService.deleteExpiredByRetentionPolicy()).thenReturn(5);
+        
+        mockMvc.perform(delete("/api/v1/consents/retention/expired"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deletedCount").value(5));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### InvoiceControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\InvoiceControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### InvoiceControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.InvoiceDTO;
+import com.fitness.service.InvoiceService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigDecimal;
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(InvoiceController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class InvoiceControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private InvoiceService invoiceService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void createInvoice_Success() throws Exception {
+        InvoiceDTO dto = new InvoiceDTO();
+        dto.setInvoiceId(10L);
+        dto.setMemberId(1L);
+
+        when(invoiceService.createInvoice(any(InvoiceDTO.class))).thenReturn(dto);
+
+        String json = "{\"memberId\":1, \"finalAmount\":100.0}";
+
+        mockMvc.perform(post("/api/v1/invoices")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.invoiceId").value(10));
+    }
+
+    @Test
+    void getInvoicesByMember_Success() throws Exception {
+        InvoiceDTO dto = new InvoiceDTO();
+        dto.setInvoiceId(10L);
+
+        when(invoiceService.getInvoicesByMember(1L)).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/invoices/member/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].invoiceId").value(10));
+    }
+
+    @Test
+    void getInvoiceById_Success() throws Exception {
+        InvoiceDTO dto = new InvoiceDTO();
+        dto.setInvoiceId(10L);
+
+        when(invoiceService.getInvoiceById(10L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/invoices/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.invoiceId").value(10));
+    }
+
+    @Test
+    void voidInvoice_Success() throws Exception {
+        InvoiceDTO dto = new InvoiceDTO();
+        dto.setInvoiceId(10L);
+
+        when(invoiceService.voidInvoice(eq(10L), eq("Customer request"))).thenReturn(dto);
+
+        mockMvc.perform(patch("/api/v1/invoices/10/void")
+                .param("reason", "Customer request"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.invoiceId").value(10));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### InvoiceExportControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\InvoiceExportControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### InvoiceExportControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.entity.Invoice;
+import com.fitness.service.InvoiceExportService;
+import com.fitness.service.InvoiceService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(InvoiceExportController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class InvoiceExportControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private InvoiceExportService invoiceExportService;
+    @MockBean
+    private InvoiceService invoiceService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void downloadInvoicePDF_Success() throws Exception {
+        Invoice invoice = new Invoice();
+        when(invoiceService.getInvoiceEntityById(10L)).thenReturn(invoice);
+        when(invoiceExportService.exportInvoiceAsPDF(invoice)).thenReturn(new byte[]{1, 2, 3});
+        when(invoiceExportService.getInvoiceFileName(invoice, "pdf")).thenReturn("Invoice_10.pdf");
+
+        mockMvc.perform(get("/api/v1/invoices/10/pdf"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"Invoice_10.pdf\""))
+                .andExpect(content().contentType(MediaType.APPLICATION_PDF))
+                .andExpect(content().bytes(new byte[]{1, 2, 3}));
+    }
+
+    @Test
+    void downloadInvoiceCSV_Success() throws Exception {
+        Invoice invoice = new Invoice();
+        when(invoiceService.getInvoiceEntityById(10L)).thenReturn(invoice);
+        when(invoiceExportService.exportInvoiceAsCSV(invoice)).thenReturn("csv_data".getBytes());
+        when(invoiceExportService.getInvoiceFileName(invoice, "csv")).thenReturn("Invoice_10.csv");
+
+        mockMvc.perform(get("/api/v1/invoices/10/csv"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"Invoice_10.csv\""))
+                .andExpect(content().contentType(MediaType.TEXT_PLAIN))
+                .andExpect(content().bytes("csv_data".getBytes()));
+    }
+
+    @Test
+    void downloadMemberInvoicesCSV_Success() throws Exception {
+        Invoice invoice = new Invoice();
+        when(invoiceService.getInvoicesEntityByMember(1L)).thenReturn(Collections.singletonList(invoice));
+        when(invoiceExportService.exportInvoicesAsCSV(any())).thenReturn("csv_data".getBytes());
+
+        mockMvc.perform(get("/api/v1/invoices/member/1/export/csv"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"Invoices_Member_1.csv\""))
+                .andExpect(content().contentType(MediaType.TEXT_PLAIN))
+                .andExpect(content().bytes("csv_data".getBytes()));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### ManagerControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\ManagerControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### ManagerControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.ManagerDashboardDto;
+import com.fitness.entity.Invoice;
+import com.fitness.repository.InvoiceRepository;
+import com.fitness.service.ManagerService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(ManagerController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class ManagerControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private ManagerService managerService;
+    @MockBean
+    private InvoiceRepository invoiceRepository;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void getDashboardStats_Success() throws Exception {
+        ManagerDashboardDto dto = new ManagerDashboardDto();
+        dto.setActiveMembers(500L);
+        dto.setMonthlyRevenue(15000.0);
+
+        when(managerService.getDashboardStats(1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/manager/dashboard/stats")
+                .param("branchId", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activeMembers").value(500L))
+                .andExpect(jsonPath("$.monthlyRevenue").value(15000.0));
+    }
+
+    @Test
+    void exportAnalyticsCsv_Success() throws Exception {
+        String csvData = "Month,Revenue,NewJoins,Churn\nJan,1000,10,2";
+        when(managerService.exportAnalyticsCsv()).thenReturn(csvData);
+
+        mockMvc.perform(get("/api/v1/manager/dashboard/export-csv")
+                .accept(MediaType.valueOf("text/csv")))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=analytics_report.csv"))
+                .andExpect(content().string(csvData));
+    }
+
+    @Test
+    void getTransactionsDrillDown_Success() throws Exception {
+        Invoice inv = new Invoice();
+        inv.setInvoiceId(10L);
+        
+        when(invoiceRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(Collections.singletonList(inv)));
+
+        mockMvc.perform(get("/api/v1/manager/dashboard/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].invoiceId").value(10L));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### MemberControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\MemberControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### MemberControllerTest.java
+package com.fitness.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fitness.dto.MemberDTO;
+import com.fitness.service.MemberService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(MemberController.class)
+public class MemberControllerTest {
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private MemberService memberService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createMember_Success() throws Exception {
+        MemberDTO dto = MemberDTO.builder()
+                .memName("John Doe")
+                .email("john@example.com")
+                .phone("1234567890")
+                .dob("1990-01-01")
+                .homeBranchId(1L)
+                .address("123 Main St")
+                .emgContact("Jane Doe")
+                .emgPhone("0987654321")
+                .build();
+
+        when(memberService.createMember(any())).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/members")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.email").value("john@example.com"));
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void getAllMembers_Success() throws Exception {
+        MemberDTO dto = MemberDTO.builder().email("john@example.com").build();
+        when(memberService.getAllMembers()).thenReturn(List.of(dto));
+
+        mockMvc.perform(get("/api/v1/members")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].email").value("john@example.com"));
+    }
+
+    @Test
+    @WithMockUser(roles = "MEMBER")
+    void getMemberById_Success() throws Exception {
+        MemberDTO dto = MemberDTO.builder().email("john@example.com").build();
+        when(memberService.getMemberById(1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/members/1")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("john@example.com"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void updateMember_Success() throws Exception {
+        MemberDTO dto = MemberDTO.builder()
+                .memName("John Doe")
+                .email("updated@example.com")
+                .phone("1234567890")
+                .dob("1990-01-01")
+                .homeBranchId(1L)
+                .address("123 Main St")
+                .emgContact("Jane Doe")
+                .emgPhone("0987654321")
+                .build();
+        when(memberService.updateMember(eq(1L), any())).thenReturn(dto);
+
+        mockMvc.perform(put("/api/v1/members/1")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("updated@example.com"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void deactivateMember_Success() throws Exception {
+        mockMvc.perform(delete("/api/v1/members/1")
+                .with(csrf()))
+                .andExpect(status().isNoContent());
+
+        verify(memberService).deactivateMember(1L);
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### MembershipControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\MembershipControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### MembershipControllerTest.java
+package com.fitness.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fitness.dto.MembershipDTO;
+import com.fitness.service.MembershipService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(MembershipController.class)
+public class MembershipControllerTest {
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private MembershipService membershipService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createMembership_Success() throws Exception {
+        MembershipDTO dto = new MembershipDTO();
+        dto.setMemberId(1L);
+        dto.setPlanId(1L);
+
+        when(membershipService.createMembership(any())).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/memberships")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.memberId").value(1L));
+    }
+
+    @Test
+    @WithMockUser
+    void getMembershipById_Success() throws Exception {
+        MembershipDTO dto = new MembershipDTO();
+        dto.setMemberId(1L);
+
+        when(membershipService.getMembershipById(1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/memberships/1")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.memberId").value(1L));
+    }
+
+    @Test
+    @WithMockUser
+    void getMembershipsByMember_Success() throws Exception {
+        MembershipDTO dto = new MembershipDTO();
+        dto.setMemberId(1L);
+
+        when(membershipService.getMembershipsByMember(1L)).thenReturn(List.of(dto));
+
+        mockMvc.perform(get("/api/v1/memberships/member/1")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].memberId").value(1L));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### NotificationControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\NotificationControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### NotificationControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.NotificationDTO;
+import com.fitness.entity.NotificationPreference;
+import com.fitness.service.NotificationService;
+import com.fitness.service.PreferenceManager;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collections;
+
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(NotificationController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class NotificationControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private NotificationService notifService;
+
+    @MockBean
+    private PreferenceManager preferenceManager;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    @WithMockUser
+    void getNotifications_Success() throws Exception {
+        NotificationDTO dto = new NotificationDTO();
+        dto.setNotifId(1L);
+
+        when(notifService.getNotificationsForUser(1L)).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/notifications/user/1")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].notifId").value(1));
+    }
+
+    @Test
+    @WithMockUser
+    void markAsRead_Success() throws Exception {
+        mockMvc.perform(patch("/api/v1/notifications/1/read")
+                .with(csrf()))
+                .andExpect(status().isNoContent());
+
+        verify(notifService).markAsRead(1L);
+    }
+
+    @Test
+    @WithMockUser
+    void countUnread_Success() throws Exception {
+        when(notifService.countUnread(1L)).thenReturn(5L);
+
+        mockMvc.perform(get("/api/v1/notifications/user/1/unread-count")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(5));
+    }
+
+    @Test
+    @WithMockUser
+    void getPreferences_Success() throws Exception {
+        NotificationPreference pref = new NotificationPreference();
+        pref.setEmailEnabled(true);
+
+        when(preferenceManager.getPreferences(1L)).thenReturn(pref);
+
+        mockMvc.perform(get("/api/v1/notifications/user/1/preferences")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.emailEnabled").value(true));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### PasswordPolicyControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\PasswordPolicyControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### PasswordPolicyControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.PasswordPolicyDto;
+import com.fitness.service.PasswordPolicyService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(PasswordPolicyController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class PasswordPolicyControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private PasswordPolicyService passwordPolicyService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void getPolicy_Success() throws Exception {
+        PasswordPolicyDto dto = new PasswordPolicyDto();
+        dto.setMinPasswordLength(8);
+
+        when(passwordPolicyService.getPolicy()).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/admin/config/password-policy"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.minPasswordLength").value(8));
+    }
+
+    @Test
+    @WithMockUser(username = "adminUser", roles = {"ADMIN"})
+    void updatePolicy_Success() throws Exception {
+        PasswordPolicyDto dto = new PasswordPolicyDto();
+        dto.setMinPasswordLength(10);
+
+        when(passwordPolicyService.updatePolicy(any(PasswordPolicyDto.class), anyString())).thenReturn(dto);
+
+        String json = "{\"minPasswordLength\":10}";
+
+        mockMvc.perform(put("/api/v1/admin/config/password-policy")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.minPasswordLength").value(10));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### PaymentControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\PaymentControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### PaymentControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.PaymentDTO;
+import com.fitness.service.PaymentService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigDecimal;
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(PaymentController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class PaymentControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private PaymentService paymentService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void processPayment_Success() throws Exception {
+        PaymentDTO dto = new PaymentDTO();
+        dto.setPaymentId(100L);
+
+        when(paymentService.processPayment(any(PaymentDTO.class))).thenReturn(dto);
+
+        String json = "{\"invoiceId\":10, \"memberId\":1, \"paymentMethod\":\"CARD\", \"amountPaid\":100.0}";
+
+        mockMvc.perform(post("/api/v1/payments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.paymentId").value(100));
+    }
+
+    @Test
+    void refundPayment_Success() throws Exception {
+        PaymentDTO dto = new PaymentDTO();
+        dto.setPaymentId(100L);
+
+        when(paymentService.refundPayment(eq(100L), eq(2L), eq("Customer request"))).thenReturn(dto);
+
+        mockMvc.perform(patch("/api/v1/payments/100/refund")
+                .param("refundBy", "2")
+                .param("reason", "Customer request"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paymentId").value(100));
+    }
+
+    @Test
+    void getPaymentsByMember_Success() throws Exception {
+        PaymentDTO dto = new PaymentDTO();
+        dto.setPaymentId(100L);
+
+        when(paymentService.getPaymentsByMember(1L)).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/payments/member/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].paymentId").value(100));
+    }
+
+    @Test
+    void getFailedPayments_Success() throws Exception {
+        PaymentDTO dto = new PaymentDTO();
+        dto.setPaymentId(100L);
+
+        when(paymentService.getFailedPayments()).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/payments/failed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].paymentId").value(100));
+    }
+
+    @Test
+    void getRevenueMTD_Success() throws Exception {
+        when(paymentService.getRevenueMTD()).thenReturn(BigDecimal.valueOf(1000));
+
+        mockMvc.perform(get("/api/v1/payments/revenue/mtd"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(1000));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### PhotoUploadControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\PhotoUploadControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### PhotoUploadControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.entity.Member;
+import com.fitness.repository.MemberRepository;
+import com.fitness.service.AuditLogService;
+import com.fitness.service.FileUploadService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(PhotoUploadController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class PhotoUploadControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private FileUploadService fileUploadService;
+    
+    @MockBean
+    private MemberRepository memberRepository;
+    
+    @MockBean
+    private AuditLogService auditLogService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    @WithMockUser(roles = "FRONT_DESK")
+    void uploadPhoto_Success() throws Exception {
+        Member member = new Member();
+        member.setMemberId(10L);
+        member.setPhotoPath("old/path.jpg");
+
+        when(memberRepository.findById(10L)).thenReturn(Optional.of(member));
+        when(fileUploadService.uploadPhoto(any(), eq(10L))).thenReturn("uploads/member_10_xyz.jpg");
+
+        MockMultipartFile file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", "content".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/members/10/photo")
+                .file(file)
+                .with(csrf()))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.filePath").value("uploads/member_10_xyz.jpg"));
+        
+        verify(memberRepository).save(member);
+    }
+
+    @Test
+    @WithMockUser(roles = "FRONT_DESK")
+    void uploadPhoto_Failure() throws Exception {
+        Member member = new Member();
+        member.setMemberId(10L);
+
+        when(memberRepository.findById(10L)).thenReturn(Optional.of(member));
+        when(fileUploadService.uploadPhoto(any(), eq(10L))).thenThrow(new RuntimeException("Upload failed"));
+
+        MockMultipartFile file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", "content".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/members/10/photo")
+                .file(file)
+                .with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @WithMockUser
+    void getUploadPolicy_Success() throws Exception {
+        when(fileUploadService.getUploadPolicy()).thenReturn("Max 5MB");
+
+        mockMvc.perform(get("/api/v1/members/photo/policy")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.policy").value("Max 5MB"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void deletePhoto_Success() throws Exception {
+        Member member = new Member();
+        member.setMemberId(10L);
+        member.setPhotoPath("old/path.jpg");
+
+        when(memberRepository.findById(10L)).thenReturn(Optional.of(member));
+
+        mockMvc.perform(delete("/api/v1/members/10/photo")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+        
+        verify(fileUploadService).deletePhoto("old/path.jpg");
+        verify(memberRepository).save(member);
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### PlanControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\PlanControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### PlanControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.PlanDTO;
+import com.fitness.service.PlanService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigDecimal;
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(PlanController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class PlanControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private PlanService planService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void createPlan_Success() throws Exception {
+        PlanDTO dto = new PlanDTO();
+        dto.setPlanId(1L);
+        dto.setPlanName("Gold Plan");
+
+        when(planService.createPlan(any(PlanDTO.class))).thenReturn(dto);
+
+        String json = "{\"planName\":\"Gold Plan\", \"durationDays\":30, \"price\":100.0, \"accessStart\":\"10:00\", \"accessEnd\":\"22:00\", \"effectiveFrom\":\"2024-11-11\"}";
+
+        mockMvc.perform(post("/api/v1/plans")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.planName").value("Gold Plan"));
+    }
+
+    @Test
+    void getActivePlans_Success() throws Exception {
+        PlanDTO dto = new PlanDTO();
+        dto.setPlanId(1L);
+        dto.setPlanName("Gold Plan");
+
+        when(planService.getActivePlans()).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/plans"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].planName").value("Gold Plan"));
+    }
+
+    @Test
+    void getPlanById_Success() throws Exception {
+        PlanDTO dto = new PlanDTO();
+        dto.setPlanId(1L);
+
+        when(planService.getPlanById(1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/plans/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.planId").value(1));
+    }
+
+    @Test
+    void updatePlan_Success() throws Exception {
+        PlanDTO dto = new PlanDTO();
+        dto.setPlanName("Updated Plan");
+
+        when(planService.updatePlan(eq(1L), any(PlanDTO.class))).thenReturn(dto);
+
+        String json = "{\"planName\":\"Updated Plan\", \"durationDays\":30, \"price\":120.0, \"accessStart\":\"10:00\", \"accessEnd\":\"22:00\", \"effectiveFrom\":\"2024-11-11\"}";
+
+        mockMvc.perform(put("/api/v1/plans/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.planName").value("Updated Plan"));
+    }
+
+    @Test
+    void deactivatePlan_Success() throws Exception {
+        mockMvc.perform(delete("/api/v1/plans/1"))
+                .andExpect(status().isNoContent());
+
+        verify(planService).deactivatePlan(1L);
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### PricingControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\PricingControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### PricingControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.PriceBreakdownDTO;
+import com.fitness.service.PriceBreakdownService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigDecimal;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(PricingController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class PricingControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private PriceBreakdownService priceBreakdownService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void getPlanBreakdown_Success() throws Exception {
+        PriceBreakdownDTO dto = PriceBreakdownDTO.builder()
+                .planId(10L)
+                .finalAmount(BigDecimal.valueOf(110))
+                .build();
+
+        when(priceBreakdownService.calculateNewPlanBreakdown(eq(10L), any(BigDecimal.class))).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/pricing/plan/10/breakdown")
+                .param("discountAmount", "10.0"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.planId").value(10))
+                .andExpect(jsonPath("$.finalAmount").value(110));
+    }
+
+    @Test
+    void getUpgradeBreakdown_Success() throws Exception {
+        PriceBreakdownDTO dto = PriceBreakdownDTO.builder()
+                .planId(20L)
+                .finalAmount(BigDecimal.valueOf(150))
+                .build();
+
+        when(priceBreakdownService.calculateUpgradeBreakdown(eq(1L), eq(20L), any(BigDecimal.class))).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/pricing/member/1/upgrade/20")
+                .param("discountAmount", "20.0"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.planId").value(20))
+                .andExpect(jsonPath("$.finalAmount").value(150));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### PromoCodeControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\PromoCodeControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### PromoCodeControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.PromoCodeDTO;
+import com.fitness.service.PromoCodeService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(PromoCodeController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class PromoCodeControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private PromoCodeService promoCodeService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void createPromoCode_Success() throws Exception {
+        PromoCodeDTO dto = new PromoCodeDTO();
+        dto.setCode("SAVE20");
+        
+        when(promoCodeService.createPromoCode(any(PromoCodeDTO.class))).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/promo-codes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"code\":\"SAVE20\", \"discountType\":\"PERCENT\", \"discountValue\":20.0, \"expiryDate\":\"2030-01-01\", \"usageLimit\":10, \"perMemberLimit\":1, \"eligibility\":\"ALL\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value("SAVE20"));
+    }
+
+    @Test
+    void validateCode_Success() throws Exception {
+        PromoCodeDTO dto = new PromoCodeDTO();
+        dto.setCode("SAVE20");
+        when(promoCodeService.validateAndGet("SAVE20", 1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/promo-codes/validate/SAVE20")
+                .param("memberId", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("SAVE20"));
+    }
+
+    @Test
+    void getAllPromoCodes_Success() throws Exception {
+        PromoCodeDTO dto = new PromoCodeDTO();
+        dto.setCode("SAVE20");
+        when(promoCodeService.getAllPromoCodes()).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/promo-codes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].code").value("SAVE20"));
+    }
+
+    @Test
+    void deactivatePromoCode_Success() throws Exception {
+        mockMvc.perform(delete("/api/v1/promo-codes/1"))
+                .andExpect(status().isNoContent());
+                
+        verify(promoCodeService).deactivatePromoCode(1L);
+    }
+
+    @Test
+    void exportPromoUsageCsv_Success() throws Exception {
+        byte[] csv = "UsageID,PromoCode\n1,SAVE20".getBytes();
+        when(promoCodeService.exportPromoUsageCsv()).thenReturn(csv);
+
+        mockMvc.perform(get("/api/v1/promo-codes/export-usage"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=promo_usage.csv"))
+                .andExpect(content().bytes(csv));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### PtSessionControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\PtSessionControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### PtSessionControllerTest.java
+package com.fitness.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fitness.dto.PtSessionDTO;
+import com.fitness.entity.PtSession;
+import com.fitness.service.PtSessionService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Arrays;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(PtSessionController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class PtSessionControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private PtSessionService ptService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    void requestSession_Success() throws Exception {
+        PtSessionDTO requestDto = new PtSessionDTO();
+        requestDto.setMemberId(1L);
+        requestDto.setTrainerId(2L);
+        requestDto.setDurationMins(60);
+        requestDto.setScheduledAt("2030-01-01T10:00:00");
+        
+        PtSessionDTO responseDto = new PtSessionDTO();
+        responseDto.setSessionId(10L);
+        
+        when(ptService.requestSession(any())).thenReturn(responseDto);
+
+        mockMvc.perform(post("/api/v1/pt-sessions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.sessionId").value(10L));
+    }
+
+    @Test
+    void updateStatus_Success() throws Exception {
+        PtSessionDTO responseDto = new PtSessionDTO();
+        responseDto.setSessionId(10L);
+        responseDto.setStatus(PtSession.Status.APPROVED);
+
+        when(ptService.updateStatus(eq(10L), eq(PtSession.Status.APPROVED), eq("notes"))).thenReturn(responseDto);
+
+        mockMvc.perform(patch("/api/v1/pt-sessions/10/status")
+                .param("status", "APPROVED")
+                .param("notes", "notes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("APPROVED"));
+    }
+
+    @Test
+    void rescheduleSession_Success() throws Exception {
+        PtSessionDTO responseDto = new PtSessionDTO();
+        responseDto.setSessionId(10L);
+        
+        when(ptService.rescheduleSession(eq(10L), eq("2030-01-01T10:00:00"))).thenReturn(responseDto);
+
+        mockMvc.perform(patch("/api/v1/pt-sessions/10/reschedule")
+                .param("newScheduledAt", "2030-01-01T10:00:00"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessionId").value(10L));
+    }
+
+    @Test
+    void cancelSession_Success() throws Exception {
+        PtSessionDTO responseDto = new PtSessionDTO();
+        responseDto.setSessionId(10L);
+        
+        when(ptService.cancelSession(10L)).thenReturn(responseDto);
+
+        mockMvc.perform(patch("/api/v1/pt-sessions/10/cancel"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessionId").value(10L));
+    }
+
+    @Test
+    void getSessionsByMember_Success() throws Exception {
+        PtSessionDTO responseDto = new PtSessionDTO();
+        responseDto.setSessionId(10L);
+        
+        when(ptService.getSessionsByMember(1L)).thenReturn(Arrays.asList(responseDto));
+
+        mockMvc.perform(get("/api/v1/pt-sessions/member/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].sessionId").value(10L));
+    }
+
+    @Test
+    void getSessionsByTrainer_Success() throws Exception {
+        PtSessionDTO responseDto = new PtSessionDTO();
+        responseDto.setSessionId(10L);
+        
+        when(ptService.getSessionsByTrainer(2L)).thenReturn(Arrays.asList(responseDto));
+
+        mockMvc.perform(get("/api/v1/pt-sessions/trainer/2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].sessionId").value(10L));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### ReceiptControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\ReceiptControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### ReceiptControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.ReceiptDTO;
+import com.fitness.service.ReceiptService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(ReceiptController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class ReceiptControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private ReceiptService receiptService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void getMemberReceipts_Success() throws Exception {
+        ReceiptDTO dto = new ReceiptDTO();
+        dto.setReceiptNumber("RCP-1234");
+
+        when(receiptService.getReceiptsByMember(1L)).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/receipts/member/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].receiptNumber").value("RCP-1234"));
+    }
+
+    @Test
+    void getReceiptByNumber_Success() throws Exception {
+        ReceiptDTO dto = new ReceiptDTO();
+        dto.setReceiptNumber("RCP-1234");
+
+        when(receiptService.getReceiptByNumber("RCP-1234")).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/receipts/RCP-1234"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.receiptNumber").value("RCP-1234"));
+    }
+
+    @Test
+    void markAsEmailed_Success() throws Exception {
+        ReceiptDTO dto = new ReceiptDTO();
+        dto.setReceiptNumber("RCP-1234");
+
+        when(receiptService.markAsEmailed(10L)).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/receipts/10/email"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.receiptNumber").value("RCP-1234"));
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### RecurringBillingControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\RecurringBillingControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### RecurringBillingControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.InvoiceDTO;
+import com.fitness.dto.RecurringBillingScheduleDTO;
+import com.fitness.entity.Membership;
+import com.fitness.service.RecurringBillingService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDate;
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(RecurringBillingController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class RecurringBillingControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private RecurringBillingService recurringBillingService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void createSchedule_Success() throws Exception {
+        Membership m = new Membership();
+        m.setMemId(10L);
+        when(recurringBillingService.getMembershipById(10L)).thenReturn(m);
+
+        RecurringBillingScheduleDTO dto = RecurringBillingScheduleDTO.builder().membershipId(10L).build();
+        when(recurringBillingService.createRecurringSchedule(m)).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/recurring-billing/membership/10/schedule"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.membershipId").value(10L));
+    }
+
+    @Test
+    void getMembershipsForBilling_Success() throws Exception {
+        Membership m = new Membership();
+        m.setMemId(10L);
+        when(recurringBillingService.getMembershipsForRecurringBilling(LocalDate.parse("2030-01-01")))
+                .thenReturn(Collections.singletonList(m));
+
+        mockMvc.perform(get("/api/v1/recurring-billing/billing-due/2030-01-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"))
+                .andExpect(jsonPath("$.count").value(1));
+    }
+
+    @Test
+    void runRecurringBillingNow_Success() throws Exception {
+        InvoiceDTO invoice = new InvoiceDTO();
+        invoice.setInvoiceNumber("INV-123");
+        when(recurringBillingService.processRecurringBilling(any())).thenReturn(Collections.singletonList(invoice));
+
+        mockMvc.perform(post("/api/v1/recurring-billing/run-today"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"))
+                .andExpect(jsonPath("$.createdInvoices").value(1));
+    }
+
+    @Test
+    void pauseRecurringBilling_Success() throws Exception {
+        mockMvc.perform(post("/api/v1/recurring-billing/10/pause")
+                .param("reason", "vacation"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"));
+                
+        verify(recurringBillingService).pauseRecurringBilling(10L, "vacation");
+    }
+
+    @Test
+    void resumeRecurringBilling_Success() throws Exception {
+        mockMvc.perform(post("/api/v1/recurring-billing/10/resume"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"));
+                
+        verify(recurringBillingService).resumeRecurringBilling(10L);
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### SystemConfigControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\SystemConfigControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### SystemConfigControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.entity.ConfigAuditLog;
+import com.fitness.entity.FeatureFlag;
+import com.fitness.entity.SystemConfig;
+import com.fitness.service.SystemConfigService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collections;
+
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(SystemConfigController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class SystemConfigControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private SystemConfigService configService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void getAllConfigs_Success() throws Exception {
+        SystemConfig config = new SystemConfig();
+        config.setConfigKey("app.name");
+
+        when(configService.getAllConfigs()).thenReturn(Collections.singletonList(config));
+
+        mockMvc.perform(get("/api/v1/config/all"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].configKey").value("app.name"));
+    }
+
+    @Test
+    void updateConfigs_Success() throws Exception {
+        String json = "{\"app.name\":\"NewAppName\"}";
+
+        mockMvc.perform(put("/api/v1/config/update")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isOk());
+        
+        verify(configService).updateConfig("app.name", "NewAppName");
+    }
+
+    @Test
+    void getAuditLogs_Success() throws Exception {
+        ConfigAuditLog auditLog = new ConfigAuditLog();
+        auditLog.setSettingName("app.name");
+
+        when(configService.getRecentAudits()).thenReturn(Collections.singletonList(auditLog));
+
+        mockMvc.perform(get("/api/v1/config/audit"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].settingName").value("app.name"));
+    }
+
+    @Test
+    void getFeatureFlags_Success() throws Exception {
+        FeatureFlag flag = new FeatureFlag();
+        flag.setFlagName("NEW_UI");
+
+        when(configService.getAllFeatureFlags()).thenReturn(Collections.singletonList(flag));
+
+        mockMvc.perform(get("/api/v1/config/features"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].flagName").value("NEW_UI"));
+    }
+
+    @Test
+    void toggleFeature_Success() throws Exception {
+        mockMvc.perform(put("/api/v1/config/features/NEW_UI/toggle")
+                .param("enabled", "true"))
+                .andExpect(status().isOk());
+        
+        verify(configService).toggleFeature("NEW_UI", true);
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### SystemUserControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\SystemUserControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### SystemUserControllerTest.java
+package com.fitness.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fitness.dto.SystemUserDTO;
+import com.fitness.service.SystemUserService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Arrays;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(SystemUserController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class SystemUserControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private SystemUserService userService;
+
+    @Autowired
+    private MockMvc mockMvc;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    void createUser_Success() throws Exception {
+        SystemUserDTO requestDto = new SystemUserDTO();
+        requestDto.setUsername("newuser");
+        requestDto.setEmail("new@example.com");
+
+        SystemUserDTO responseDto = new SystemUserDTO();
+        responseDto.setUsername("newuser");
+        responseDto.setBranchName("HQ");
+
+        when(userService.createUser(any(), eq("securePass"))).thenReturn(responseDto);
+
+        mockMvc.perform(post("/api/v1/users")
+                .param("password", "securePass")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.username").value("newuser"))
+                .andExpect(jsonPath("$.branchName").value("HQ"));
+    }
+
+    @Test
+    void getAllUsers_Success() throws Exception {
+        SystemUserDTO dto = new SystemUserDTO();
+        dto.setUsername("user1");
+        
+        when(userService.getAllUsers()).thenReturn(Arrays.asList(dto));
+
+        mockMvc.perform(get("/api/v1/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].username").value("user1"));
+    }
+
+    @Test
+    void getUserById_Success() throws Exception {
+        SystemUserDTO dto = new SystemUserDTO();
+        dto.setUsername("user1");
+        
+        when(userService.getUserById(1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/users/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("user1"));
+    }
+
+    @Test
+    void updateUser_Success() throws Exception {
+        SystemUserDTO requestDto = new SystemUserDTO();
+        requestDto.setUsername("updated");
+        requestDto.setEmail("update@example.com");
+        
+        SystemUserDTO responseDto = new SystemUserDTO();
+        responseDto.setUsername("updated");
+        
+        when(userService.updateUser(eq(1L), any())).thenReturn(responseDto);
+
+        mockMvc.perform(put("/api/v1/users/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("updated"));
+    }
+
+    @Test
+    void deactivateUser_Success() throws Exception {
+        mockMvc.perform(delete("/api/v1/users/1"))
+                .andExpect(status().isNoContent());
+                
+        verify(userService).deactivateUser(1L);
+    }
+
+    @Test
+    void lockUser_Success() throws Exception {
+        mockMvc.perform(post("/api/v1/users/1/lock"))
+                .andExpect(status().isNoContent());
+                
+        verify(userService).lockUser(1L);
+    }
+
+    @Test
+    void unlockUser_Success() throws Exception {
+        mockMvc.perform(post("/api/v1/users/1/unlock"))
+                .andExpect(status().isNoContent());
+                
+        verify(userService).unlockUser(1L);
+    }
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller>(
+echo ###FILE### TrainerControllerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\controller\TrainerControllerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### TrainerControllerTest.java
+package com.fitness.controller;
+
+import com.fitness.dto.TrainerDTO;
+import com.fitness.service.TrainerService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(TrainerController.class)
+@AutoConfigureMockMvc(addFilters = false)
+public class TrainerControllerTest {
+
+    @MockBean
+    private com.fitness.config.JwtConfig jwtConfig;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    @MockBean
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private TrainerService trainerService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void createTrainer_Success() throws Exception {
+        TrainerDTO dto = new TrainerDTO();
+        dto.setTrainerId(100L);
+        dto.setTrainerName("John Trainer");
+
+        when(trainerService.createTrainer(any(TrainerDTO.class))).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/trainers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userId\":1, \"branchId\":10, \"trainerName\":\"John Trainer\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.trainerName").value("John Trainer"));
+    }
+
+    @Test
+    void getAllTrainers_Success() throws Exception {
+        TrainerDTO dto = new TrainerDTO();
+        dto.setTrainerId(100L);
+        dto.setTrainerName("John Trainer");
+
+        when(trainerService.getAllTrainers()).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/trainers"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].trainerName").value("John Trainer"));
+    }
+
+    @Test
+    void getTrainersByBranch_Success() throws Exception {
+        TrainerDTO dto = new TrainerDTO();
+        dto.setTrainerId(100L);
+        when(trainerService.getTrainersByBranch(10L)).thenReturn(Collections.singletonList(dto));
+
+        mockMvc.perform(get("/api/v1/trainers/branch/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].trainerId").value(100));
+    }
+
+    @Test
+    void getTrainerById_Success() throws Exception {
+        TrainerDTO dto = new TrainerDTO();
+        dto.setTrainerId(100L);
+        when(trainerService.getTrainerById(100L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/trainers/100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trainerId").value(100));
+    }
+
+    @Test
+    void getTrainerByUserId_Success() throws Exception {
+        TrainerDTO dto = new TrainerDTO();
+        dto.setUserId(1L);
+        when(trainerService.getTrainerByUserId(1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/trainers/user/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(1));
+    }
+
+    @Test
+    void updateTrainer_Success() throws Exception {
+        TrainerDTO dto = new TrainerDTO();
+        dto.setBio("Updated Bio");
+        when(trainerService.updateTrainer(eq(100L), any(TrainerDTO.class))).thenReturn(dto);
+
+        mockMvc.perform(put("/api/v1/trainers/100")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userId\":1, \"branchId\":10, \"trainerName\":\"John Trainer\", \"bio\":\"Updated Bio\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.bio").value("Updated Bio"));
+    }
+
+    @Test
+    void deactivateTrainer_Success() throws Exception {
+        mockMvc.perform(delete("/api/v1/trainers/100"))
+                .andExpect(status().isNoContent());
+
+        verify(trainerService).deactivateTrainer(100L);
+    }
+}
+
+###END###

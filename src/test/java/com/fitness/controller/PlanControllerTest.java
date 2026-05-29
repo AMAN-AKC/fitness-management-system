@@ -97,10 +97,10 @@ public class PlanControllerTest {
     }
 
     @Test
-    void deactivatePlan_Success() throws Exception {
+    void deletePlan_Success() throws Exception {
         mockMvc.perform(delete("/api/v1/plans/1"))
                 .andExpect(status().isNoContent());
 
-        verify(planService).deactivatePlan(1L);
+        verify(planService).deletePlan(1L);
     }
 }

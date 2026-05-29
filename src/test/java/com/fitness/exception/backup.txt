@@ -1,0 +1,128 @@
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\exception>(
+echo ###FILE### GlobalExceptionHandlerTest.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\test\java\com\fitness\exception\GlobalExceptionHandlerTest.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### GlobalExceptionHandlerTest.java
+package com.fitness.exception;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.context.request.WebRequest;
+
+import java.util.Collections;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+public class GlobalExceptionHandlerTest {
+
+    private GlobalExceptionHandler exceptionHandler;
+    private WebRequest request;
+
+    @BeforeEach
+    void setUp() {
+        exceptionHandler = new GlobalExceptionHandler();
+        request = mock(WebRequest.class);
+        when(request.getDescription(false)).thenReturn("uri=/test");
+    }
+
+    @Test
+    void handleResourceNotFound() {
+        ResourceNotFoundException ex = new ResourceNotFoundException("Test", "id", 1);
+        ResponseEntity<Map<String, Object>> response = exceptionHandler.handleResourceNotFound(ex, request);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void handleDuplicateResource() {
+        DuplicateResourceException ex = new DuplicateResourceException("Duplicate");
+        ResponseEntity<Map<String, Object>> response = exceptionHandler.handleDuplicateResource(ex, request);
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    }
+
+    @Test
+    void handleUnauthorized() {
+        UnauthorizedAccessException ex = new UnauthorizedAccessException("Unauthorized");
+        ResponseEntity<Map<String, Object>> response = exceptionHandler.handleUnauthorized(ex, request);
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    }
+
+    @Test
+    void handleAccessDenied() {
+        AccessDeniedException ex = new AccessDeniedException("Denied");
+        ResponseEntity<Map<String, Object>> response = exceptionHandler.handleUnauthorized(ex, request);
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    }
+
+    @Test
+    void handleValidationErrors() throws NoSuchMethodException {
+        BindingResult bindingResult = mock(BindingResult.class);
+        FieldError fieldError = new FieldError("object", "field", "message");
+        when(bindingResult.getAllErrors()).thenReturn(Collections.singletonList(fieldError));
+        
+        MethodParameter parameter = new MethodParameter(this.getClass().getDeclaredMethod("setUp"), -1);
+        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(parameter, bindingResult);
+
+        ResponseEntity<Map<String, Object>> response = exceptionHandler.handleValidationErrors(ex, request);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertTrue(((Map<String, String>) response.getBody().get("fieldErrors")).containsKey("field"));
+    }
+
+    @Test
+    void handleValidation() {
+        ValidationException ex = new ValidationException("Validation error");
+        ResponseEntity<Map<String, Object>> response = exceptionHandler.handleValidation(ex, request);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void handleBusinessRule() {
+        BusinessRuleException ex = new BusinessRuleException("Business error");
+        ResponseEntity<Map<String, Object>> response = exceptionHandler.handleBusinessRule(ex, request);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void handleBadCredentials() {
+        BadCredentialsException ex = new BadCredentialsException("Bad creds");
+        ResponseEntity<Map<String, Object>> response = exceptionHandler.handleBadCredentials(ex, request);
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    }
+
+    @Test
+    void handleDisabled() {
+        DisabledException ex = new DisabledException("Disabled");
+        ResponseEntity<Map<String, Object>> response = exceptionHandler.handleDisabled(ex, request);
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    }
+
+    @Test
+    void handleLocked() {
+        LockedException ex = new LockedException("Locked");
+        ResponseEntity<Map<String, Object>> response = exceptionHandler.handleLocked(ex, request);
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    }
+
+    @Test
+    void handleGeneral() {
+        Exception ex = new Exception("General");
+        ResponseEntity<Map<String, Object>> response = exceptionHandler.handleGeneral(ex, request);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    }
+}
+
+###END###

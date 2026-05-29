@@ -45,7 +45,7 @@ public class PlanController {
 	@DeleteMapping("/{id}")
 	@PreAuthorize("hasRole('ADMIN')")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public void deactivatePlan(@PathVariable Long id) {
-		planService.deactivatePlan(id);
+	public void deletePlan(@PathVariable Long id) {
+		planService.deletePlan(id);
 	}
 }

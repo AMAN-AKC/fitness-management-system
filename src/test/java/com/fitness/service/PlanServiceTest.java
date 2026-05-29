@@ -5,6 +5,7 @@ import com.fitness.entity.AuditLog;
 import com.fitness.entity.Membership;
 import com.fitness.entity.Plan;
 import com.fitness.exception.DuplicateResourceException;
+import com.fitness.exception.BusinessRuleException;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.MembershipRepository;
 import com.fitness.repository.PlanRepository;
@@ -72,7 +73,8 @@ public class PlanServiceTest {
         assertEquals(1, mockPlan.getVersion());
         assertTrue(mockPlan.getIsActive());
         verify(planRepo).save(mockPlan);
-        verify(auditLogService).logForCurrentUser(eq("Plan"), eq(1L), eq(AuditLog.Action.CREATE), anyString(), isNull());
+        verify(auditLogService).logForCurrentUser(eq("Plan"), eq(1L), eq(AuditLog.Action.CREATE), anyString(),
+                isNull());
     }
 
     @Test
@@ -126,21 +128,32 @@ public class PlanServiceTest {
         assertNotNull(result);
         assertEquals(2, mockPlan.getVersion());
         verify(mapper).map(mockDto, mockPlan);
-        verify(auditLogService).logForCurrentUser(eq("Plan"), eq(1L), eq(AuditLog.Action.UPDATE), anyString(), anyString());
+        verify(auditLogService).logForCurrentUser(eq("Plan"), eq(1L), eq(AuditLog.Action.UPDATE), anyString(),
+                anyString());
     }
 
     @Test
-    void deactivatePlan_Success() {
+    void deletePlan_WhenInUse_ThrowsException() {
         when(planRepo.findById(1L)).thenReturn(Optional.of(mockPlan));
-        
+
         Membership m = new Membership();
         m.setPlan(mockPlan);
         when(membershipRepo.findByStatus(Membership.Status.ACTIVE)).thenReturn(Collections.singletonList(m));
 
-        planService.deactivatePlan(1L);
+        assertThrows(BusinessRuleException.class, () -> planService.deletePlan(1L));
 
-        assertFalse(mockPlan.getIsActive());
-        verify(planRepo).save(mockPlan);
-        verify(auditLogService).logForCurrentUser(eq("Plan"), eq(1L), eq(AuditLog.Action.UPDATE), anyString(), anyString());
+        verify(planRepo, never()).delete(any());
+    }
+
+    @Test
+    void deletePlan_Success() {
+        when(planRepo.findById(1L)).thenReturn(Optional.of(mockPlan));
+        when(membershipRepo.findByStatus(Membership.Status.ACTIVE)).thenReturn(Collections.emptyList());
+
+        planService.deletePlan(1L);
+
+        verify(planRepo).delete(mockPlan);
+        verify(auditLogService).logForCurrentUser(eq("Plan"), eq(1L), eq(AuditLog.Action.DELETE), anyString(),
+                eq("DELETED"));
     }
 }

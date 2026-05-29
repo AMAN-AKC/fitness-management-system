@@ -1,0 +1,294 @@
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\exception>(
+echo ###FILE### BusinessRuleException.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\exception\BusinessRuleException.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### BusinessRuleException.java
+package com.fitness.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public class BusinessRuleException extends RuntimeException {
+
+	public BusinessRuleException(String message) {
+		super(message);
+	}
+}
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\exception>(
+echo ###FILE### DuplicateResourceException.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\exception\DuplicateResourceException.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### DuplicateResourceException.java
+package com.fitness.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.CONFLICT)
+public class DuplicateResourceException extends RuntimeException {
+
+	public DuplicateResourceException(String resourceName, String fieldName, Object fieldValue) {
+		super(String.format("%s already exists with %s : '%s'", resourceName, fieldName, fieldValue));
+	}
+
+	public DuplicateResourceException(String message) {
+		super(message);
+	}
+}
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\exception>(
+echo ###FILE### GlobalExceptionHandler.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\exception\GlobalExceptionHandler.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### GlobalExceptionHandler.java
+package com.fitness.exception;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+@Slf4j
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+	// ── Standard error response body ────────────────────────────────────────
+	private ResponseEntity<Map<String, Object>> buildError(
+			HttpStatus status, String error, String message, String path) {
+
+		Map<String, Object> body = new HashMap<>();
+		body.put("timestamp", LocalDateTime.now().toString());
+		body.put("status", status.value());
+		body.put("error", error);
+		body.put("message", message);
+		body.put("path", path);
+		return ResponseEntity.status(status).body(body);
+	}
+
+	// ── 404 Not Found ───────────────────────────────────────────────────────
+	@ExceptionHandler(ResourceNotFoundException.class)
+	public ResponseEntity<Map<String, Object>> handleResourceNotFound(
+			ResourceNotFoundException ex, WebRequest request) {
+		log.warn("ResourceNotFound: {}", ex.getMessage());
+		return buildError(HttpStatus.NOT_FOUND, "Not Found",
+				ex.getMessage(), request.getDescription(false));
+	}
+
+	// ── 409 Conflict ────────────────────────────────────────────────────────
+	@ExceptionHandler(DuplicateResourceException.class)
+	public ResponseEntity<Map<String, Object>> handleDuplicateResource(
+			DuplicateResourceException ex, WebRequest request) {
+		log.warn("DuplicateResource: {}", ex.getMessage());
+		return buildError(HttpStatus.CONFLICT, "Conflict",
+				ex.getMessage(), request.getDescription(false));
+	}
+
+	// ── 403 Forbidden ───────────────────────────────────────────────────────
+	@ExceptionHandler({ UnauthorizedAccessException.class, AccessDeniedException.class })
+	public ResponseEntity<Map<String, Object>> handleUnauthorized(
+			RuntimeException ex, WebRequest request) {
+		log.warn("AccessDenied: {}", ex.getMessage());
+		return buildError(HttpStatus.FORBIDDEN, "Forbidden",
+				ex.getMessage(), request.getDescription(false));
+	}
+
+	// ── 400 Bad Request — Bean Validation (@Valid) ──────────────────────────
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<Map<String, Object>> handleValidationErrors(
+			MethodArgumentNotValidException ex, WebRequest request) {
+
+		Map<String, String> fieldErrors = new HashMap<>();
+		ex.getBindingResult().getAllErrors().forEach(error -> {
+			String field = ((FieldError) error).getField();
+			String message = error.getDefaultMessage();
+			fieldErrors.put(field, message);
+		});
+
+		Map<String, Object> body = new HashMap<>();
+		body.put("timestamp", LocalDateTime.now().toString());
+		body.put("status", HttpStatus.BAD_REQUEST.value());
+		body.put("error", "Validation Failed");
+		body.put("message", "One or more fields have invalid values.");
+		body.put("fieldErrors", fieldErrors);
+		body.put("path", request.getDescription(false));
+
+		log.warn("ValidationFailed: {}", fieldErrors);
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+	}
+
+	// ── 400 Bad Request — custom ValidationException ────────────────────────
+	@ExceptionHandler(ValidationException.class)
+	public ResponseEntity<Map<String, Object>> handleValidation(
+			ValidationException ex, WebRequest request) {
+		log.warn("Validation: {}", ex.getMessage());
+		return buildError(HttpStatus.BAD_REQUEST, "Validation Failed",
+				ex.getMessage(), request.getDescription(false));
+	}
+
+	// ── 422 Unprocessable — business rule violation ─────────────────────────
+	@ExceptionHandler(BusinessRuleException.class)
+	public ResponseEntity<Map<String, Object>> handleBusinessRule(
+			BusinessRuleException ex, WebRequest request) {
+		log.warn("BusinessRule: {}", ex.getMessage());
+		return buildError(HttpStatus.BAD_REQUEST, "Business Rule Violation",
+				ex.getMessage(), request.getDescription(false));
+	}
+
+	// ── 401 Unauthorized — bad credentials ──────────────────────────────────
+	@ExceptionHandler(BadCredentialsException.class)
+	public ResponseEntity<Map<String, Object>> handleBadCredentials(
+			BadCredentialsException ex, WebRequest request) {
+		log.warn("BadCredentials from: {}", request.getDescription(false));
+		return buildError(HttpStatus.UNAUTHORIZED, "Unauthorized",
+				ex.getMessage() != null ? ex.getMessage() : "Invalid username or password.", request.getDescription(false));
+	}
+
+	// ── 401 Unauthorized — account disabled ─────────────────────────────────
+	@ExceptionHandler(DisabledException.class)
+	public ResponseEntity<Map<String, Object>> handleDisabled(
+			DisabledException ex, WebRequest request) {
+		return buildError(HttpStatus.UNAUTHORIZED, "Unauthorized",
+				"Account is deactivated. Contact admin.", request.getDescription(false));
+	}
+
+	// ── 401 Unauthorized — account locked ───────────────────────────────────
+	@ExceptionHandler(LockedException.class)
+	public ResponseEntity<Map<String, Object>> handleLocked(
+			LockedException ex, WebRequest request) {
+		return buildError(HttpStatus.UNAUTHORIZED, "Unauthorized",
+				ex.getMessage() != null ? ex.getMessage() : "Account is locked due to too many failed attempts.",
+				request.getDescription(false));
+	}
+
+	// ── 500 Internal Server Error — catch-all ───────────────────────────────
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<Map<String, Object>> handleGeneral(
+			Exception ex, WebRequest request) {
+		log.error("Unhandled exception at [{}]: ", request.getDescription(false), ex);
+		return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
+				"An unexpected error occurred. Please try again later.",
+				request.getDescription(false));
+	}
+}
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\exception>(
+echo ###FILE### ResourceNotFoundException.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\exception\ResourceNotFoundException.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### ResourceNotFoundException.java
+package com.fitness.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class ResourceNotFoundException extends RuntimeException {
+
+	private final String resourceName;
+	private final String fieldName;
+	private final Object fieldValue;
+
+	public ResourceNotFoundException(String resourceName, String fieldName, Object fieldValue) {
+		super(String.format("%s not found with %s : '%s'", resourceName, fieldName, fieldValue));
+		this.resourceName = resourceName;
+		this.fieldName = fieldName;
+		this.fieldValue = fieldValue;
+	}
+
+	public ResourceNotFoundException(String message) {
+		super(message);
+		this.resourceName = null;
+		this.fieldName = null;
+		this.fieldValue = null;
+	}
+
+	public String getResourceName() {
+		return resourceName;
+	}
+
+	public String getFieldName() {
+		return fieldName;
+	}
+
+	public Object getFieldValue() {
+		return fieldValue;
+	}
+}
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\exception>(
+echo ###FILE### UnauthorizedAccessException.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\exception\UnauthorizedAccessException.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### UnauthorizedAccessException.java
+package com.fitness.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.FORBIDDEN)
+public class UnauthorizedAccessException extends RuntimeException {
+
+	public UnauthorizedAccessException(String message) {
+		super(message);
+	}
+
+	public UnauthorizedAccessException() {
+		super("You do not have permission to perform this action.");
+	}
+}
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\exception>(
+echo ###FILE### ValidationException.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\exception\ValidationException.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### ValidationException.java
+package com.fitness.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public class ValidationException extends RuntimeException {
+
+	public ValidationException(String message) {
+		super(message);
+	}
+
+	public ValidationException(String fieldName, String detail) {
+		super(String.format("Please provide a valid %s. %s", fieldName, detail));
+	}
+}
+
+###END###

@@ -1,0 +1,128 @@
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\validator>(
+echo ###FILE### DateNotStartingWithZero.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\validator\DateNotStartingWithZero.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### DateNotStartingWithZero.java
+package com.fitness.validator;
+
+import java.lang.annotation.*;
+
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
+
+@Documented
+@Constraint(validatedBy = DateNotStartingWithZeroValidator.class)
+@Target({ ElementType.FIELD, ElementType.PARAMETER })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface DateNotStartingWithZero {
+	String message() default "Invalid format selection: Date and time values must not start with zero. Please utilize the calendar dropdown selector tool.";
+
+	Class<?>[] groups() default {};
+
+	Class<? extends Payload>[] payload() default {};
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\validator>(
+echo ###FILE### DateNotStartingWithZeroValidator.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\validator\DateNotStartingWithZeroValidator.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### DateNotStartingWithZeroValidator.java
+package com.fitness.validator;
+
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+
+public class DateNotStartingWithZeroValidator implements ConstraintValidator<DateNotStartingWithZero, String> {
+
+	@Override
+	public boolean isValid(String value, ConstraintValidatorContext ctx) {
+		if (value == null || value.isBlank())
+			return true; 
+		
+		return !value.trim().startsWith("0");
+	}
+}
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\validator>(
+echo ###FILE### PasswordComplexity.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\validator\PasswordComplexity.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### PasswordComplexity.java
+package com.fitness.validator;
+
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
+
+import java.lang.annotation.*;
+
+@Documented
+@Constraint(validatedBy = PasswordComplexityValidator.class)
+@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface PasswordComplexity {
+	String message() default "Password must meet complexity requirements: minimum 12 characters, at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character.";
+
+	Class<?>[] groups() default {};
+
+	Class<? extends Payload>[] payload() default {};
+}
+
+###END###
+
+C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\validator>(
+echo ###FILE### PasswordComplexityValidator.java  
+ type "C:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system\src\main\java\com\fitness\validator\PasswordComplexityValidator.java"  
+ echo. 
+ echo ###END### 
+) 
+###FILE### PasswordComplexityValidator.java
+package com.fitness.validator;
+
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import com.fitness.service.PasswordValidationService;
+import org.springframework.beans.factory.annotation.Autowired;
+
+@Component
+public class PasswordComplexityValidator implements ConstraintValidator<PasswordComplexity, String> {
+
+	@Autowired
+	private PasswordValidationService passwordValidationService;
+
+	private static final String SPECIAL_CHARS = "!@#$%^&*()-_=+[]{}|;:',.<>?/`~";
+
+	@Override
+	public boolean isValid(String password, ConstraintValidatorContext context) {
+		if (password == null) {
+			return false;
+		}
+
+		try {
+			passwordValidationService.validatePassword(password);
+			return true;
+		} catch (Exception e) {
+			addConstraintViolation(context, e.getMessage());
+			return false;
+		}
+	}
+
+	private void addConstraintViolation(ConstraintValidatorContext context, String message) {
+		context.buildConstraintViolationWithTemplate(message)
+				.addConstraintViolation()
+				.disableDefaultConstraintViolation();
+	}
+}
+
+###END###
