@@ -5,6 +5,7 @@ import com.fitness.entity.SystemUser;
 import com.fitness.exception.DuplicateResourceException;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.SystemUserRepository;
+import com.fitness.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,6 +19,7 @@ public class SystemUserService {
 
 	private final SystemUserRepository userRepo;
 	private final com.fitness.repository.BranchRepository branchRepo;
+	private final MemberRepository memberRepo;
 	private final ModelMapper mapper;
 	private final PasswordEncoder passwordEncoder;
 	private final PasswordValidationService passwordValidator;
@@ -72,7 +74,7 @@ public class SystemUserService {
 		} else if (savedUser.getRole() == com.fitness.enums.Role.ADMIN) {
 			responseDto.setBranchName("System HQ");
 		} else {
-			responseDto.setBranchName("Unassigned");
+			responseDto.setBranchName("Global Access");
 		}
 		return responseDto;
 	}
@@ -87,16 +89,20 @@ public class SystemUserService {
 						try {
 							String bName = jdbcTemplate.queryForObject("SELECT b.branch_name FROM branch b JOIN member m ON b.branch_id = m.home_branch_id WHERE m.user_id = ?", String.class, u.getUserId());
 							dto.setBranchName(bName);
-						} catch (Exception e) {}
+						} catch (Exception e) {
+							dto.setBranchName("Global Access");
+						}
 					} else if (u.getRole() == com.fitness.enums.Role.TRAINER) {
 						try {
 							String bName = jdbcTemplate.queryForObject("SELECT b.branch_name FROM branch b JOIN trainer t ON b.branch_id = t.branch_id WHERE t.user_id = ?", String.class, u.getUserId());
 							dto.setBranchName(bName);
-						} catch (Exception e) {}
+						} catch (Exception e) {
+							dto.setBranchName("Global Access");
+						}
 					} else if (u.getRole() == com.fitness.enums.Role.ADMIN) {
 						dto.setBranchName("System HQ");
 					} else {
-						dto.setBranchName("Unassigned");
+						dto.setBranchName("Global Access");
 					}
 					return dto;
 				})
@@ -150,13 +156,20 @@ public class SystemUserService {
 			trainerRepo.save(trainer);
 		}
 
+		if (savedUser.getRole() == com.fitness.enums.Role.MEMBER) {
+			memberRepo.findByUserUserId(savedUser.getUserId()).ifPresent(member -> {
+				member.setHomeBranch(savedUser.getBranch());
+				memberRepo.save(member);
+			});
+		}
+
 		SystemUserDTO responseDto = mapper.map(savedUser, SystemUserDTO.class);
 		if (savedUser.getBranch() != null) {
 			responseDto.setBranchName(savedUser.getBranch().getBranchName());
 		} else if (savedUser.getRole() == com.fitness.enums.Role.ADMIN) {
 			responseDto.setBranchName("System HQ");
 		} else {
-			responseDto.setBranchName("Unassigned");
+			responseDto.setBranchName("Global Access");
 		}
 		return responseDto;
 	}

@@ -29,7 +29,8 @@ public class ClassBookingService {
 	private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 	private final ModelMapper mapper;
 
-	private static final int CANCEL_CUTOFF_HOURS = 2;
+	@Value("${booking.cancel.cutoff-hours:2}")
+	private int cancelCutoffHours;
 
 	/** AC05: Configurable no-show penalty threshold */
 	@Value("${booking.noshow.penalty-threshold:3}")
@@ -200,8 +201,8 @@ public class ClassBookingService {
 			throw new BusinessRuleException("Cannot cancel a class that has already started.");
 		}
 
-		// Check if it is a late cancellation (less than 2 hours before start)
-		boolean isLateCancel = LocalDateTime.now().isAfter(classDateTime.minusHours(CANCEL_CUTOFF_HOURS));
+		// Check if it is a late cancellation (less than cutoff hours before start)
+		boolean isLateCancel = LocalDateTime.now().isAfter(classDateTime.minusHours(cancelCutoffHours));
 
 		booking.setBookingStatus(ClassBooking.BookingStatus.CANCELLED);
 		booking.setCancelledAt(LocalDateTime.now());
@@ -527,7 +528,7 @@ public class ClassBookingService {
 					if (b.getBookingStatus() == ClassBooking.BookingStatus.CANCELLED && b.getCancelledAt() != null) {
 						LocalDateTime classTime = b.getFitnessClass().getStartDate().atTime(b.getFitnessClass().getClassTime());
 						if (classTime.isAfter(now.minusDays(30))) {
-							return b.getCancelledAt().isAfter(classTime.minusHours(CANCEL_CUTOFF_HOURS));
+							return b.getCancelledAt().isAfter(classTime.minusHours(cancelCutoffHours));
 						}
 					}
 					return false;

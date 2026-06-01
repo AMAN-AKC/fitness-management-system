@@ -68,7 +68,7 @@ public class Member {
 	private Status status = Status.PROSPECT;
 
 	@ManyToOne
-	@JoinColumn(name = "home_branch_id", nullable = false)
+	@JoinColumn(name = "home_branch_id", nullable = true)
 	private Branch homeBranch;
 
 	@Column(length = 255)

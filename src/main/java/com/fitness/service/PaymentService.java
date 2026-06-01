@@ -67,6 +67,19 @@ public class PaymentService {
 			} else {
 				invoice.setStatus(Invoice.Status.UNPAID);
 			}
+
+			// REFERRAL REWARD LOGIC (AC04)
+			if (paymentRepo.findByMemberMemberId(member.getMemberId()).isEmpty()) {
+				String referrerCode = member.getReferralCode();
+				if (referrerCode != null && !referrerCode.trim().isEmpty()) {
+					memberRepo.findByMyReferralCode(referrerCode).ifPresent(referrer -> {
+						BigDecimal reward = new BigDecimal("500.00");
+						referrer.setWalletBalance(referrer.getWalletBalance().add(reward));
+						memberRepo.save(referrer);
+						auditLogService.logForCurrentUser("Member", referrer.getMemberId(), AuditLog.Action.UPDATE, null, "Wallet +" + reward);
+					});
+				}
+			}
 		} else {
 			invoice.setStatus(Invoice.Status.OVERDUE);
 		}

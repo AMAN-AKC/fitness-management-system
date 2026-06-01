@@ -22,8 +22,8 @@ public class PromoCodeDTO {
 	@DecimalMin(value = "0.01", message = "Please provide a valid discount value")
 	private BigDecimal discountValue;
 
-	@NotBlank(message = "Please provide a valid expiry date")
-	private String expiryDate;
+	@NotNull(message = "Please provide a valid expiry date")
+	private java.time.LocalDate expiryDate;
 
 	@NotNull(message = "Please provide a valid usage limit")
 	@Min(value = 1, message = "Usage limit must be at least 1")

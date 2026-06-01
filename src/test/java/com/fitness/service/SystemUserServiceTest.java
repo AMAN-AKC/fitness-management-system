@@ -10,6 +10,7 @@ import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.BranchRepository;
 import com.fitness.repository.SystemUserRepository;
 import com.fitness.repository.TrainerRepository;
+import com.fitness.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +49,8 @@ public class SystemUserServiceTest {
     private JdbcTemplate jdbcTemplate;
     @Mock
     private TrainerRepository trainerRepo;
+    @Mock
+    private MemberRepository memberRepo;
 
     private SystemUser mockUser;
     private SystemUserDTO mockDto;
@@ -83,7 +86,7 @@ public class SystemUserServiceTest {
         SystemUserDTO result = systemUserService.createUser(mockDto, "SecurePass123!");
 
         assertNotNull(result);
-        assertEquals("Unassigned", result.getBranchName());
+        assertEquals("Global Access", result.getBranchName());
         verify(passwordValidator).validatePassword("SecurePass123!");
         verify(userRepo).save(mockUser);
     }

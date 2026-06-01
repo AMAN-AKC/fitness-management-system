@@ -46,15 +46,15 @@ public class CsvImportServiceTest {
 
     @Test
     void importMembers_Success() throws Exception {
-        String csvContent = "memName,email,phone,dob,address,emgContact,emgPhone,branchCode,referralCode,corporateCode,notes\n" +
-                "John Doe,john@example.com,9876543210,1990-01-01,123 Main St,Jane Doe,9876543211,BR01,,,\n";
+        String csvContent = "memName,email,phone,dob,address,emgContact,emgPhone,homeBranchId,referralCode,corporateCode,notes\n" +
+                "John Doe,john@example.com,9876543210,01-01-1990,123 Main St,Jane Doe,9876543211,1,,,\n";
         
         MockMultipartFile file = new MockMultipartFile("file", "members.csv", "text/csv", csvContent.getBytes());
 
         Branch branch = new Branch();
         branch.setBranchId(1L);
 
-        when(branchRepository.findByBranchCode("BR01")).thenReturn(Optional.of(branch));
+        when(branchRepository.findById(1L)).thenReturn(Optional.of(branch));
         when(memberRepository.existsByEmail("john@example.com")).thenReturn(false);
         when(memberRepository.existsByPhone("9876543210")).thenReturn(false);
         when(systemUserRepository.existsByEmail("john@example.com")).thenReturn(false);
@@ -63,7 +63,7 @@ public class CsvImportServiceTest {
         createdDto.setMemberId(10L);
         when(memberService.createMember(any(MemberDTO.class))).thenReturn(createdDto);
 
-        BulkImportReport report = csvImportService.importMembers(file);
+        BulkImportReport report = csvImportService.importMembers(file, false);
 
         assertNotNull(report);
         assertEquals(1, report.getTotalRows());
@@ -74,12 +74,12 @@ public class CsvImportServiceTest {
 
     @Test
     void importMembers_ValidationError() throws Exception {
-        String csvContent = "memName,email,phone,dob,address,emgContact,emgPhone,branchCode,referralCode,corporateCode,notes\n" +
-                ",invalid-email,123,1990-01-01,123 Main St,Jane Doe,9876543211,BR01,,,\n";
+        String csvContent = "memName,email,phone,dob,address,emgContact,emgPhone,homeBranchId,referralCode,corporateCode,notes\n" +
+                ",invalid-email,123,1990-01-01,123 Main St,Jane Doe,9876543211,1,,,\n";
         
         MockMultipartFile file = new MockMultipartFile("file", "members.csv", "text/csv", csvContent.getBytes());
 
-        BulkImportReport report = csvImportService.importMembers(file);
+        BulkImportReport report = csvImportService.importMembers(file, false);
 
         assertNotNull(report);
         assertEquals(1, report.getTotalRows());
@@ -90,14 +90,14 @@ public class CsvImportServiceTest {
 
     @Test
     void importMembers_DuplicateEmail() throws Exception {
-        String csvContent = "memName,email,phone,dob,address,emgContact,emgPhone,branchCode,referralCode,corporateCode,notes\n" +
-                "John Doe,john@example.com,9876543210,1990-01-01,123 Main St,Jane Doe,9876543211,BR01,,,\n";
+        String csvContent = "memName,email,phone,dob,address,emgContact,emgPhone,homeBranchId,referralCode,corporateCode,notes\n" +
+                "John Doe,john@example.com,9876543210,01-01-1990,123 Main St,Jane Doe,9876543211,1,,,\n";
         
         MockMultipartFile file = new MockMultipartFile("file", "members.csv", "text/csv", csvContent.getBytes());
 
         when(memberRepository.existsByEmail("john@example.com")).thenReturn(true);
 
-        BulkImportReport report = csvImportService.importMembers(file);
+        BulkImportReport report = csvImportService.importMembers(file, false);
 
         assertNotNull(report);
         assertEquals(1, report.getTotalRows());
@@ -107,17 +107,17 @@ public class CsvImportServiceTest {
 
     @Test
     void importMembers_BranchNotFound() throws Exception {
-        String csvContent = "memName,email,phone,dob,address,emgContact,emgPhone,branchCode,referralCode,corporateCode,notes\n" +
-                "John Doe,john@example.com,9876543210,1990-01-01,123 Main St,Jane Doe,9876543211,UNKNOWN,,,\n";
+        String csvContent = "memName,email,phone,dob,address,emgContact,emgPhone,homeBranchId,referralCode,corporateCode,notes\n" +
+                "John Doe,john@example.com,9876543210,01-01-1990,123 Main St,Jane Doe,9876543211,999,,,\n";
         
         MockMultipartFile file = new MockMultipartFile("file", "members.csv", "text/csv", csvContent.getBytes());
 
         when(memberRepository.existsByEmail("john@example.com")).thenReturn(false);
         when(memberRepository.existsByPhone("9876543210")).thenReturn(false);
         when(systemUserRepository.existsByEmail("john@example.com")).thenReturn(false);
-        when(branchRepository.findByBranchCode("UNKNOWN")).thenReturn(Optional.empty());
+        when(branchRepository.findById(999L)).thenReturn(Optional.empty());
 
-        BulkImportReport report = csvImportService.importMembers(file);
+        BulkImportReport report = csvImportService.importMembers(file, false);
 
         assertNotNull(report);
         assertEquals(1, report.getTotalRows());
@@ -125,3 +125,4 @@ public class CsvImportServiceTest {
         assertTrue(report.getRowResults().get(0).getErrorMessage().contains("not found"));
     }
 }
+

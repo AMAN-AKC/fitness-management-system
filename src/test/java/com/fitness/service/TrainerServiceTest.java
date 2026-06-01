@@ -96,6 +96,7 @@ public class TrainerServiceTest {
     void createTrainer_BranchNotFound() {
         when(userRepo.findById(1L)).thenReturn(Optional.of(mockUser));
         when(branchRepo.findById(10L)).thenReturn(Optional.empty());
+        when(mapper.map(any(TrainerDTO.class), eq(Trainer.class))).thenReturn(mockTrainer);
         assertThrows(ResourceNotFoundException.class, () -> trainerService.createTrainer(mockDto));
     }
 

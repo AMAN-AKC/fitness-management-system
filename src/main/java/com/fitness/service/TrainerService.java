@@ -22,11 +22,15 @@ public class TrainerService {
 	public TrainerDTO createTrainer(TrainerDTO dto) {
 		SystemUser user = userRepo.findById(dto.getUserId())
 				.orElseThrow(() -> new ResourceNotFoundException("SystemUser", "id", dto.getUserId()));
-		Branch branch = branchRepo.findById(dto.getBranchId())
-				.orElseThrow(() -> new ResourceNotFoundException("Branch", "id", dto.getBranchId()));
 		Trainer trainer = mapper.map(dto, Trainer.class);
 		trainer.setUser(user);
-		trainer.setBranch(branch);
+		
+		if (dto.getBranchId() != null) {
+			Branch branch = branchRepo.findById(dto.getBranchId())
+					.orElseThrow(() -> new ResourceNotFoundException("Branch", "id", dto.getBranchId()));
+			trainer.setBranch(branch);
+		}
+		
 		trainer.setIsActive(true);
 		return convertToDto(trainerRepo.save(trainer));
 	}

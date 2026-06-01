@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -50,7 +51,7 @@ public class DataImportControllerTest {
                 .rowResults(new ArrayList<>())
                 .build();
 
-        when(csvImportService.importMembers(any())).thenReturn(report);
+        when(csvImportService.importMembers(any(), anyBoolean())).thenReturn(report);
 
         MockMultipartFile file = new MockMultipartFile("file", "members.csv", "text/csv", "content".getBytes());
 
@@ -81,3 +82,4 @@ public class DataImportControllerTest {
                 .andExpect(jsonPath("$.maxFileSize").value("5MB"));
     }
 }
+

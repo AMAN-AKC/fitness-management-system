@@ -4,6 +4,8 @@ import com.fitness.dto.InvoiceDTO;
 import com.fitness.entity.*;
 import com.fitness.exception.ResourceNotFoundException;
 import com.fitness.repository.*;
+import com.fitness.entity.PromoCode;
+import com.fitness.entity.PromoCodeUsage;
 import lombok.RequiredArgsConstructor;
 import com.fitness.entity.AuditLog;
 import org.modelmapper.ModelMapper;
@@ -19,6 +21,8 @@ public class InvoiceService {
 
 	private final InvoiceRepository invoiceRepo;
 	private final MemberRepository memberRepo;
+	private final PromoCodeRepository promoCodeRepo;
+	private final PromoCodeUsageRepository promoCodeUsageRepo;
 	private final ModelMapper mapper;
 	private final AuditLogService auditLogService;
 
@@ -37,6 +41,18 @@ public class InvoiceService {
 				dto.getPaidAmount() != null ? dto.getPaidAmount() : BigDecimal.ZERO));
 		invoice.setStatus(Invoice.Status.ISSUED);
 		Invoice saved = invoiceRepo.save(invoice);
+
+		if (dto.getPromoCode() != null && !dto.getPromoCode().isEmpty()) {
+			promoCodeRepo.findByCode(dto.getPromoCode()).ifPresent(promo -> {
+				PromoCodeUsage usage = PromoCodeUsage.builder()
+						.promoCode(promo)
+						.member(member)
+						.invoice(saved)
+						.build();
+				promoCodeUsageRepo.save(usage);
+			});
+		}
+
 		auditLogService.logForCurrentUser("Invoice", saved.getInvoiceId(), AuditLog.Action.CREATE,
 				null, "Invoice created for member: " + member.getMemName() + " | Amount: ₹" + saved.getFinalAmount());
 		return mapper.map(saved, InvoiceDTO.class);

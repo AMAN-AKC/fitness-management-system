@@ -262,7 +262,7 @@ public class MemberService {
 							.address(record.get("address"))
 							.emgContact(record.get("emg_contact"))
 							.emgPhone(record.get("emg_phone"))
-							.homeBranchId(Long.parseLong(record.get("home_branch_id")))
+							.homeBranchId(record.get("home_branch_id") != null && !record.get("home_branch_id").trim().isEmpty() ? Long.parseLong(record.get("home_branch_id").trim()) : null)
 							.referralCode(getOptionalField(record, "referral_code"))
 							.corporateCode(getOptionalField(record, "corporate_code"))
 							.notes(getOptionalField(record, "notes"))
