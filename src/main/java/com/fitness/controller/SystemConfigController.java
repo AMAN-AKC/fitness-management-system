@@ -43,6 +43,18 @@ public class SystemConfigController {
 		return ResponseEntity.ok(configService.getAllFeatureFlags());
 	}
 
+	@GetMapping("/public")
+	public ResponseEntity<Map<String, String>> getPublicConfigs() {
+		List<SystemConfig> all = configService.getAllConfigs();
+		Map<String, String> publicConfigs = new java.util.HashMap<>();
+		for (SystemConfig c : all) {
+			if (c.getConfigKey().equals("billing.currency") || c.getConfigKey().equals("branding.primaryColor") || c.getConfigKey().equals("branding.logoUrl")) {
+				publicConfigs.put(c.getConfigKey(), c.getConfigValue());
+			}
+		}
+		return ResponseEntity.ok(publicConfigs);
+	}
+
 	@PutMapping("/features/{name}/toggle")
 	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<Void> toggleFeature(@PathVariable String name, @RequestParam boolean enabled) {

@@ -61,6 +61,12 @@ public class MemberController {
 		return ResponseEntity.ok(memberService.updateMember(id, dto));
 	}
 
+	@PostMapping("/{id}/referral/activate")
+	@PreAuthorize("hasAnyRole('MEMBER','FRONT_DESK','ADMIN')")
+	public ResponseEntity<MemberDTO> activateReferralCode(@PathVariable Long id) {
+		return ResponseEntity.ok(memberService.activateReferralCode(id));
+	}
+
 	@DeleteMapping("/{id}")
 	@PreAuthorize("hasRole('ADMIN')")
 	@ResponseStatus(HttpStatus.NO_CONTENT)

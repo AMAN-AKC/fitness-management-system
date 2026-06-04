@@ -58,6 +58,17 @@ public class Member {
 	@Column(length = 30, unique = true)
 	private String myReferralCode;
 
+	public enum ReferralStatus {
+		INACTIVE, ACTIVE, USED, REWARDED
+	}
+
+	@Enumerated(EnumType.STRING)
+	@Column(length = 20, nullable = false)
+	@Builder.Default
+	private ReferralStatus referralStatus = ReferralStatus.INACTIVE;
+
+	private java.time.LocalDateTime referralCodeActivatedAt;
+
 	@Column(nullable = false, precision = 10, scale = 2)
 	@Builder.Default
 	private java.math.BigDecimal walletBalance = java.math.BigDecimal.ZERO;

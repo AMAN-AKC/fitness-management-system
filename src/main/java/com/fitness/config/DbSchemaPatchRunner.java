@@ -33,12 +33,18 @@ public class DbSchemaPatchRunner {
 					"ALTER TABLE member ADD COLUMN my_referral_code VARCHAR(30) NULL");
 			ensureColumnExists(jdbcTemplate, "member", "wallet_balance",
 					"ALTER TABLE member ADD COLUMN wallet_balance DECIMAL(10,2) NOT NULL DEFAULT 0.00");
+			ensureColumnExists(jdbcTemplate, "member", "referral_status",
+					"ALTER TABLE member ADD COLUMN referral_status VARCHAR(20) NOT NULL DEFAULT 'INACTIVE'");
+			ensureColumnExists(jdbcTemplate, "member", "referral_code_activated_at",
+					"ALTER TABLE member ADD COLUMN referral_code_activated_at DATETIME NULL");
 			ensureColumnExists(jdbcTemplate, "notification", "deep_link",
 					"ALTER TABLE notification ADD COLUMN deep_link VARCHAR(500) NULL AFTER body");
 			ensureColumnExists(jdbcTemplate, "invoice", "wallet_credit_applied",
 					"ALTER TABLE invoice ADD COLUMN wallet_credit_applied DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER discount");
 			ensureColumnDefinition(jdbcTemplate, "classes", "weekdays", "varchar(100)",
 					"ALTER TABLE classes MODIFY COLUMN weekdays VARCHAR(100) NOT NULL");
+			ensureColumnDefinition(jdbcTemplate, "system_config", "config_value", "longtext",
+					"ALTER TABLE system_config MODIFY COLUMN config_value LONGTEXT NOT NULL");
 			ensureTableExists(jdbcTemplate, "system_user_branches",
 					"CREATE TABLE IF NOT EXISTS system_user_branches (" +
 							"user_id BIGINT NOT NULL, " +

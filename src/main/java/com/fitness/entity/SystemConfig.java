@@ -13,7 +13,7 @@ public class SystemConfig {
 	@Column(name = "config_key", nullable = false, unique = true)
 	private String configKey;
 
-	@Column(name = "config_value", nullable = false)
+	@Column(name = "config_value", nullable = false, columnDefinition = "LONGTEXT")
 	private String configValue;
 
 	@Column(name = "version", nullable = false)

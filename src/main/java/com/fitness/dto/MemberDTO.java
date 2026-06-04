@@ -41,6 +41,8 @@ public class MemberDTO {
 	private String referralCode;
 	private String corporateCode;
 	private String myReferralCode;
+	private Member.ReferralStatus referralStatus;
+	private java.time.LocalDateTime referralCodeActivatedAt;
 	private java.math.BigDecimal walletBalance;
 	private String notes;
 	private Member.Status status;

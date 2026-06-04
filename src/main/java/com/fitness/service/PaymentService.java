@@ -68,15 +68,20 @@ public class PaymentService {
 				invoice.setStatus(Invoice.Status.UNPAID);
 			}
 
-			// REFERRAL REWARD LOGIC (AC04)
+			// REFERRAL REWARD LOGIC
 			if (paymentRepo.findByMemberMemberId(member.getMemberId()).isEmpty()) {
 				String referrerCode = member.getReferralCode();
-				if (referrerCode != null && !referrerCode.trim().isEmpty()) {
+				if (referrerCode != null && !referrerCode.trim().isEmpty() && !referrerCode.startsWith("USED:")) {
 					memberRepo.findByMyReferralCode(referrerCode).ifPresent(referrer -> {
 						BigDecimal reward = new BigDecimal("500.00");
 						referrer.setWalletBalance(referrer.getWalletBalance().add(reward));
+						referrer.setReferralStatus(Member.ReferralStatus.REWARDED);
 						memberRepo.save(referrer);
-						auditLogService.logForCurrentUser("Member", referrer.getMemberId(), AuditLog.Action.UPDATE, null, "Wallet +" + reward);
+						auditLogService.logForCurrentUser("Member", referrer.getMemberId(), AuditLog.Action.UPDATE, null, "Wallet +" + reward + " for referring " + member.getMemName());
+						
+						// Prevent duplicate payouts
+						member.setReferralCode("USED:" + referrerCode);
+						memberRepo.save(member);
 					});
 				}
 			}
@@ -146,19 +151,7 @@ public class PaymentService {
 					if (healthConsentService.hasActiveConsent(m.getMemberId())) {
 						m.setStatus(Member.Status.ACTIVE);
 						memberRepo.save(m);
-						
-						// Trigger Referral Reward (₹500 to Referrer)
-						if (m.getReferralCode() != null && !m.getReferralCode().isBlank()) {
-							memberRepo.findByMyReferralCode(m.getReferralCode()).ifPresent(referrer -> {
-								referrer.setWalletBalance(referrer.getWalletBalance().add(new BigDecimal("500.00")));
-								memberRepo.save(referrer);
-								auditLogService.logForCurrentUser("Member", referrer.getMemberId(), AuditLog.Action.UPDATE,
-									null, "Granted ₹500 referral credit for referring " + m.getMemName());
-								// Mark referral code as used to prevent duplicate payouts
-								m.setReferralCode("USED:" + m.getReferralCode());
-								memberRepo.save(m);
-							});
-						}
+
 					} else {
 						auditLogService.logForCurrentUser("Member", m.getMemberId(), AuditLog.Action.UPDATE, null, "Payment successful but Member status kept PENDING due to missing Health Consent.");
 					}

@@ -57,9 +57,18 @@ public class MemberService {
 			throw new DuplicateResourceException("User", "email", dto.getEmail());
 
 		if (dto.getReferralCode() != null && !dto.getReferralCode().isBlank()) {
-			if (!promoRepo.existsByCode(dto.getReferralCode())) {
+			memberRepo.findByMyReferralCode(dto.getReferralCode()).ifPresentOrElse(referrer -> {
+				if (referrer.getReferralStatus() != Member.ReferralStatus.ACTIVE) {
+					throw new BusinessRuleException("Referral Code is not active: " + dto.getReferralCode());
+				}
+				referrer.setReferralStatus(Member.ReferralStatus.USED);
+				memberRepo.save(referrer);
+				
+				// Reward the new user with an initial wallet balance of 500
+				dto.setWalletBalance(new java.math.BigDecimal("500.00"));
+			}, () -> {
 				throw new BusinessRuleException("Invalid Referral Code: " + dto.getReferralCode());
-			}
+			});
 		}
 		if (dto.getCorporateCode() != null && !dto.getCorporateCode().isBlank()) {
 			if (!promoRepo.existsByCode(dto.getCorporateCode())) {
@@ -234,6 +243,23 @@ public class MemberService {
 	 *
 	 * @return A list of maps, one per row, containing "row", "status", and "message"
 	 */
+	@Transactional
+	public MemberDTO activateReferralCode(Long id) {
+		Member member = findById(id);
+		if (member.getReferralStatus() == Member.ReferralStatus.REWARDED) {
+			throw new BusinessRuleException("Referral feature is permanently disabled for this member.");
+		}
+		if (member.getReferralStatus() != Member.ReferralStatus.INACTIVE) {
+			throw new BusinessRuleException("Referral Code is already active or used.");
+		}
+		member.setReferralStatus(Member.ReferralStatus.ACTIVE);
+		member.setReferralCodeActivatedAt(java.time.LocalDateTime.now());
+		Member saved = memberRepo.save(member);
+		auditLogService.logForCurrentUser("Member", saved.getMemberId(), AuditLog.Action.UPDATE, 
+				"referralStatus", "Activated referral code");
+		return mapper.map(saved, MemberDTO.class);
+	}
+
 	@Transactional
 	public List<Map<String, String>> bulkUploadMembers(MultipartFile file) {
 		List<Map<String, String>> report = new ArrayList<>();

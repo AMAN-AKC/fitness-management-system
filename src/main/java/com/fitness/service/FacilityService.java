@@ -21,6 +21,14 @@ public class FacilityService {
 	private final AuditLogService auditLogService;
 	private final ModelMapper mapper;
 
+	private FacilityDTO mapToDTO(Facility facility) {
+		FacilityDTO dto = mapper.map(facility, FacilityDTO.class);
+		if (facility.getBranch() != null) {
+			dto.setBranchId(facility.getBranch().getBranchId());
+		}
+		return dto;
+	}
+
 	public FacilityDTO createFacility(FacilityDTO dto) {
 		Branch branch = branchRepo.findById(dto.getBranchId())
 				.orElseThrow(() -> new ResourceNotFoundException("Branch", "id", dto.getBranchId()));
@@ -28,27 +36,27 @@ public class FacilityService {
 		facility.setBranch(branch);
 		facility.setIsActive(true);
 		facility.setUnderMaintenance(false);
-		return mapper.map(facilityRepo.save(facility), FacilityDTO.class);
+		return mapToDTO(facilityRepo.save(facility));
 	}
 
 	public List<FacilityDTO> getFacilitiesByBranch(Long branchId) {
 		return facilityRepo.findByBranchBranchId(branchId).stream()
-				.map(f -> mapper.map(f, FacilityDTO.class)).collect(Collectors.toList());
+				.map(this::mapToDTO).collect(Collectors.toList());
 	}
 
 	public List<FacilityDTO> getAllFacilities() {
 		return facilityRepo.findAll().stream()
-				.map(f -> mapper.map(f, FacilityDTO.class)).collect(Collectors.toList());
+				.map(this::mapToDTO).collect(Collectors.toList());
 	}
 
 	public FacilityDTO getFacilityById(Long id) {
-		return mapper.map(findById(id), FacilityDTO.class);
+		return mapToDTO(findById(id));
 	}
 
 	public FacilityDTO updateFacility(Long id, FacilityDTO dto) {
 		Facility facility = findById(id);
 		mapper.map(dto, facility);
-		return mapper.map(facilityRepo.save(facility), FacilityDTO.class);
+		return mapToDTO(facilityRepo.save(facility));
 	}
 
 	public void deactivateFacility(Long id) {
@@ -72,7 +80,7 @@ public class FacilityService {
 						? "Room set to maintenance: " + (reason != null ? reason : "No reason")
 						: "Room maintenance ended");
 
-		return mapper.map(saved, FacilityDTO.class);
+		return mapToDTO(saved);
 	}
 
 	private Facility findById(Long id) {
